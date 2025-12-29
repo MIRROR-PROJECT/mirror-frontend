@@ -1,15 +1,5 @@
 "use client";
 
-export default function StudyRoomPage() {
-  return (
-    <div className="p-8 max-w-5xl mx-auto">
-      <h1 className="text-2xl font-bold">나의 학습방</h1>
-      <p className="text-sm text-gray-500 mt-2">학습방 상세 내용이 이곳에 표시됩니다. (임시)</p>
-    </div>
-  );
-}
-"use client";
-
 import { useState, useRef, useEffect, useMemo } from "react";
 import { useStudy } from "../../context/StudyContext"; 
 import { 
@@ -256,9 +246,9 @@ export default function StudyRoomPage() {
               {/* 그래프 부분 (생략 없이 유지) */}
               <div className="h-48 w-full relative flex items-end justify-between px-4 pb-2">
                 <div className="absolute inset-0 flex flex-col justify-between py-6 px-4 pointer-events-none">
-                  <div className="border-b border-dashed border-gray-200 w-full flex items-center"><span className="text-[10px] text-gray-400 absolute -left-0 -top-2">100%</span></div>
-                  <div className="border-b border-dashed border-gray-100 w-full flex items-center"><span className="text-[10px] text-gray-300 absolute -left-0">50%</span></div>
-                  <div className="border-b border-gray-200 w-full"><span className="text-[10px] text-gray-400 absolute -left-0 -bottom-4">0%</span></div>
+                  <div className="border-b border-dashed border-gray-200 w-full flex items-center"><span className="text-[10px] text-gray-400 absolute left-0 -top-2">100%</span></div>
+                  <div className="border-b border-dashed border-gray-100 w-full flex items-center"><span className="text-[10px] text-gray-300 absolute left-0">50%</span></div>
+                  <div className="border-b border-gray-200 w-full"><span className="text-[10px] text-gray-400 absolute left-0 -bottom-4">0%</span></div>
                 </div>
                 <svg className="absolute inset-0 w-full h-full overflow-visible py-6 px-4" preserveAspectRatio="none">
                   {ACHIEVEMENT_DATA.map((data, i) => {
@@ -299,7 +289,7 @@ export default function StudyRoomPage() {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-7 gap-4">
             {WEEKLY_PLAN.map((plan, idx) => (
-              <div key={idx} className={`min-h-[200px] p-4 rounded-2xl border flex flex-col gap-3 ${plan.isToday ? 'bg-white border-blue-400 shadow-md ring-1 ring-blue-100' : 'bg-gray-50/50 border-gray-200 hover:bg-white'}`}>
+              <div key={idx} className={`min-h-50 p-4 rounded-2xl border flex flex-col gap-3 ${plan.isToday ? 'bg-white border-blue-400 shadow-md ring-1 ring-blue-100' : 'bg-gray-50/50 border-gray-200 hover:bg-white'}`}>
                 <div className={`text-center pb-2 border-b ${plan.isToday ? 'text-blue-600' : 'text-gray-400'}`}>
                   <div className="flex justify-center items-center gap-2 mb-1">
                     <span className="text-xs font-medium">{plan.day}</span>

@@ -7,7 +7,7 @@ export default function ParentDashboard() {
       <h1 className="text-2xl font-bold">자녀 학습 현황 📊</h1>
       
       {/* 자녀 요약 카드 */}
-      <div className="bg-gradient-to-r from-indigo-500 to-purple-600 p-8 rounded-3xl text-white shadow-lg">
+      <div className="bg-linear-to-r from-indigo-500 to-purple-600 p-8 rounded-3xl text-white shadow-lg">
         <h2 className="text-xl font-bold mb-1">김민수 학생</h2>
         <p className="text-indigo-100 text-sm mb-6">고등수학 집중반 | 출석률 98%</p>
         

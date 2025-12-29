@@ -184,7 +184,7 @@ export default function TeacherWorkspace() {
             <Sparkles className="w-5 h-5 text-purple-600" /> AI 오답 클리닉
           </h2>
           
-          <div className="bg-gradient-to-br from-purple-600 to-indigo-700 rounded-3xl p-6 text-white shadow-lg relative overflow-hidden group">
+          <div className="bg-linear-to-br from-purple-600 to-indigo-700 rounded-3xl p-6 text-white shadow-lg relative overflow-hidden group">
              <div className="absolute right-0 top-0 w-64 h-64 bg-white opacity-5 rounded-full blur-3xl translate-x-1/3 -translate-y-1/3"></div>
              
              <div className="relative z-10">

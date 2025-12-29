@@ -395,7 +395,7 @@ export default function DiagnosisPage() {
                         <div className={`font-bold text-base mb-1 ${answers[q.id] === opt.value ? "text-blue-700" : "text-gray-800"}`}>{opt.label}</div>
                         <div className="text-xs text-gray-500">{opt.desc}</div>
                       </div>
-                      {answers[q.id] === opt.value && <CheckCircle2 className="w-5 h-5 text-blue-500 flex-shrink-0" />}
+                      {answers[q.id] === opt.value && <CheckCircle2 className="w-5 h-5 text-blue-500 shrink-0" />}
                     </button>
                   ))}
                 </div>
@@ -606,7 +606,7 @@ export default function DiagnosisPage() {
                               </div>
                               <p className={`text-sm font-semibold ${isToday ? 'text-gray-900' : 'text-gray-500'}`}>{idx % 2 === 0 ? "수학 I: 지수함수와 로그함수" : "지수함수 필수 유형 문제풀이"}</p>
                             </div>
-                            <div className="text-right min-w-[60px]"><span className="text-xs font-bold text-gray-400 block">목표</span><span className={`text-sm font-bold ${isToday ? 'text-blue-600' : 'text-gray-600'}`}>{finalTime}분</span></div>
+                            <div className="text-right min-w-15"><span className="text-xs font-bold text-gray-400 block">목표</span><span className={`text-sm font-bold ${isToday ? 'text-blue-600' : 'text-gray-600'}`}>{finalTime}분</span></div>
                           </div>
                          )
                       })}

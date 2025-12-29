@@ -122,7 +122,7 @@ export default function DashboardPage() {
           <div className="lg:col-span-2 space-y-6">
             
             {/* A. 오늘의 메인 미션 카드 */}
-            <div className="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-3xl p-8 text-white shadow-xl relative overflow-hidden">
+            <div className="bg-linear-to-br from-blue-600 to-indigo-700 rounded-3xl p-8 text-white shadow-xl relative overflow-hidden">
               <div className="absolute top-0 right-0 w-64 h-64 bg-white opacity-5 rounded-full blur-3xl transform translate-x-1/3 -translate-y-1/3"></div>
               
               <div className="relative z-10 flex justify-between items-start mb-6">
@@ -289,7 +289,7 @@ export default function DashboardPage() {
             </div>
 
             {/* E. 랭킹 */}
-            <div className="bg-gradient-to-b from-gray-900 to-gray-800 p-6 rounded-3xl text-white shadow-lg">
+            <div className="bg-linear-to-b from-gray-900 to-gray-800 p-6 rounded-3xl text-white shadow-lg">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="font-bold flex items-center gap-2">
                   <TrendingUp className="w-5 h-5 text-green-400" /> 실시간 랭킹
