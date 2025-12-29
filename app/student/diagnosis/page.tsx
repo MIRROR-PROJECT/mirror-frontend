@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useMemo } from "react";
-import { useStudy } from "../context/StudyContext";
+import { useStudy } from "../../context/StudyContext";
 import { 
   Loader2, Camera, Clock, Check, GraduationCap, BookOpen, 
   ChevronRight, ChevronLeft, Eraser, PenTool, RefreshCcw, 

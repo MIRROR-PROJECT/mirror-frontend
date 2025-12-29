@@ -1,5 +1,15 @@
 "use client";
 
+export default function StudyRoomPage() {
+  return (
+    <div className="p-8 max-w-5xl mx-auto">
+      <h1 className="text-2xl font-bold">나의 학습방</h1>
+      <p className="text-sm text-gray-500 mt-2">학습방 상세 내용이 이곳에 표시됩니다. (임시)</p>
+    </div>
+  );
+}
+"use client";
+
 import { useState, useRef, useEffect, useMemo } from "react";
 import { useStudy } from "../../context/StudyContext"; 
 import { 

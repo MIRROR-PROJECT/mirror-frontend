@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { useStudy } from "../context/StudyContext"; // 경로 맞춰주세요 (../context/StudyContext 등)
+import { useStudy } from "../../context/StudyContext"; // 경로 맞춰주세요 (../context/StudyContext 등)
 import { 
   Send, 
   Bot, 

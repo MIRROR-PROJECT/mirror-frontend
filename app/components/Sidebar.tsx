@@ -2,35 +2,30 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, BookOpen, BarChart2, Highlighter, MessageCircle } from "lucide-react";
-// [수정] 상대 경로로 변경 (점 1개)
-import { useStudy } from "../context/StudyContext"; 
+import { useStudy } from "@/app/context/StudyContext";
+import { ROLE_MENUS } from "@/app/constants/navigation"; // 위에서 만든 상수 임포트
 
 export default function Sidebar() {
   const pathname = usePathname();
-  const { user } = useStudy();
+  const { user } = useStudy(); // user.role이 'student' | 'teacher' | 'parent' 라고 가정
 
-// ... (아래 코드는 기존과 동일)
-
-  // 메뉴 목록 정의
-  const MENU_ITEMS = [
-    { name: "대시보드", path: "/dashboard", icon: LayoutDashboard },
-    { name: "나의 학습방", path: "/study-room", icon: BookOpen },
-    { name: "리포트 모아보기", path: "/report", icon: BarChart2 }, // 나중에 만들 것
-    { name: "AI 튜터", path: "/chat", icon: MessageCircle }, // 나중에 만들 것
-  ];
+  // 현재 유저 역할에 맞는 메뉴 리스트 가져오기 (없으면 학생꺼 기본)
+  const currentMenus = ROLE_MENUS[user.role] || ROLE_MENUS.student;
 
   return (
     <aside className="w-64 bg-white border-r border-gray-200 hidden md:flex flex-col p-6 sticky top-0 h-screen z-50">
-      {/* 로고 */}
       <div className="text-2xl font-bold text-blue-600 mb-10 pl-2">Mirror.</div>
       
-      {/* 메뉴 네비게이션 */}
+      <div className="mb-4 px-2">
+        <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">
+          {user.role === 'teacher' ? 'Instructor Mode' : 
+           user.role === 'parent' ? 'Parent Mode' : 'Student Mode'}
+        </span>
+      </div>
+
       <nav className="space-y-2 flex-1">
-        {MENU_ITEMS.map((item) => {
-          // 현재 주소가 메뉴의 경로와 일치하면 활성화 (파란색)
-          const isActive = pathname === item.path; 
-          
+        {currentMenus.map((item) => {
+          const isActive = pathname === item.path;
           return (
             <Link key={item.path} href={item.path}>
               <div className={`flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all cursor-pointer
@@ -46,14 +41,15 @@ export default function Sidebar() {
         })}
       </nav>
       
-      {/* 하단 프로필 (Context 데이터 연동) */}
+      {/* 프로필 영역 */}
       <div className="flex items-center gap-3 p-3 border-t border-gray-100 pt-6">
-        <div className="w-10 h-10 rounded-full bg-linear-to-tr from-blue-100 to-blue-50 border border-blue-200 flex items-center justify-center text-lg">
-           🧸
+        <div className="w-10 h-10 rounded-full bg-gray-100 border border-gray-200 flex items-center justify-center">
+           {/* 역할별 아이콘 다르게 */}
+           {user.role === 'teacher' ? '👨‍🏫' : user.role === 'parent' ? '👨‍👩‍👧' : '🧸'}
         </div>
         <div>
           <p className="text-sm font-bold text-gray-900">{user.name}</p>
-          <p className="text-xs text-gray-500">고2 이과반</p>
+          <p className="text-xs text-gray-500 capitalize">{user.role}</p>
         </div>
       </div>
     </aside>

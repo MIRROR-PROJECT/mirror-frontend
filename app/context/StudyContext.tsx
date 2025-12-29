@@ -26,7 +26,7 @@ type Book = {
 export type ScheduleMap = Record<string, "study" | "fixed">;
 
 interface StudyContextType {
-  user: { name: string; streak: number };
+  user: { name: string; streak: number; role: "student" | "teacher" | "parent" };
   tasks: Task[];
   books: Book[];
   schedule: ScheduleMap; // 🆕 전역 시간표 데이터
@@ -37,7 +37,7 @@ interface StudyContextType {
 const StudyContext = createContext<StudyContextType | undefined>(undefined);
 
 export function StudyProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState({ name: "김민수", streak: 14 });
+  const [user, setUser] = useState({ name: "김민수", streak: 14, role: "parent" as const });
 
   // --- 기존 데이터 ---
   const [books, setBooks] = useState<Book[]>([
