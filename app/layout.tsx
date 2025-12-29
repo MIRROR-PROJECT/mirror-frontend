@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { StudyProvider } from "@/app/context/StudyContext";
+import Sidebar from "./components/Sidebar";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -17,10 +18,14 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ko">
-      {/* ⚠️ 수정됨: 주석을 <body> 태그 안으로 옮기거나 삭제해야 합니다. */}
       <body className={inter.className}>
         <StudyProvider>
-          {children}
+          <div className="min-h-screen flex bg-gray-50">
+            <Sidebar />
+            <div className="flex-1">
+              {children}
+            </div>
+          </div>
         </StudyProvider>
       </body>
     </html>
