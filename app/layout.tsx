@@ -1,30 +1,41 @@
-import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+"use client";
+
+import { usePathname } from "next/navigation";
 import "./globals.css";
-import { StudyProvider } from "@/app/context/StudyContext";
-import Sidebar from "./components/Sidebar";
-
-const inter = Inter({ subsets: ["latin"] });
-
-export const metadata: Metadata = {
-  title: "Mirror - AI Study Solution",
-  description: "Personalized study platform",
-};
+import Navbar from "./components/Sidebar"; 
+import { StudyProvider } from "./context/StudyContext";
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
+  const pathname = usePathname();
+
+  // [수정 포인트] Navbar를 숨길 경로들을 정의합니다.
+  // 1. 랜딩 페이지 ("/")
+  // 2. 로그인 ("/login")
+  // 3. 회원가입 ("/signup")
+  // 4. 진단 페이지 ("/student/diagnosis" 로 시작하는 모든 경로)
+  const hideNavbar = 
+    pathname === "/" || 
+    pathname === "/login" || 
+    pathname === "/signup" || 
+    pathname?.startsWith("/student/diagnosis");
+
   return (
     <html lang="ko">
-      <body className={inter.className}>
+      <body>
         <StudyProvider>
-          <div className="min-h-screen flex bg-gray-50">
-            <Sidebar />
-            <div className="flex-1">
+          <div className="flex min-h-screen bg-gray-50"> 
+            
+            {/* 조건에 맞지 않을 때만 사이드바 표시 */}
+            {!hideNavbar && <Navbar />}
+
+            <main className="flex-1 w-full">
               {children}
-            </div>
+            </main>
+            
           </div>
         </StudyProvider>
       </body>

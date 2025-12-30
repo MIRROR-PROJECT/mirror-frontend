@@ -1,14 +1,35 @@
-import Link from "next/link";
+"use client";
+
+import { useRouter } from "next/navigation";
 import { ArrowRight, CheckCircle, TrendingUp } from "lucide-react";
+// 전역 상태(Context) 사용 (로그인 정보 확인용)
+import { useStudy } from "./context/StudyContext"; 
 
 export default function Home() {
+  const router = useRouter();
+  const { user } = useStudy(); // user 정보 가져오기 (name, role 등)
+
+  const handleDiagnosisClick = () => {
+    // 1. 비로그인 상태일 경우 -> 회원가입 페이지로 유도
+    // (실제 앱에서는 user 객체가 null인지 체크하는 로직이 필요합니다)
+    const isLoggedIn = user && user.name !== ""; // 예시: 이름이 있으면 로그인된 것으로 간주
+
+    if (!isLoggedIn) {
+      router.push("/signup"); 
+      return;
+    }
+
+    // 2. 로그인 상태일 경우 -> 역할에 따라 이동
+    if (user.role === "student") {
+      router.push("/diagnosis"); // 학생 -> 진단 페이지
+    } else {
+      router.push("/dashboard"); // 선생님/학부모 -> 대시보드
+    }
+  };
+
   return (
     <div className="min-h-screen bg-white">
-      {/* Navbar */}
-      <nav className="flex justify-between items-center p-6 max-w-7xl mx-auto">
-        <div className="text-2xl font-bold text-blue-600">Mirror.</div>
-        <Link href="/login" className="text-gray-600 hover:text-blue-600">로그인</Link>
-      </nav>
+      {/* Navbar는 layout.tsx에서 제어합니다 */}
 
       {/* Hero Section */}
       <main className="max-w-7xl mx-auto px-6 py-12 lg:flex lg:items-center lg:gap-12">
@@ -28,10 +49,13 @@ export default function Home() {
           </p>
           
           <div className="flex gap-4">
-            <Link href="/diagnosis" className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-xl font-bold text-lg flex items-center gap-2 transition-all shadow-lg hover:shadow-blue-200">
+            <button 
+              onClick={handleDiagnosisClick}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-xl font-bold text-lg flex items-center gap-2 transition-all shadow-lg hover:shadow-blue-200"
+            >
               🚀 무료로 내 '승리 패턴' 진단받기
               <ArrowRight className="w-5 h-5" />
-            </Link>
+            </button>
           </div>
           <p className="text-sm text-red-500 font-medium">
             ⚠️ 현재 접속자가 많아 리포트 생성이 1분 정도 지연될 수 있습니다.

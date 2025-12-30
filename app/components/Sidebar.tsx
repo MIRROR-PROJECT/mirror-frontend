@@ -9,6 +9,9 @@ export default function Sidebar() {
   const pathname = usePathname();
   const { user } = useStudy(); // user.role이 'student' | 'teacher' | 'parent' 라고 가정
 
+  // 홈('/')에서는 사이드바를 숨김
+  if (pathname === "/") return null;
+
   // 현재 유저 역할에 맞는 메뉴 리스트 가져오기 (없으면 학생꺼 기본)
   const currentMenus = ROLE_MENUS[user.role] || ROLE_MENUS.student;
 

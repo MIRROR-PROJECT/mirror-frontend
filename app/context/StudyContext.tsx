@@ -37,7 +37,7 @@ interface StudyContextType {
 const StudyContext = createContext<StudyContextType | undefined>(undefined);
 
 export function StudyProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState({ name: "김민수", streak: 14, role: "parent" as const });
+  const [user, setUser] = useState({ name: "", streak: 14, role: "student" as const });
 
   // --- 기존 데이터 ---
   const [books, setBooks] = useState<Book[]>([
