@@ -17,7 +17,6 @@ export const ROLE_MENUS = {
   teacher: [
     { name: "워크스페이스", path: "/teacher/dashboard", icon: LayoutDashboard },
     { name: "수강생 관리", path: "/teacher/students", icon: Users },
-    { name: "상담 일지", path: "/teacher/counseling", icon: MessageSquareText }, // 과제 대신 상담!
     { name: "수업 자료실", path: "/teacher/materials", icon: FolderOpen },
   ],
 
@@ -25,7 +24,5 @@ export const ROLE_MENUS = {
   parent: [
     { name: "자녀 현황", path: "/parent/dashboard", icon: LayoutDashboard },
     { name: "학습 리포트", path: "/parent/child-report", icon: BarChart2 },
-    { name: "결제 관리", path: "/parent/payment", icon: CreditCard },
-    { name: "선생님 상담", path: "/parent/consultation", icon: UserCircle },
   ],
 };

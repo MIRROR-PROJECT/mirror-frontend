@@ -2,19 +2,18 @@
 
 import { useState } from "react";
 import { 
-  Sparkles, Printer, FileText, 
-  Search, Calendar, CheckCircle2, 
-  Brain, Clock, PenTool, MessageSquare,
-  ChevronDown, BarChart, Users
+  Sparkles, Printer, Calendar, CheckCircle2, 
+  BarChart, Clock, MessageSquare, ChevronDown, 
+  Brain, Check, FileText, ArrowRight
 } from "lucide-react";
+import Link from "next/link"; // 페이지 이동을 위해 추가
 
-// [Mock Data] 여러 반의 데이터 시뮬레이션
 const CLASS_DATA = [
   {
     id: 1,
     name: "고2 수리논술 심화반 A",
     studentCount: 42,
-    avgProgress: 78, // 반 평균 학습 완료율 (학생 개개인 달성률의 평균)
+    avgProgress: 78,
     briefing: {
       mood: "🔥 자습 열기 고조",
       moodDesc: "어제 밤 10시 이후 접속자가 30명 이상이었습니다.",
@@ -23,15 +22,15 @@ const CLASS_DATA = [
       careAction: "수업 도입부 '합성 공식' 10분 복습"
     },
     careList: [
-      { name: "박민수", issue: "성적 급락", urgent: true },
-      { name: "최유리", issue: "진로 상담 요청", urgent: false }
+      { id: 101, name: "박민수", issue: "성적 급락 (▼20점)", urgent: true },
+      { id: 102, name: "최유리", issue: "진로 상담 요청", urgent: false }
     ]
   },
   {
     id: 2,
     name: "고1 수학 개념완성반 B",
     studentCount: 35,
-    avgProgress: 45, // 학습률이 저조한 반 예시
+    avgProgress: 45,
     briefing: {
       mood: "📉 학습량 부족",
       moodDesc: "전체적으로 완강률이 떨어지고 있습니다. 독려가 필요합니다.",
@@ -40,16 +39,13 @@ const CLASS_DATA = [
       careAction: "오답 노트 숙제 검사 꼼꼼히 진행"
     },
     careList: [
-      { name: "김철수", issue: "3일 연속 미접속", urgent: true }
+      { id: 201, name: "김철수", issue: "3일 연속 미접속", urgent: true }
     ]
   }
 ];
 
 export default function TeacherWorkspace() {
-  // 현재 선택된 반 (기본값: 첫 번째 반)
   const [selectedClassId, setSelectedClassId] = useState(1);
-  
-  // 선택된 반의 데이터 찾기
   const currentClass = CLASS_DATA.find(c => c.id === selectedClassId) || CLASS_DATA[0];
 
   return (
@@ -62,14 +58,12 @@ export default function TeacherWorkspace() {
             <Calendar className="w-4 h-4" /> 2025년 12월 29일 (월)
           </span>
           
-          {/* 반 선택 Dropdown UI */}
           <div className="relative group inline-block">
             <button className="flex items-center gap-2 text-2xl font-bold text-gray-900 hover:text-blue-700 transition-colors">
               {currentClass.name}
               <ChevronDown className="w-6 h-6 text-gray-400 group-hover:text-blue-600" />
             </button>
             
-            {/* 드롭다운 메뉴 (Hover시 표시) */}
             <div className="absolute top-full left-0 mt-2 w-64 bg-white border border-gray-200 rounded-xl shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
               <div className="p-2">
                 <p className="text-xs font-bold text-gray-400 px-2 py-2">내 클래스 목록</p>
@@ -90,7 +84,6 @@ export default function TeacherWorkspace() {
           </div>
         </div>
 
-        {/* 우측 상단 지표 (출석 삭제 -> 학습 완료율 강조) */}
         <div className="flex gap-2">
            <div className="bg-white border border-gray-200 px-4 py-2 rounded-xl flex items-center gap-3 shadow-sm">
              <div className="flex flex-col items-end leading-tight">
@@ -110,7 +103,7 @@ export default function TeacherWorkspace() {
         </div>
       </div>
 
-      {/* 2. 데일리 학습 브리핑 (선택된 반 데이터 연동) */}
+      {/* 2. 데일리 학습 브리핑 */}
       <section className="bg-white rounded-3xl border border-gray-200 shadow-sm overflow-hidden transition-all">
         <div className="bg-gray-900 p-6 text-white flex justify-between items-center">
           <div>
@@ -125,12 +118,14 @@ export default function TeacherWorkspace() {
         </div>
 
         <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-8">
-          {/* A. 학습 활동 요약 */}
-          <div className="space-y-4 border-r border-gray-100 pr-0 md:pr-8">
-            <h3 className="font-bold text-gray-800 flex items-center gap-2">
+          
+          {/* A. 학습 활동 요약 (왼쪽) */}
+          <div className="flex flex-col h-full border-r border-gray-100 pr-0 md:pr-8">
+            <h3 className="font-bold text-gray-800 flex items-center gap-2 mb-4">
               <Clock className="w-4 h-4 text-blue-600" /> 어제 학습 요약
             </h3>
-            <ul className="space-y-3">
+            
+            <ul className="space-y-3 flex-1">
               <li className="flex gap-3 items-start p-3 bg-gray-50 rounded-xl">
                  <span className="text-lg">{currentClass.avgProgress >= 70 ? '🔥' : '💧'}</span>
                  <div>
@@ -150,26 +145,38 @@ export default function TeacherWorkspace() {
                  </div>
               </li>
             </ul>
+
+            {/* ✨ [NEW] 구체적인 리포트 보기 버튼 */}
+            <Link href="/report" className="mt-4">
+              <button className="w-full py-3 bg-white border border-gray-200 rounded-xl text-sm font-bold text-gray-600 hover:bg-gray-50 hover:text-blue-600 hover:border-blue-200 flex items-center justify-center gap-2 transition-all shadow-sm">
+                <FileText className="w-4 h-4" />
+                구체적인 학습 리포트 보기
+                <ArrowRight className="w-4 h-4 opacity-50" />
+              </button>
+            </Link>
           </div>
 
-          {/* B. 오늘의 케어 가이드 */}
+          {/* B. 오늘의 케어 가이드 (오른쪽) */}
           <div className="space-y-4">
             <h3 className="font-bold text-gray-800 flex items-center gap-2">
               <CheckCircle2 className="w-4 h-4 text-green-600" /> 오늘의 추천 액션
             </h3>
             <div className="space-y-2">
-               <div className="flex items-center gap-3 p-3 border border-blue-100 bg-blue-50/50 rounded-xl">
-                 <input type="checkbox" className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500 border-gray-300" />
+               <div className="flex items-center gap-3 p-3 border border-blue-100 bg-blue-50/50 rounded-xl cursor-pointer hover:bg-blue-100 transition-colors">
+                 <div className="w-5 h-5 rounded-full border-2 border-blue-600 bg-white flex items-center justify-center">
+                    <div className="w-2.5 h-2.5 rounded-full bg-blue-600 opacity-0 hover:opacity-100"></div>
+                 </div>
                  <span className="text-sm font-bold text-gray-700">{currentClass.briefing.careAction}</span>
                </div>
-               {currentClass.careList.length > 0 && (
-                 <div className="flex items-center gap-3 p-3 border border-red-100 bg-red-50/50 rounded-xl">
-                   <input type="checkbox" className="w-4 h-4 text-red-600 rounded focus:ring-red-500 border-gray-300" />
-                   <span className="text-sm font-bold text-gray-700">
-                     {currentClass.careList[0].name} 학생 면담 ({currentClass.careList[0].issue})
-                   </span>
-                 </div>
-               )}
+            </div>
+            
+            {/* 시각적 여백 채우기용 더미 데이터 */}
+            <div className="mt-4 p-4 bg-gray-50 rounded-2xl border border-gray-100 opacity-70">
+               <p className="text-xs font-bold text-gray-400 mb-2">📌 다음 주 예정 사항</p>
+               <div className="text-xs text-gray-500 space-y-1">
+                 <p>• 1월 정기 모의고사 (1/5)</p>
+                 <p>• 학부모 간담회 안내문 발송 (1/7)</p>
+               </div>
             </div>
           </div>
         </div>
@@ -178,70 +185,79 @@ export default function TeacherWorkspace() {
       {/* 하단 2단 그리드 */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         
-        {/* 3. AI 오답 클리닉 (취약점 기반) */}
+        {/* 3. AI 오답 클리닉 */}
         <div className="lg:col-span-2 space-y-4">
           <h2 className="font-bold text-lg text-gray-800 flex items-center gap-2">
             <Sparkles className="w-5 h-5 text-purple-600" /> AI 오답 클리닉
           </h2>
           
-          <div className="bg-linear-to-br from-purple-600 to-indigo-700 rounded-3xl p-6 text-white shadow-lg relative overflow-hidden group">
+          <div className="bg-gradient-to-br from-purple-600 to-indigo-700 rounded-3xl p-6 text-white shadow-lg relative overflow-hidden group">
              <div className="absolute right-0 top-0 w-64 h-64 bg-white opacity-5 rounded-full blur-3xl translate-x-1/3 -translate-y-1/3"></div>
              
-             <div className="relative z-10">
-               <div className="flex justify-between items-start mb-4">
-                 <div>
-                   <span className="bg-white/20 text-xs font-bold px-2 py-1 rounded backdrop-blur">
-                     {currentClass.name} 전용
-                   </span>
-                   <h3 className="text-2xl font-bold mt-2">맞춤형 보충 문제지 생성</h3>
-                 </div>
-                 <Printer className="w-8 h-8 text-purple-200 opacity-80" />
-               </div>
-               
-               <p className="text-purple-100 text-sm mb-6 max-w-md leading-relaxed">
-                 <span className="font-bold text-white underline">{currentClass.briefing.weakness}</span> 등 
-                 이번 주 취약 유형을 모아 보충 자료를 생성합니다.
-               </p>
-
-               <div className="flex gap-3">
-                 <button className="bg-white text-purple-700 px-5 py-3 rounded-xl font-bold text-sm shadow-md hover:bg-purple-50 transition-all flex items-center gap-2">
-                   <Sparkles className="w-4 h-4" />
-                   문제지 자동 생성
-                 </button>
-               </div>
+             <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+                <div>
+                   <div className="flex items-center gap-2 mb-3">
+                     <span className="bg-white/20 text-xs font-bold px-2 py-1 rounded backdrop-blur">
+                       {currentClass.name} 전용
+                     </span>
+                     <span className="bg-purple-500/30 text-xs font-bold px-2 py-1 rounded backdrop-blur border border-purple-400/30">
+                        AI Generated
+                     </span>
+                   </div>
+                   <h3 className="text-2xl font-bold mb-2">맞춤형 보충 문제지 생성</h3>
+                   <p className="text-purple-100 text-sm max-w-md leading-relaxed">
+                     <span className="font-bold text-white underline decoration-purple-300 underline-offset-4">{currentClass.briefing.weakness}</span> 등 
+                     이번 주 취약 유형을 모아 PDF를 생성합니다.
+                   </p>
+                </div>
+                
+                <button className="whitespace-nowrap bg-white text-purple-700 px-6 py-4 rounded-2xl font-bold text-sm shadow-xl hover:bg-purple-50 hover:scale-105 transition-all flex items-center gap-2">
+                   <Printer className="w-5 h-5" />
+                   문제지 만들기
+                </button>
              </div>
           </div>
         </div>
 
-        {/* 4. 학생 케어 CRM (반별 필터링됨) */}
+        {/* 4. 학생 케어 체크리스트 */}
         <div className="space-y-4">
           <h2 className="font-bold text-lg text-gray-800 flex items-center gap-2">
             <MessageSquare className="w-5 h-5 text-pink-500" /> 케어 필요 학생 ({currentClass.careList.length})
           </h2>
           
-          <div className="bg-white border border-gray-200 rounded-3xl p-5 shadow-sm h-full flex flex-col">
+          <div className="bg-white border border-gray-200 rounded-3xl p-5 shadow-sm h-full flex flex-col justify-between">
              {currentClass.careList.length > 0 ? (
-               <div className="space-y-2 mb-4">
-                 {currentClass.careList.map((student, idx) => (
-                   <div key={idx} className={`p-3 border rounded-xl flex gap-3 items-start ${student.urgent ? 'bg-red-50 border-red-100' : 'bg-gray-50 border-gray-100'}`}>
-                      <div className={`w-2 h-2 mt-1.5 rounded-full shrink-0 ${student.urgent ? 'bg-red-500' : 'bg-gray-400'}`}></div>
-                      <div>
-                        <p className="text-sm font-bold text-gray-900">{student.name}</p>
-                        <p className="text-xs text-gray-600 mt-1">{student.issue}</p>
+               <div className="space-y-3">
+                 {currentClass.careList.map((student) => (
+                   <div key={student.id} className="group relative">
+                      <div className={`p-4 border rounded-2xl flex gap-3 items-start transition-all
+                        ${student.urgent 
+                          ? 'bg-red-50 border-red-100 hover:border-red-200' 
+                          : 'bg-gray-50 border-gray-100 hover:border-gray-200'}
+                      `}>
+                         <div className={`w-2 h-2 mt-1.5 rounded-full shrink-0 ${student.urgent ? 'bg-red-500' : 'bg-gray-400'}`}></div>
+                         <div className="flex-1">
+                           <div className="flex justify-between items-start">
+                             <p className="text-sm font-bold text-gray-900">{student.name}</p>
+                             <button className="text-[10px] font-bold bg-white border border-gray-200 px-2 py-1 rounded-lg text-gray-400 hover:bg-green-50 hover:text-green-600 hover:border-green-200 transition-colors flex items-center gap-1">
+                               <Check className="w-3 h-3" /> 확인
+                             </button>
+                           </div>
+                           <p className="text-xs text-gray-600 mt-1">{student.issue}</p>
+                         </div>
                       </div>
                    </div>
                  ))}
                </div>
              ) : (
-               <div className="text-center py-8 text-gray-400 text-sm">
-                 오늘의 긴급 케어 대상이 없습니다. 🎉
+               <div className="flex flex-col items-center justify-center h-40 text-center">
+                 <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mb-3">
+                    <Sparkles className="w-6 h-6 text-green-600" />
+                 </div>
+                 <p className="text-gray-900 font-bold text-sm">모든 케어 완료!</p>
+                 <p className="text-gray-500 text-xs mt-1">오늘도 수고하셨습니다 👏</p>
                </div>
              )}
-
-             <button className="mt-auto w-full bg-gray-900 text-white py-3 rounded-xl text-sm font-bold flex items-center justify-center gap-2 hover:bg-black transition-colors">
-                <PenTool className="w-4 h-4" />
-                상담 일지 작성
-             </button>
           </div>
         </div>
 
