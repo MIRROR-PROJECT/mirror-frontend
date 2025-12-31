@@ -184,8 +184,7 @@ export default function DiagnosisPage() {
         // [수정] Step 1 데이터 전송 로직 작성
         const requestBody = {
           user_id: userId,
-          school: info.school,
-          grade: info.grade,
+          school_grade: info.grade,
           semester: info.semester,
           subjects: info.subjects
         };
