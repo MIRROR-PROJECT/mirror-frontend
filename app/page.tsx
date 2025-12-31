@@ -15,7 +15,7 @@ export default function Home() {
     const isLoggedIn = user && user.name !== ""; // 예시: 이름이 있으면 로그인된 것으로 간주
 
     if (!isLoggedIn) {
-      router.push("/signup"); 
+      router.push("/login"); 
       return;
     }
 

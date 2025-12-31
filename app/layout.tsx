@@ -20,7 +20,8 @@ export default function RootLayout({
   const hideNavbar = 
     pathname === "/" || 
     pathname === "/login" || 
-    pathname === "/signup" || 
+    pathname === "/onboarding/info" ||
+    pathname == "/onboarding/role" ||
     pathname?.startsWith("/student/diagnosis");
 
   return (

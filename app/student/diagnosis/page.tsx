@@ -10,31 +10,12 @@ import {
   School 
 } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation"; 
+import { useRouter } from "next/navigation";
+import { supabase } from "../../lib/supabase"; // 경로가 맞는지 확인하세요!
 
 // --- 타입 정의 ---
 type TimeSlotSet = Set<string>;
 type WeekData = { [key: string]: string };
-
-// 1. API 요청/응답 타입 정의
-interface ApiRequestBody {
-  user_id: string;
-  school_grade: number;
-  semester: number;
-  subjects: string[];
-}
-
-interface ApiResponse {
-  success: boolean;
-  code: number;
-  message: string;
-  data: {
-    profile_id: string;
-    user_id: string;
-    streak_days: number;
-    total_points: number;
-  } | null;
-}
 
 export default function DiagnosisPage() {
   const { updateSchedule } = useStudy(); 
@@ -42,7 +23,7 @@ export default function DiagnosisPage() {
   
   // 단계: 1(Info) -> 2(Style) -> 3(OCR) -> 4(Time) -> 5(Loading) -> 6(Result)
   const [step, setStep] = useState<number>(1);
-  const [isSubmitting, setIsSubmitting] = useState(false); // API 호출 중 로딩 상태
+  const [isSubmitting, setIsSubmitting] = useState(false); 
   
   // --- Data States ---
   const [info, setInfo] = useState({ school: "high", grade: "", semester: "1", subjects: [] as string[] });
@@ -172,101 +153,117 @@ export default function DiagnosisPage() {
     return false;
   };
 
-  const finalTime = Math.round((selectedSlots.size * 60) / 7).toString(); // 하루 평균
+  const finalTime = Math.round((selectedSlots.size * 60) / 7).toString(); 
 
-  // === handleNext 함수 ===
+  // === handleNext 함수 (핵심 로직 수정됨) ===
   const handleNext = async () => {
     
-    const ACCESS_TOKEN = "YOUR_ACCESS_TOKEN"; 
-    const TEMP_USER_ID = "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a22"; 
+    // 1. 토큰 가져오기 (공통)
+    const { data: { session } } = await supabase.auth.getSession();
+    const accessToken = session?.access_token;
+    const userId = session?.user?.id; // 실제 유저 ID 사용
 
-        // CASE 1: Step 1 완료 (기본 정보) - 프록시 없이 직접 요청
+    if (!accessToken || !userId) {
+       console.log("로그인 정보 없음 (테스트 모드일 수 있음)");
+       // 실제 배포 시에는 여기서 return 하거나 로그인 페이지로 보낼 수 있음
+    }
+
     // ----------------------------------------------------
-    /*
+    // CASE 1: Step 1 완료 (기본 정보)
+    // ----------------------------------------------------
     if (step === 1) {
-      if (!info.grade || !info.semester || info.subjects.length === 0) {
-        alert("학년, 학기, 과목을 모두 선택해주세요.");
-        return;
-      }
-
       if (isSubmitting) return;
       setIsSubmitting(true);
 
       try {
+        // [수정] Step 1 데이터 전송 로직 작성
         const requestBody = {
-          user_id: TEMP_USER_ID,
-          school_grade: parseInt(info.grade),
-          semester: parseInt(info.semester),
-          subjects: info.subjects,
+          user_id: userId,
+          school: info.school,
+          grade: info.grade,
+          semester: info.semester,
+          subjects: info.subjects
         };
 
-        // 외부 API로 직접 요청
+        // ★ Step 1 저장용 백엔드 주소 (백엔드 경로 확인 필요!)
+        // 예시: /setup/basic-info
         const response = await fetch("https://mirror-backend-5j11.onrender.com/setup/basic-info", { 
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            "Authorization": `Bearer ${ACCESS_TOKEN}`
+            // 토큰이 없으면 빈 값이라도 보냄
+            "Authorization": accessToken ? `Bearer ${accessToken}` : "" 
           },
           body: JSON.stringify(requestBody),
         });
 
         const result = await response.json();
 
-        if (response.ok && result.success) {
-          console.log("Step 1 성공:", result);
-          setStep(step + 1); 
+        if (response.ok) {
+           console.log("✅ Step 1 저장 성공:", result);
+           setStep(step + 1);
         } else {
-          alert(result.message || "기본 정보 저장 실패");
+           console.warn("⚠️ Step 1 저장 실패(백엔드 거부):", result);
+           // 실패해도 다음 단계로 넘어가고 싶다면 아래 주석 해제
+           // setStep(step + 1); 
+           alert("정보 저장에 실패했습니다. (로그인이 필요할 수 있습니다)");
         }
       } catch (error) {
-        console.error("API Error:", error);
-        alert("서버 연결 실패 (CORS 또는 네트워크 문제)");
+        console.error("통신 에러:", error);
+        // 에러 나도 넘어가게 하려면: setStep(step + 1);
       } finally {
         setIsSubmitting(false);
       }
       return;
     }
-    */
 
     // ----------------------------------------------------
     // CASE 2: Step 2 완료 시 -> 학습 성향 API 전송
     // ----------------------------------------------------
     if (step === 2) {
-
       if (isSubmitting) return;
       setIsSubmitting(true);
 
       try {
-        // 2. [데이터 변환] ID/Value -> 자연어 질문 & 합쳐진 답변(Label + Desc)
+        // 1. [중요] 최신 세션 정보 가져오기 (만료되었으면 갱신 시도)
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        
+        // 로그 찍어보기 (개발자 도구 콘솔 확인 필수!)
+        console.log("🔍 현재 세션 상태:", session);
+        console.log("🔑 보낼 토큰:", session?.access_token);
+
+        if (sessionError || !session || !session.access_token) {
+           alert("로그인 세션이 만료되었습니다. 다시 로그인해주세요.");
+           router.push('/login'); // 로그인 페이지로 쫓아내기
+           return;
+        }
+
+        const accessToken = session.access_token;
+        const userId = session.user.id;
+
+        // 2. 데이터 변환
         const formattedStyleAnswers = Object.entries(answers).map(([qId, ansValue]) => {
             const questionObj = QUIZ_QUESTIONS.find(q => q.id === parseInt(qId));
             const optionObj = questionObj?.options.find(opt => opt.value === ansValue);
-            
-            // ★ 수정된 부분: Label과 Desc를 합쳐서 포맷팅
-            // 예: "빠르게 훑어보고... ('대충 맞겠지' 하는 직감적 풀이...)"
             const combinedAnswerText = `${optionObj?.label} (${optionObj?.desc})`;
 
             return {
-                question_id: parseInt(qId),
-                question_text: questionObj?.question,
-                answer_value: ansValue,       // "A" (분석용 코드)
-                answer_text: combinedAnswerText // "Label (Desc)" (자연어 처리용)
+                question: questionObj?.question,
+                answer: combinedAnswerText
             };
         });
 
         const requestBody = {
-          user_id: TEMP_USER_ID,
-          style_answers: formattedStyleAnswers
+            user_id: userId,
+            style_answers: formattedStyleAnswers
         };
 
-        // 로그로 데이터 확인 (개발자 도구 콘솔에서 확인 가능)
-        console.log("전송할 성향 데이터:", requestBody);
-
+        // 3. 백엔드 전송
         const response = await fetch("https://mirror-backend-5j11.onrender.com/setup/style-quiz", { 
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            "Authorization": `Bearer ${ACCESS_TOKEN}`
+            "Authorization": `Bearer ${accessToken}` // 여기에 토큰이 잘 들어가는지 확인
           },
           body: JSON.stringify(requestBody),
         });
@@ -274,22 +271,23 @@ export default function DiagnosisPage() {
         const result = await response.json();
 
         if (response.ok && result.success) {
-          console.log("Step 2 성공:", result);
-          setStep(step + 1); 
+            console.log("✅ Step 2 성공:", result);
+            setStep(step + 1); 
         } else {
-           alert(result.message || "성향 분석 저장 실패");
+            console.error("❌ Step 2 실패 (백엔드 거부):", result);
+            alert(`저장 실패: ${result.detail || result.message || "알 수 없는 오류"}`);
         }
+
       } catch (error) {
-        console.error("API Error:", error);
-        alert("서버 연결 실패");
+        console.error("❌ API 통신 에러:", error);
+        alert("서버와 연결할 수 없습니다.");
       } finally {
         setIsSubmitting(false);
       }
       return;
     }
-
-    // ... (Step 4 등 나머지 로직 유지) ...
     
+    // Step 4 완료 시
     if (step === 4) {
       const newSchedule: Record<string, "study" | "fixed"> = {};
       selectedSlots.forEach(k => newSchedule[k] = "study");
@@ -298,6 +296,7 @@ export default function DiagnosisPage() {
       return;
     }
     
+    // 그 외 단계는 그냥 다음으로
     setStep(step + 1);
   };
 
