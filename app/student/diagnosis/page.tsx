@@ -11,39 +11,40 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { supabase } from "../../lib/supabase"; // 경로가 맞는지 확인하세요!
+import { supabase } from "../../lib/supabase"; 
 
 // --- 타입 정의 ---
 type TimeSlotSet = Set<string>;
 type WeekData = { [key: string]: string };
 
+// [수정] API 명세에 맞춘 타입 코드 정의
+const COGNITIVE_TYPES = {
+  A: "SPEED_FIRST",
+  B: "PRECISION_FIRST",
+  C: "BURST_STUDY"
+};
+
 export default function DiagnosisPage() {
   const { updateSchedule } = useStudy(); 
   const router = useRouter();
   
-  // 단계: 1(Info) -> 2(Style) -> 3(OCR) -> 4(Time) -> 5(Loading) -> 6(Result)
   const [step, setStep] = useState<number>(1);
   const [isSubmitting, setIsSubmitting] = useState(false); 
   
-  // --- Data States ---
   const [info, setInfo] = useState({ school: "high", grade: "", semester: "1", subjects: [] as string[] });
   
-  // Step 2: 성향
   const [answers, setAnswers] = useState<Record<number, string>>({});
 
-  // Step 3: OCR 진단 상태
   const [ocrStatus, setOcrStatus] = useState<"idle" | "scanning" | "analyzing" | "done">("idle");
   const [ocrResult, setOcrResult] = useState<string>("");
 
-  // Step 4: 시간표
   const [selectedSlots, setSelectedSlots] = useState<TimeSlotSet>(new Set());
   const isDragging = useRef(false);
   const dragAction = useRef<"add" | "remove">("add"); 
 
   const [showSubSubjects, setShowSubSubjects] = useState(false);
 
-  // --- Constants ---
-  const HOURS = Array.from({ length: 17 }, (_, i) => i + 8); // 08:00 ~ 24:00
+  const HOURS = Array.from({ length: 17 }, (_, i) => i + 8); 
   const WEEK_DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
   
   const MAIN_SUBJECTS = ["국어", "수학", "영어"];
@@ -52,6 +53,13 @@ export default function DiagnosisPage() {
     { category: "사회/역사 탐구", items: ["한국사", "윤리", "지리", "역사", "일반사회", "통합사회"] },
     { category: "기타", items: ["정보", "제2외국어", "한문", "기가"] }
   ];
+
+  // 프론트엔드 표시용 정보
+  const USER_TYPES_INFO = {
+    A: { label: "스키마 오버로더 (Schema Overloader)", desc: "직관적이고 빠른 '스피드 러너'" },
+    B: { label: "코그니티브 터널러 (Cognitive Tunneller)", desc: "깊이 있는 이해를 추구하는 '딥 다이버'" },
+    C: { label: "도파민 디스카운터 (Dopamine Discounter)", desc: "집중력이 폭발하는 '벼락치기 마스터'" }
+  };
 
   const QUIZ_QUESTIONS = [
     { id: 1, question: "문제를 풀 때 나의 모습은?", options: [
@@ -68,10 +76,14 @@ export default function DiagnosisPage() {
       { value: "A", label: "복습은 잘 안 한다. 한 번 푼 건 끝", desc: "'이건 아니까 패스', 실수도 '아차' 하고 끝냄" },
       { value: "B", label: "틀린 문제를 완전히 이해할 때까지 파고든다", desc: "원인 분석, 관련 개념 확인, 복습 노트 작성" },
       { value: "C", label: "복습 계획은 세우지만 실천은 잘 안 된다", desc: "'내일부터 해야지' 미루다가 시험 직전 벼락치기" }
+    ]},
+    { id: 4, question: "계획대로 공부가 안 될 때 나는?", options: [
+      { value: "A", label: "유연하게 넘기고 다른 과목부터 한다", desc: "융통성 있음, 계획 변경이 빠름" },
+      { value: "B", label: "못 지킨 부분 때문에 스트레스 받는다", desc: "완벽주의, 하나 밀리면 와르르 무너짐" },
+      { value: "C", label: "에라 모르겠다 하고 놀아버린다", desc: "포기가 빠름, 기분파" }
     ]}
   ];
 
-  // --- Helpers & Logic ---
   const toggleSubject = (subject: string) => {
     setInfo(prev => {
       const exists = prev.subjects.includes(subject);
@@ -145,9 +157,26 @@ export default function DiagnosisPage() {
     setTimeout(() => setStep(6), 3000);
   };
 
+  // [로직] 사용자 유형 판별 (A, B, C 리턴)
+  const calculateUserType = (): "A" | "B" | "C" => {
+    const counts = { A: 0, B: 0, C: 0 };
+    Object.values(answers).forEach((val) => {
+      if (val === 'A' || val === 'B' || val === 'C') {
+        counts[val]++;
+      }
+    });
+
+    const max = Math.max(counts.A, counts.B, counts.C);
+    
+    // 우선순위: 동점일 경우 B > C > A (예: B는 완벽주의라 교정이 시급함)
+    if (counts.B === max) return "B";
+    if (counts.C === max) return "C";
+    return "A";
+  };
+
   const canGoNext = () => {
     if (step === 1) return info.grade && info.semester && info.subjects.length > 0;
-    if (step === 2) return Object.keys(answers).length === 3;
+    if (step === 2) return Object.keys(answers).length === 4; // [수정] 질문 4개 필수
     if (step === 3) return ocrStatus === "done"; 
     if (step === 4) return selectedSlots.size > 0;
     return false;
@@ -155,22 +184,21 @@ export default function DiagnosisPage() {
 
   const finalTime = Math.round((selectedSlots.size * 60) / 7).toString(); 
 
-  // === handleNext 함수 (핵심 로직 수정됨) ===
+  // === handleNext 함수 ===
   const handleNext = async () => {
     
     // 1. 토큰 가져오기 (공통)
     const { data: { session } } = await supabase.auth.getSession();
     const accessToken = session?.access_token;
-    const userId = session?.user?.id; // 실제 유저 ID 사용
+    const userId = session?.user?.id; 
 
     if (!accessToken) {
       alert("로그인이 필요합니다.");
       return;
     }
 
-    if (!accessToken || !userId) {
-       console.log("로그인 정보 없음 (테스트 모드일 수 있음)");
-       // 실제 배포 시에는 여기서 return 하거나 로그인 페이지로 보낼 수 있음
+    if (!userId) {
+       console.warn("로그인 정보 없음");
     }
 
     // ----------------------------------------------------
@@ -181,7 +209,6 @@ export default function DiagnosisPage() {
       setIsSubmitting(true);
 
       try {
-        // [수정] Step 1 데이터 전송 로직 작성
         const requestBody = {
           user_id: userId,
           school_grade: info.grade,
@@ -189,38 +216,25 @@ export default function DiagnosisPage() {
           subjects: info.subjects
         };
 
-        // ★ Step 1 저장용 백엔드 주소 (백엔드 경로 확인 필요!)
-        // 예시: /setup/basic-info
         const response = await fetch("https://mirror-backend-5j11.onrender.com/setup/basic-info", { 
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            // 토큰이 없으면 빈 값이라도 보냄
-            "Authorization": accessToken ? `Bearer ${accessToken}` : "" 
+            "Authorization": `Bearer ${accessToken}`
           },
           body: JSON.stringify(requestBody),
         });
 
-        console.log("🔍 현재 세션 상태:", session);
-        console.log("🔑 보낼 토큰:", session?.access_token);
         const result = await response.json();
         if (response.ok && result.success) {
-          // 성공 시 (여기는 message가 있을 것임)
           console.log("✅ Step 1 저장 성공:", result.message);
           setStep(step + 1);
         } else {
-          // ⚠️ 실패 시 (여기는 message 대신 detail이 들어올 확률 99%)
-          // result 전체를 찍어서 눈으로 확인하는 게 가장 확실합니다.
-          console.warn("⚠️ 백엔드 응답 전체:", result); 
-          
-          // 에러 메시지 추출 (message가 없으면 detail을 씀)
-          const errorMsg = result.message || result.detail || "알 수 없는 에러";
-          
-          alert(`저장 실패: ${errorMsg}`);
+          console.warn("⚠️ 백엔드 에러:", result); 
+          alert(`저장 실패: ${result.message || result.detail || "알 수 없는 에러"}`);
         }
       } catch (error) {
         console.error("통신 에러:", error);
-        // 에러 나도 넘어가게 하려면: setStep(step + 1);
       } finally {
         setIsSubmitting(false);
       }
@@ -228,44 +242,27 @@ export default function DiagnosisPage() {
     }
 
     // ----------------------------------------------------
-    // CASE 2: Step 2 완료 시 -> 학습 성향 API 전송
+    // CASE 2: Step 2 완료 시 -> 학습 성향 분석 및 API 전송
     // ----------------------------------------------------
     if (step === 2) {
       if (isSubmitting) return;
       setIsSubmitting(true);
 
       try {
-        // 1. [중요] 최신 세션 정보 가져오기 (만료되었으면 갱신 시도)
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-        
-        // 로그 찍어보기 (개발자 도구 콘솔 확인 필수!)
-        console.log("🔍 현재 세션 상태:", session);
-        console.log("🔑 보낼 토큰:", session?.access_token);
-
-        if (sessionError || !session || !session.access_token) {
-           alert("로그인 세션이 만료되었습니다. 다시 로그인해주세요.");
-           router.push('/login'); // 로그인 페이지로 쫓아내기
+        if (!userId || !accessToken) {
+           alert("로그인 세션이 만료되었습니다.");
+           router.push('/login');
            return;
         }
 
-        const accessToken = session.access_token;
-        const userId = session.user.id;
+        // 1. 유형 분석 실행
+        const typeKey = calculateUserType(); // returns 'A', 'B', 'C'
+        const cognitiveType = COGNITIVE_TYPES[typeKey]; // returns 'SPEED_FIRST', etc.
 
-        // 2. 데이터 변환
-        const formattedStyleAnswers = Object.entries(answers).map(([qId, ansValue]) => {
-            const questionObj = QUIZ_QUESTIONS.find(q => q.id === parseInt(qId));
-            const optionObj = questionObj?.options.find(opt => opt.value === ansValue);
-            const combinedAnswerText = `${optionObj?.label} (${optionObj?.desc})`;
-
-            return {
-                question: questionObj?.question,
-                answer: combinedAnswerText
-            };
-        });
-
+        // 2. [수정] 명세서에 맞춘 Body 생성
         const requestBody = {
             user_id: userId,
-            style_answers: formattedStyleAnswers
+            cognitive_type: cognitiveType
         };
 
         // 3. 백엔드 전송
@@ -273,7 +270,7 @@ export default function DiagnosisPage() {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            "Authorization": `Bearer ${accessToken}` // 여기에 토큰이 잘 들어가는지 확인
+            "Authorization": `Bearer ${accessToken}`
           },
           body: JSON.stringify(requestBody),
         });
@@ -281,21 +278,20 @@ export default function DiagnosisPage() {
         const result = await response.json();
 
         if (response.ok && result.success) {
-            console.log("✅ Step 2 성공:", result);
+            console.log("✅ Step 2 성공 (유형 저장):", cognitiveType);
             setStep(step + 1); 
         } else {
-            console.error("❌ Step 2 실패 (백엔드 거부):", result);
-            alert(`저장 실패: ${result.detail || result.message || "알 수 없는 오류"}`);
+            throw new Error(result.message || "인지성향 저장 실패");
         }
 
-      } catch (error) {
+      } catch (error: any) {
         console.error("❌ API 통신 에러:", error);
-        alert("서버와 연결할 수 없습니다.");
+        alert(`저장 중 오류가 발생했습니다: ${error.message}`);
       } finally {
         setIsSubmitting(false);
       }
       return;
-    }
+    }    
     
     // Step 4 완료 시
     if (step === 4) {
@@ -311,12 +307,8 @@ export default function DiagnosisPage() {
   };
 
   const getAnalysisText = () => {
-    const types = Object.values(answers);
-    const countA = types.filter(t => t === 'A').length;
-    const countB = types.filter(t => t === 'B').length;
-    if (countA >= 2) return "직관적이고 빠른 '스피드 러너' 타입";
-    if (countB >= 2) return "깊이 있는 이해를 추구하는 '딥 다이버' 타입";
-    return "집중력이 폭발하는 '벼락치기 마스터' 타입";
+    const typeKey = calculateUserType();
+    return USER_TYPES_INFO[typeKey].desc;
   };
 
   return (
@@ -613,6 +605,8 @@ export default function DiagnosisPage() {
           </div>
           
           <div className="grid md:grid-cols-12 gap-6">
+            {/* 결과 화면 UI는 기존과 동일하게 유지 */}
+            {/* ... (이전 코드의 Step 6 내용과 동일) ... */}
             <div className="md:col-span-7 bg-white p-6 rounded-3xl shadow-xl border border-gray-100 flex flex-col h-full">
                <div className="flex items-center justify-between mb-6">
                  <div className="flex items-center gap-2">
