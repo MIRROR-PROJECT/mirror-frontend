@@ -202,16 +202,22 @@ export default function DiagnosisPage() {
           body: JSON.stringify(requestBody),
         });
 
+        console.log("🔍 현재 세션 상태:", session);
+        console.log("🔑 보낼 토큰:", session?.access_token);
         const result = await response.json();
-
-        if (response.ok) {
-           console.log("✅ Step 1 저장 성공:", result);
-           setStep(step + 1);
+        if (response.ok && result.success) {
+          // 성공 시 (여기는 message가 있을 것임)
+          console.log("✅ Step 1 저장 성공:", result.message);
+          setStep(step + 1);
         } else {
-           console.warn("⚠️ Step 1 저장 실패(백엔드 거부):", result);
-           // 실패해도 다음 단계로 넘어가고 싶다면 아래 주석 해제
-           // setStep(step + 1); 
-           alert("정보 저장에 실패했습니다. (로그인이 필요할 수 있습니다)");
+          // ⚠️ 실패 시 (여기는 message 대신 detail이 들어올 확률 99%)
+          // result 전체를 찍어서 눈으로 확인하는 게 가장 확실합니다.
+          console.warn("⚠️ 백엔드 응답 전체:", result); 
+          
+          // 에러 메시지 추출 (message가 없으면 detail을 씀)
+          const errorMsg = result.message || result.detail || "알 수 없는 에러";
+          
+          alert(`저장 실패: ${errorMsg}`);
         }
       } catch (error) {
         console.error("통신 에러:", error);
