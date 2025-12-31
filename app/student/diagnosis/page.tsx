@@ -163,6 +163,11 @@ export default function DiagnosisPage() {
     const accessToken = session?.access_token;
     const userId = session?.user?.id; // 실제 유저 ID 사용
 
+    if (!accessToken) {
+      alert("로그인이 필요합니다.");
+      return;
+    }
+
     if (!accessToken || !userId) {
        console.log("로그인 정보 없음 (테스트 모드일 수 있음)");
        // 실제 배포 시에는 여기서 return 하거나 로그인 페이지로 보낼 수 있음

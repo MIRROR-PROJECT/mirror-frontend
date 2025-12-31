@@ -1,17 +1,20 @@
 "use client";
 
+import { Suspense } from 'react';
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
-export default function ExtraInfoPage() {
+// 1. 알맹이 컴포넌트 (이름을 ExtraInfoPage -> InfoContent로 변경)
+// export default를 뺐습니다.
+function InfoContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const role = searchParams.get("role") || "teacher"; // 쿼리파라미터에서 역할 가져오기
+  const role = searchParams.get("role") || "teacher"; 
 
   const [formData, setFormData] = useState({
     phoneNumber: "",
-    organization: "", // 학교/학원명 (선생님용)
-    childName: ""     // 자녀 이름 (학부모용)
+    organization: "", 
+    childName: ""     
   });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -74,5 +77,15 @@ export default function ExtraInfoPage() {
         </form>
       </div>
     </div>
+  );
+}
+
+// 2. 껍데기 컴포넌트 (새로 만듦)
+// Suspense로 감싸서 내보내는 역할만 합니다.
+export default function ExtraInfoPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">로딩 중...</div>}>
+      <InfoContent />
+    </Suspense>
   );
 }
