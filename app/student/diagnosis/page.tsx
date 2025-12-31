@@ -7,7 +7,7 @@ import {
   ChevronRight, ChevronLeft, RefreshCcw, 
   Maximize, Map, ListTodo, FileSearch, 
   ChevronDown, ChevronUp, CheckCircle2, ScanLine, 
-  School 
+  School
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -17,7 +17,6 @@ import { supabase } from "../../lib/supabase";
 type TimeSlotSet = Set<string>;
 type WeekData = { [key: string]: string };
 
-// [수정] API 명세에 맞춘 타입 코드 정의
 const COGNITIVE_TYPES = {
   A: "SPEED_FIRST",
   B: "PRECISION_FIRST",
@@ -32,11 +31,15 @@ export default function DiagnosisPage() {
   const [isSubmitting, setIsSubmitting] = useState(false); 
   
   const [info, setInfo] = useState({ school: "high", grade: "", semester: "1", subjects: [] as string[] });
-  
   const [answers, setAnswers] = useState<Record<number, string>>({});
 
+  // Step 3: 과목별 이미지 관리를 위한 State
+  const [activeSubjectTab, setActiveSubjectTab] = useState<string>(""); 
+  const [subjectImages, setSubjectImages] = useState<Record<string, string>>({}); 
+  const [ocrAnalysis, setOcrAnalysis] = useState<Record<string, string>>({}); 
+
   const [ocrStatus, setOcrStatus] = useState<"idle" | "scanning" | "analyzing" | "done">("idle");
-  const [ocrResult, setOcrResult] = useState<string>("");
+  const [ocrResult, setOcrResult] = useState<string>(""); 
 
   const [selectedSlots, setSelectedSlots] = useState<TimeSlotSet>(new Set());
   const isDragging = useRef(false);
@@ -54,196 +57,150 @@ export default function DiagnosisPage() {
     { category: "기타", items: ["정보", "제2외국어", "한문", "기가"] }
   ];
 
-  // 프론트엔드 표시용 정보
+  // 선택된 메인 과목들 추출 (국영수 중 선택한 것만)
+  const selectedMainSubjects = useMemo(() => {
+    return info.subjects.filter(sub => MAIN_SUBJECTS.includes(sub));
+  }, [info.subjects]);
+
+  // 메인 과목 선택 여부 확인
+  const hasMainSubject = selectedMainSubjects.length > 0;
+
+  // Step 3 진입 시 첫 번째 과목을 탭으로 자동 설정
+  useEffect(() => {
+    if (step === 3 && selectedMainSubjects.length > 0 && !activeSubjectTab) {
+      setActiveSubjectTab(selectedMainSubjects[0]);
+    }
+  }, [step, selectedMainSubjects, activeSubjectTab]);
+
   const USER_TYPES_INFO = {
-    A: { label: "스키마 오버로더 (Schema Overloader)", desc: "직관적이고 빠른 '스피드 러너'" },
-    B: { label: "코그니티브 터널러 (Cognitive Tunneller)", desc: "깊이 있는 이해를 추구하는 '딥 다이버'" },
-    C: { label: "도파민 디스카운터 (Dopamine Discounter)", desc: "집중력이 폭발하는 '벼락치기 마스터'" }
+    A: { label: "스키마 오버로더", desc: "직관적이고 빠른 '스피드 러너'" },
+    B: { label: "코그니티브 터널러", desc: "깊이 있는 이해를 추구하는 '딥 다이버'" },
+    C: { label: "도파민 디스카운터", desc: "집중력이 폭발하는 '벼락치기 마스터'" }
   };
 
   const QUIZ_QUESTIONS = [
-    { id: 1, question: "문제를 풀 때 나의 모습은?", options: [
-      { value: "A", label: "빠르게 훑어보고 답을 선택한 뒤 넘어간다", desc: "'대충 맞겠지' 하는 직감적 풀이, 핵심 키워드 위주" },
-      { value: "B", label: "완벽히 이해할 때까지 붙잡고 고민한다", desc: "이해 안 되면 못 넘어감, 한 문제에 10분 이상 소요" },
-      { value: "C", label: "문제집을 펼치기까지가 제일 어렵다", desc: "시작하면 잘하는데 시작이 힘듦, 마감 직전 몰아서 함" }
-    ]},
-    { id: 2, question: "시험 공부를 할 때 나는?", options: [
-      { value: "A", label: "여러 문제를 빠르게 풀면서 감을 익힌다", desc: "양치기 선호, 틀린 문제는 가볍게 패스" },
-      { value: "B", label: "한 개념을 여러 자료로 비교하며 이해한다", desc: "교과서/인강/참고서 모두 확인, 개념 노트 정리" },
-      { value: "C", label: "평소엔 안 하다가 시험 직전에 집중한다", desc: "시험 기간에만 도서관 행, 압박감을 즐김" }
-    ]},
-    { id: 3, question: "학습 후 복습할 때 나는?", options: [
-      { value: "A", label: "복습은 잘 안 한다. 한 번 푼 건 끝", desc: "'이건 아니까 패스', 실수도 '아차' 하고 끝냄" },
-      { value: "B", label: "틀린 문제를 완전히 이해할 때까지 파고든다", desc: "원인 분석, 관련 개념 확인, 복습 노트 작성" },
-      { value: "C", label: "복습 계획은 세우지만 실천은 잘 안 된다", desc: "'내일부터 해야지' 미루다가 시험 직전 벼락치기" }
-    ]},
-    { id: 4, question: "계획대로 공부가 안 될 때 나는?", options: [
-      { value: "A", label: "유연하게 넘기고 다른 과목부터 한다", desc: "융통성 있음, 계획 변경이 빠름" },
-      { value: "B", label: "못 지킨 부분 때문에 스트레스 받는다", desc: "완벽주의, 하나 밀리면 와르르 무너짐" },
-      { value: "C", label: "에라 모르겠다 하고 놀아버린다", desc: "포기가 빠름, 기분파" }
-    ]}
+    { id: 1, question: "문제를 풀 때 나의 모습은?", options: [{ value: "A", label: "빠르게 훑어보고 답을 선택한 뒤 넘어간다", desc: "'대충 맞겠지' 하는 직감적 풀이, 핵심 키워드 위주" }, { value: "B", label: "완벽히 이해할 때까지 붙잡고 고민한다", desc: "이해 안 되면 못 넘어감, 한 문제에 10분 이상 소요" }, { value: "C", label: "문제집을 펼치기까지가 제일 어렵다", desc: "시작하면 잘하는데 시작이 힘듦, 마감 직전 몰아서 함" }]},
+    { id: 2, question: "시험 공부를 할 때 나는?", options: [{ value: "A", label: "여러 문제를 빠르게 풀면서 감을 익힌다", desc: "양치기 선호, 틀린 문제는 가볍게 패스" }, { value: "B", label: "한 개념을 여러 자료로 비교하며 이해한다", desc: "교과서/인강/참고서 모두 확인, 개념 노트 정리" }, { value: "C", label: "평소엔 안 하다가 시험 직전에 집중한다", desc: "시험 기간에만 도서관 행, 압박감을 즐김" }]},
+    { id: 3, question: "학습 후 복습할 때 나는?", options: [{ value: "A", label: "복습은 잘 안 한다. 한 번 푼 건 끝", desc: "'이건 아니까 패스', 실수도 '아차' 하고 끝냄" }, { value: "B", label: "틀린 문제를 완전히 이해할 때까지 파고든다", desc: "원인 분석, 관련 개념 확인, 복습 노트 작성" }, { value: "C", label: "복습 계획은 세우지만 실천은 잘 안 된다", desc: "'내일부터 해야지' 미루다가 시험 직전 벼락치기" }]},
+    { id: 4, question: "계획대로 공부가 안 될 때 나는?", options: [{ value: "A", label: "유연하게 넘기고 다른 과목부터 한다", desc: "융통성 있음, 계획 변경이 빠름" }, { value: "B", label: "못 지킨 부분 때문에 스트레스 받는다", desc: "완벽주의, 하나 밀리면 와르르 무너짐" }, { value: "C", label: "에라 모르겠다 하고 놀아버린다", desc: "포기가 빠름, 기분파" }]}
   ];
 
-  const toggleSubject = (subject: string) => {
-    setInfo(prev => {
-      const exists = prev.subjects.includes(subject);
-      return { ...prev, subjects: exists ? prev.subjects.filter(s => s !== subject) : [...prev.subjects, subject] };
-    });
-  };
-
-  const schedule = useMemo(() => {
-    const data: WeekData = {};
-    WEEK_DAYS.forEach((day, idx) => {
-      let count = 0;
-      selectedSlots.forEach(slot => {
-        const [d] = slot.split('-');
-        if (parseInt(d) === idx) count++;
-      });
-      data[day] = (count * 60).toString();
-    });
-    return data;
+  const toggleSubject = (subject: string) => { setInfo(prev => { const exists = prev.subjects.includes(subject); return { ...prev, subjects: exists ? prev.subjects.filter(s => s !== subject) : [...prev.subjects, subject] }; }); };
+  
+  const schedule = useMemo(() => { 
+    const data: WeekData = {}; 
+    WEEK_DAYS.forEach((day, idx) => { 
+      let count = 0; 
+      selectedSlots.forEach(slot => { 
+        const [d] = slot.split('-'); 
+        if (parseInt(d) === idx) count++; 
+      }); 
+      data[day] = (count * 60).toString(); 
+    }); 
+    return data; 
   }, [selectedSlots]);
 
-  const updateSlot = (dayIdx: number, hour: number, action: "add" | "remove") => {
-    const key = `${dayIdx}-${hour}`;
-    setSelectedSlots(prev => {
-      const next = new Set(prev);
-      if (action === "add") next.add(key); else next.delete(key);
-      return next;
-    });
-  };
-
-  const handleMouseDown = (dayIdx: number, hour: number) => {
-    isDragging.current = true;
-    const key = `${dayIdx}-${hour}`;
-    dragAction.current = selectedSlots.has(key) ? "remove" : "add";
-    updateSlot(dayIdx, hour, dragAction.current);
-  };
-
-  const handleMouseEnter = (dayIdx: number, hour: number) => {
-    if (!isDragging.current) return;
-    updateSlot(dayIdx, hour, dragAction.current);
-  };
-
-  useEffect(() => {
-    const onUp = () => { isDragging.current = false; };
-    window.addEventListener("mouseup", onUp);
-    return () => window.removeEventListener("mouseup", onUp);
+  const updateSlot = (dayIdx: number, hour: number, action: "add" | "remove") => { const key = `${dayIdx}-${hour}`; setSelectedSlots(prev => { const next = new Set(prev); if (action === "add") next.add(key); else next.delete(key); return next; }); };
+  const handleMouseDown = (dayIdx: number, hour: number) => { isDragging.current = true; const key = `${dayIdx}-${hour}`; dragAction.current = selectedSlots.has(key) ? "remove" : "add"; updateSlot(dayIdx, hour, dragAction.current); };
+  const handleMouseEnter = (dayIdx: number, hour: number) => { if (!isDragging.current) return; updateSlot(dayIdx, hour, dragAction.current); };
+  
+  useEffect(() => { 
+    const onUp = () => { isDragging.current = false; }; 
+    window.addEventListener("mouseup", onUp); 
+    return () => window.removeEventListener("mouseup", onUp); 
   }, []);
 
   const clearCurrentWeek = () => setSelectedSlots(new Set());
-  
-  const fillCurrentWeek = () => {
-    const next = new Set<string>();
-    for (let d = 0; d < 7; d++) {
-        for (let h of HOURS) next.add(`${d}-${h}`);
-    }
-    setSelectedSlots(next);
-  };
-  
+  const fillCurrentWeek = () => { const next = new Set<string>(); for (let d = 0; d < 7; d++) { for (let h of HOURS) next.add(`${d}-${h}`); } setSelectedSlots(next); };
   const calculateTotalHours = () => selectedSlots.size;
 
   const handleFileUpload = () => {
+    if (!activeSubjectTab) return;
+    
     setOcrStatus("scanning");
     setTimeout(() => setOcrStatus("analyzing"), 2000);
     setTimeout(() => {
       setOcrStatus("done");
-      setOcrResult("풀이 과정이 논리적이나, 중간 식을 생략하여 계산 실수가 발생할 확률이 30% 높습니다.");
+      setSubjectImages(prev => ({ ...prev, [activeSubjectTab]: "uploaded" }));
+      setOcrAnalysis(prev => ({ 
+        ...prev, 
+        [activeSubjectTab]: `${activeSubjectTab}: 풀이 과정은 좋으나 계산 실수가 잦습니다.` 
+      }));
+      setOcrResult(`${activeSubjectTab}: 풀이 과정은 좋으나 계산 실수가 잦습니다.`);
     }, 4500);
   };
 
-  const startAnalysis = () => {
-    setStep(5);
-    setTimeout(() => setStep(6), 3000);
-  };
-
-  // [로직] 사용자 유형 판별 (A, B, C 리턴)
-  const calculateUserType = (): "A" | "B" | "C" => {
-    const counts = { A: 0, B: 0, C: 0 };
-    Object.values(answers).forEach((val) => {
-      if (val === 'A' || val === 'B' || val === 'C') {
-        counts[val]++;
-      }
-    });
-
-    const max = Math.max(counts.A, counts.B, counts.C);
-    
-    // 우선순위: 동점일 경우 B > C > A (예: B는 완벽주의라 교정이 시급함)
-    if (counts.B === max) return "B";
-    if (counts.C === max) return "C";
-    return "A";
+  const startAnalysis = () => { setStep(5); setTimeout(() => setStep(6), 3000); };
+  
+  const calculateUserType = (): "A" | "B" | "C" => { 
+    const counts = { A: 0, B: 0, C: 0 }; 
+    Object.values(answers).forEach((val) => { 
+      if (val === 'A' || val === 'B' || val === 'C') { counts[val]++; } 
+    }); 
+    const max = Math.max(counts.A, counts.B, counts.C); 
+    if (counts.B === max) return "B"; 
+    if (counts.C === max) return "C"; 
+    return "A"; 
   };
 
   const canGoNext = () => {
     if (step === 1) return info.grade && info.semester && info.subjects.length > 0;
-    if (step === 2) return Object.keys(answers).length === 4; // [수정] 질문 4개 필수
-    if (step === 3) return ocrStatus === "done"; 
+    if (step === 2) return Object.keys(answers).length === 4; 
+    if (step === 3) return Object.keys(subjectImages).length > 0; 
     if (step === 4) return selectedSlots.size > 0;
     return false;
   };
 
   const finalTime = Math.round((selectedSlots.size * 60) / 7).toString(); 
 
-  // === handleNext 함수 ===
+  // === handleNext 함수 수정 (끊김 해결 및 정수형 변환 적용) ===
   const handleNext = async () => {
-    
-    // 1. 토큰 가져오기 (공통)
     const { data: { session } } = await supabase.auth.getSession();
     const accessToken = session?.access_token;
     const userId = session?.user?.id; 
 
-    if (!accessToken) {
-      alert("로그인이 필요합니다.");
-      return;
-    }
-
-    if (!userId) {
-       console.warn("로그인 정보 없음");
-    }
-
-    // ----------------------------------------------------
-    // CASE 1: Step 1 완료 (기본 정보)
-    // ----------------------------------------------------
+    // [Step 1] 기본 정보 저장
     if (step === 1) {
       if (isSubmitting) return;
       setIsSubmitting(true);
 
       try {
+        // 명세서에 따라 String -> Integer로 변환
         const requestBody = {
           user_id: userId,
-          school_grade: info.grade,
-          semester: info.semester,
+          school_grade: parseInt(info.grade), // 숫자 변환
+          semester: parseInt(info.semester),  // 숫자 변환
           subjects: info.subjects
         };
 
         const response = await fetch("https://mirror-backend-5j11.onrender.com/setup/basic-info", { 
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${accessToken}`
+          headers: { 
+            "Content-Type": "application/json", 
+            "Authorization": accessToken ? `Bearer ${accessToken}` : "" 
           },
           body: JSON.stringify(requestBody),
         });
 
         const result = await response.json();
+        
         if (response.ok && result.success) {
-          console.log("✅ Step 1 저장 성공:", result.message);
+          console.log("✅ Step 1 성공:", result.message);
           setStep(step + 1);
         } else {
-          console.warn("⚠️ 백엔드 에러:", result); 
+          console.warn("⚠️ 백엔드 오류:", result);
           alert(`저장 실패: ${result.message || result.detail || "알 수 없는 에러"}`);
         }
-      } catch (error) {
-        console.error("통신 에러:", error);
-      } finally {
-        setIsSubmitting(false);
+      } catch (error) { 
+        console.error("통신 에러:", error); 
+        alert("서버 연결 실패 (백엔드 로그를 확인하세요)");
+      } finally { 
+        setIsSubmitting(false); 
       }
       return;
     }
 
-    // ----------------------------------------------------
-    // CASE 2: Step 2 완료 시 -> 학습 성향 분석 및 API 전송
-    // ----------------------------------------------------
+    // [Step 2] 성향 분석 저장
     if (step === 2) {
       if (isSubmitting) return;
       setIsSubmitting(true);
@@ -255,61 +212,66 @@ export default function DiagnosisPage() {
            return;
         }
 
-        // 1. 유형 분석 실행
-        const typeKey = calculateUserType(); // returns 'A', 'B', 'C'
-        const cognitiveType = COGNITIVE_TYPES[typeKey]; // returns 'SPEED_FIRST', etc.
+        const typeKey = calculateUserType();
+        const cognitiveType = COGNITIVE_TYPES[typeKey];
 
-        // 2. [수정] 명세서에 맞춘 Body 생성
-        const requestBody = {
-            user_id: userId,
-            cognitive_type: cognitiveType
-        };
-
-        // 3. 백엔드 전송
         const response = await fetch("https://mirror-backend-5j11.onrender.com/setup/style-quiz", { 
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${accessToken}`
+          headers: { 
+            "Content-Type": "application/json", 
+            "Authorization": accessToken ? `Bearer ${accessToken}` : "" 
           },
-          body: JSON.stringify(requestBody),
+          body: JSON.stringify({ 
+            user_id: userId, 
+            cognitive_type: cognitiveType 
+          }),
         });
 
         const result = await response.json();
 
         if (response.ok && result.success) {
-            console.log("✅ Step 2 성공 (유형 저장):", cognitiveType);
-            setStep(step + 1); 
+           console.log("✅ Step 2 성공:", cognitiveType);
+           // ★ 핵심 로직: 메인 과목(국/영/수)이 있으면 Step 3(OCR), 없으면 Step 4(시간표)로 점프
+           if (hasMainSubject) {
+             setStep(3);
+           } else {
+             console.log("⏩ 메인 과목 없음 -> OCR 단계 건너뜀");
+             setStep(4);
+           }
         } else {
-            throw new Error(result.message || "인지성향 저장 실패");
+           alert(`저장 실패: ${result.message || result.detail}`);
         }
-
-      } catch (error: any) {
-        console.error("❌ API 통신 에러:", error);
-        alert(`저장 중 오류가 발생했습니다: ${error.message}`);
-      } finally {
-        setIsSubmitting(false);
+      } catch (error) { 
+        console.error("통신 에러:", error); 
+        alert("서버 통신 에러"); 
+      } finally { 
+        setIsSubmitting(false); 
       }
       return;
     }    
     
-    // Step 4 완료 시
+    // [Step 4] 시간표 완료
     if (step === 4) {
-      const newSchedule: Record<string, "study" | "fixed"> = {};
-      selectedSlots.forEach(k => newSchedule[k] = "study");
-      updateSchedule(newSchedule);
+      updateSchedule({});
       startAnalysis(); 
       return;
     }
     
-    // 그 외 단계는 그냥 다음으로
+    // 그 외 일반적인 단계 이동
     setStep(step + 1);
   };
 
-  const getAnalysisText = () => {
-    const typeKey = calculateUserType();
-    return USER_TYPES_INFO[typeKey].desc;
+  // 뒤로 가기 핸들러 (건너뛰기 로직 반영)
+  const handleBack = () => {
+      if (step === 4 && !hasMainSubject) {
+        // 메인 과목 없으면 Step 3가 스킵되었으므로, 바로 Step 2로 이동
+        setStep(2);
+      } else {
+        setStep(step - 1);
+      }
   };
+
+  const getAnalysisText = () => USER_TYPES_INFO[calculateUserType()].desc;
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-6 select-none">
@@ -320,7 +282,7 @@ export default function DiagnosisPage() {
           <div className="flex justify-between text-xs font-bold text-gray-400 mb-2 uppercase tracking-wide">
             <span className={step >= 1 ? "text-blue-600" : ""}>Info</span>
             <span className={step >= 2 ? "text-blue-600" : ""}>Style</span>
-            <span className={step >= 3 ? "text-blue-600" : ""}>Solving</span>
+            <span className={step >= 3 ? (hasMainSubject ? "text-blue-600" : "text-gray-300 line-through decoration-2") : ""}>Solving</span>
             <span className={step >= 4 ? "text-blue-600" : ""}>Time</span>
           </div>
           <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
@@ -434,64 +396,87 @@ export default function DiagnosisPage() {
         </div>
       )}
 
-      {/* --- STEP 3: 풀이 습관 진단 (OCR) --- */}
-      {step === 3 && (
+      {/* --- STEP 3: 풀이 습관 진단 (OCR) - 탭 UI 적용 --- */}
+      {step === 3 && hasMainSubject && (
         <div className="bg-white max-w-md w-full p-8 rounded-3xl shadow-xl space-y-6 animate-fade-in-up">
           <div className="text-center">
             <h2 className="text-2xl font-bold text-gray-900">풀이 습관 진단</h2>
             <p className="text-gray-500 text-sm mt-1">
-              {ocrStatus === "done" 
-                ? "진단이 완료되었습니다!" 
-                : "평소에 푼 연습장이나 문제집을 찍어주세요."}
+              {ocrStatus === "done" ? "분석이 완료되었습니다." : "과목별 문제 풀이 사진을 올려주세요."}
             </p>
           </div>
+
+          {/* [추가] 과목 탭 버튼 */}
+          <div className="flex bg-gray-100 p-1 rounded-xl">
+            {selectedMainSubjects.map((subject) => {
+              const isActive = activeSubjectTab === subject;
+              const isDone = subjectImages[subject] === "uploaded";
+              return (
+                <button
+                  key={subject}
+                  onClick={() => { setActiveSubjectTab(subject); setOcrStatus(isDone ? "done" : "idle"); }}
+                  className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all flex items-center justify-center gap-1
+                    ${isActive ? "bg-white text-blue-600 shadow-sm" : "text-gray-400 hover:text-gray-600"}
+                  `}
+                >
+                  {subject}
+                  {isDone && <CheckCircle2 className="w-3 h-3 text-green-500" />}
+                </button>
+              );
+            })}
+          </div>
           
-          <div className="relative">
-            {ocrStatus === "idle" && (
-              <div 
-                onClick={handleFileUpload}
-                className="border-2 border-dashed border-gray-300 rounded-2xl p-10 flex flex-col items-center justify-center cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition-all group"
-              >
-                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4 group-hover:bg-blue-100 transition-colors">
-                  <Camera className="w-8 h-8 text-gray-400 group-hover:text-blue-500" />
-                </div>
-                <p className="font-bold text-gray-600">사진 업로드하기</p>
-                <p className="text-xs text-gray-400 mt-1">또는 파일을 여기로 드래그하세요</p>
-              </div>
-            )}
-
-            {(ocrStatus === "scanning" || ocrStatus === "analyzing") && (
-              <div className="border-2 border-blue-100 rounded-2xl p-10 flex flex-col items-center justify-center bg-blue-50 relative overflow-hidden">
-                <ScanLine className="w-16 h-16 text-blue-500 animate-pulse mb-4" />
-                <div className="absolute top-0 left-0 w-full h-1 bg-blue-400 shadow-[0_0_20px_rgba(59,130,246,0.8)] animate-[scan_2s_ease-in-out_infinite]"></div>
-                
-                <p className="font-bold text-blue-700 animate-pulse">
-                  {ocrStatus === "scanning" ? "풀이 과정 스캔 중..." : "AI가 습관을 분석 중입니다..."}
-                </p>
-                <p className="text-xs text-blue-400 mt-1">잠시만 기다려주세요</p>
-              </div>
-            )}
-
-            {ocrStatus === "done" && (
-              <div className="border-2 border-green-100 rounded-2xl p-6 bg-green-50 animate-fade-in">
+          <div className="relative min-h-[300px]">
+            {/* 분석 결과가 있을 때 */}
+            {subjectImages[activeSubjectTab] === "uploaded" && ocrStatus === "done" ? (
+               <div className="border-2 border-green-100 rounded-2xl p-6 bg-green-50 animate-fade-in h-full flex flex-col justify-center">
                 <div className="flex items-center gap-2 mb-3">
                    <FileSearch className="w-5 h-5 text-green-600" />
-                   <h3 className="font-bold text-green-800">분석 결과</h3>
+                   <h3 className="font-bold text-green-800">{activeSubjectTab} 분석 완료</h3>
                 </div>
                 <p className="text-sm text-green-700 font-medium leading-relaxed">
-                  "{ocrResult}"
+                  "{ocrAnalysis[activeSubjectTab]}"
                 </p>
-                <div className="mt-4 flex gap-2">
-                   <span className="bg-white px-2 py-1 rounded text-[10px] font-bold text-green-600 border border-green-200">#논리적_전개</span>
-                   <span className="bg-white px-2 py-1 rounded text-[10px] font-bold text-red-500 border border-red-200">#계산_실수_주의</span>
-                </div>
+                <button 
+                  onClick={() => {
+                      setSubjectImages(prev => { const n = {...prev}; delete n[activeSubjectTab]; return n; });
+                      setOcrStatus("idle");
+                  }}
+                  className="mt-4 text-xs text-gray-400 underline"
+                >
+                  다시 업로드하기
+                </button>
               </div>
+            ) : (
+                /* 업로드 전 */
+                <>
+                    {(ocrStatus === "idle") && (
+                    <div 
+                        onClick={handleFileUpload}
+                        className="h-full border-2 border-dashed border-gray-300 rounded-2xl p-10 flex flex-col items-center justify-center cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition-all group"
+                    >
+                        <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4 group-hover:bg-blue-100 transition-colors">
+                        <Camera className="w-8 h-8 text-gray-400 group-hover:text-blue-500" />
+                        </div>
+                        <p className="font-bold text-gray-600">{activeSubjectTab} 풀이 사진</p>
+                        <p className="text-xs text-gray-400 mt-1">클릭하여 업로드</p>
+                    </div>
+                    )}
+
+                    {(ocrStatus === "scanning" || ocrStatus === "analyzing") && (
+                    <div className="h-full border-2 border-blue-100 rounded-2xl p-10 flex flex-col items-center justify-center bg-blue-50 relative overflow-hidden">
+                        <ScanLine className="w-16 h-16 text-blue-500 animate-pulse mb-4" />
+                        <div className="absolute top-0 left-0 w-full h-1 bg-blue-400 shadow-[0_0_20px_rgba(59,130,246,0.8)] animate-[scan_2s_ease-in-out_infinite]"></div>
+                        <p className="font-bold text-blue-700 animate-pulse">{activeSubjectTab} 분석 중...</p>
+                    </div>
+                    )}
+                </>
             )}
           </div>
         </div>
       )}
 
-      {/* --- STEP 4: 시간표 그리드 (심플 버전 - Routine Only) --- */}
+      {/* --- STEP 4: 시간표 그리드 --- */}
       {step === 4 && (
         <div className="bg-white max-w-xl w-full p-6 rounded-3xl shadow-xl space-y-4 animate-fade-in-up">
           <div className="text-center">
@@ -552,7 +537,7 @@ export default function DiagnosisPage() {
         <div className="max-w-md w-full mt-6 flex gap-3">
           {step > 1 && (
             <button 
-              onClick={() => setStep(step - 1)} 
+              onClick={handleBack} 
               disabled={isSubmitting}
               className="px-6 py-4 bg-gray-200 text-gray-700 rounded-xl font-bold hover:bg-gray-300 transition-colors disabled:opacity-50"
             >
@@ -586,7 +571,8 @@ export default function DiagnosisPage() {
           <h2 className="text-2xl font-bold text-gray-900">Mirror AI가 분석 중입니다...</h2>
           <div className="space-y-3 text-gray-500">
             <p>🧠 학습 성향 분석: {getAnalysisText()}</p>
-            <p>📝 풀이 습관: {ocrResult || '분석 중...'}</p>
+            {/* [수정] 메인 과목 미선택 시 문구 조정 */}
+            <p>📝 풀이 습관: {hasMainSubject ? (ocrResult || '분석 중...') : '분석 생략됨 (주요 과목 미선택)'}</p>
             <p>📐 하루 평균 가용 시간: {Math.round((selectedSlots.size * 60) / 7)}분</p>
           </div>
         </div>
@@ -606,7 +592,6 @@ export default function DiagnosisPage() {
           
           <div className="grid md:grid-cols-12 gap-6">
             {/* 결과 화면 UI는 기존과 동일하게 유지 */}
-            {/* ... (이전 코드의 Step 6 내용과 동일) ... */}
             <div className="md:col-span-7 bg-white p-6 rounded-3xl shadow-xl border border-gray-100 flex flex-col h-full">
                <div className="flex items-center justify-between mb-6">
                  <div className="flex items-center gap-2">
