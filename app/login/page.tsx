@@ -1,12 +1,50 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabase"; 
-import { ArrowLeft, Sparkles, Target, TrendingUp, Brain } from "lucide-react";
+import { ArrowLeft, Sparkles, Target, TrendingUp, Brain, Loader2 } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
+  const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [checkingSession, setCheckingSession] = useState(true); // 세션 확인 중 상태
+
+  // 1. 페이지 로드 시 세션 확인
+  useEffect(() => {
+    const checkSession = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+
+        if (session) {
+          // 이미 로그인된 상태라면 DB에서 Role 조회 후 이동
+          const { data: userProfile } = await supabase
+            .from('users')
+            .select('role')
+            .eq('id', session.user.id)
+            .single();
+
+          if (userProfile?.role) {
+            const role = userProfile.role.toLowerCase();
+            router.replace(`/${role}/dashboard`); // 뒤로가기 방지를 위해 push 대신 replace 사용
+            return; // 함수 종료 (checkingSession false로 만들지 않음)
+          } else {
+            // 로그인 되어있으나 Role이 없으면 온보딩으로
+            router.replace('/onboarding/role');
+            return;
+          }
+        }
+      } catch (error) {
+        console.error("세션 확인 중 오류:", error);
+      } finally {
+        // 세션이 없으면 로그인 폼을 보여줌
+        setCheckingSession(false);
+      }
+    };
+
+    checkSession();
+  }, [router]);
 
   const handleGoogleLogin = async () => {
     try {
@@ -32,8 +70,20 @@ export default function LoginPage() {
     }
   };
 
+  // 2. 세션 확인 중일 때는 로딩 화면 표시 (깜빡임 방지)
+  if (checkingSession) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="w-10 h-10 text-blue-600 animate-spin" />
+          <p className="text-gray-500 font-medium">로그인 상태 확인 중...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen flex w-full bg-white">
+    <div className="min-h-screen flex w-full bg-white animate-fade-in">
       {/* 좌측 브랜딩 영역 - 콘텐츠 추가 */}
       <div className="hidden lg:flex lg:w-1/2 bg-gray-900 text-white flex-col justify-between px-16 xl:px-20 py-16 relative overflow-hidden">
         {/* 배경 데코레이션 */}

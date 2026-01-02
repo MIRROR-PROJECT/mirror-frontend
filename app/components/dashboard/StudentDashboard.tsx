@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useStudy } from "../../context/StudyContext"; 
 import { 
   CheckCircle2, TrendingUp, Calendar, 
@@ -9,8 +9,22 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 
+// --- 타입 정의 (유지보수를 위해 명시) ---
+interface UserProps {
+  id: string;
+  name: string;
+  role: string;
+  streak?: number; // DB에 없을 수도 있으니 옵셔널
+}
+
+interface WeaknessItem {
+  label: string;
+  score: number;
+  color: string;
+}
+
 // 더미 데이터: 과목별 취약점
-const WEAKNESS_DATA: { [key: string]: { label: string; score: number; color: string }[] } = {
+const WEAKNESS_DATA: { [key: string]: WeaknessItem[] } = {
   "수학": [
     { label: "지수함수의 활용", score: 45, color: "bg-red-500" },
     { label: "로그의 성질", score: 72, color: "bg-yellow-400" },
@@ -27,15 +41,21 @@ const WEAKNESS_DATA: { [key: string]: { label: string; score: number; color: str
   ]
 };
 
-export default function DashboardPage() {
-  const { user, tasks, schedule, toggleTask } = useStudy();
+export default function StudentDashboard({ user }: { user: UserProps }) {
+  // 1. Context에서 user는 제외하고 가져옵니다. (Props user와 충돌 방지)
+  const { tasks, schedule, toggleTask } = useStudy();
+  
   const [selectedSubject, setSelectedSubject] = useState("수학");
   const [mounted, setMounted] = useState(false);
   const [weekDays, setWeekDays] = useState<{ day: string, date: number, isToday: boolean, isFuture: boolean }[]>([]);
+  const [todayMinutes, setTodayMinutes] = useState(0);
 
+  // 2. 날짜 및 시간 계산 로직을 useEffect로 통합 (하이드레이션 에러 방지)
   useEffect(() => {
     setMounted(true);
     const today = new Date();
+    
+    // --- 주간 캘린더 생성 ---
     const tempWeek = [];
     const dayNames = ['일', '월', '화', '수', '목', '금', '토']; 
 
@@ -50,65 +70,66 @@ export default function DashboardPage() {
       });
     }
     setWeekDays(tempWeek);
-  }, []);
 
-  // [수정된 로직] 오늘의 가용 시간 계산 (분 단위)
-  const calculateTodayMinutes = () => {
-    const today = new Date();
-    // getDay(): 0(일) ~ 6(토)
-    // schedule Key는 0(월) ~ 6(일) 로 저장됨. 변환 필요.
-    // 일(0) -> 6, 월(1) -> 0, 화(2) -> 1 ...
+    // --- 오늘 가용 시간 계산 ---
+    // schedule Key: "0-9" (월요일 9시) ~ "6-23" (일요일 23시)
+    // today.getDay(): 0(일) ~ 6(토)
+    // 변환: 일(0)->6, 월(1)->0, 화(2)->1 ...
     const internalDay = (today.getDay() + 6) % 7; 
     
     let slots = 0;
-    // schedule이 undefined일 경우 대비
     if (schedule) {
       Object.entries(schedule).forEach(([key, val]) => {
-        // key 예시: "0-19" (월요일 19시)
         if (val === "study" && key.startsWith(`${internalDay}-`)) {
           slots++;
         }
       });
     }
-    return slots * 60; // 1시간(1 slot) = 60분
-  };
+    setTodayMinutes(slots * 60);
 
-  const todayMinutes = calculateTodayMinutes();
+  }, [schedule]); // schedule이 로드되면 다시 계산
 
   const toggleLocalTask = (id: number) => {
     toggleTask(id);
   };
 
-  const progress = tasks.length > 0 ? Math.round((tasks.filter(t => t.done).length / tasks.length) * 100) : 0;
+  // tasks가 undefined일 경우 방어
+  const currentTasks = tasks || [];
+  const progress = currentTasks.length > 0 
+    ? Math.round((currentTasks.filter(t => t.done).length / currentTasks.length) * 100) 
+    : 0;
+
+  // 화면이 클라이언트에 마운트되기 전에는 아무것도 보여주지 않음 (UI 깨짐 방지)
+  if (!mounted) return <div className="min-h-screen bg-gray-50" />;
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
+    <div className="min-h-screen bg-gray-50 flex animate-fade-in">
       <main className="flex-1 p-6 md:p-10 max-w-7xl mx-auto">
         
         {/* 상단 헤더 */}
-        <header className="flex justify-between items-end mb-8">
+        <header className="flex flex-col md:flex-row md:justify-between md:items-end mb-8 gap-4">
           <div>
             <h1 className="text-2xl font-bold text-gray-900 mb-1">
-              반가워요, {user.name}님! 👋
+              반가워요, {user?.name || '학생'}님! 👋
             </h1>
             <p className="text-gray-500 text-sm">
               오늘의 목표를 달성하고 스트릭을 이어가세요!
             </p>
           </div>
-          <div className="flex gap-4">
+          <div className="flex gap-3">
             <div className="bg-white px-4 py-2 rounded-xl border border-gray-200 shadow-sm flex items-center gap-2">
               <Flame className="w-5 h-5 text-orange-500 fill-orange-500" />
-              <span className="font-bold text-gray-700">{user.streak}일 연속</span>
+              {/* user.streak가 없으면 0일로 처리 */}
+              <span className="font-bold text-gray-700">{user?.streak || 1}일 연속</span>
             </div>
             
-            {/* ✨ [수정] 시간 표시 부분 명확화 ✨ */}
             <div className="bg-white px-4 py-2 rounded-xl border border-gray-200 shadow-sm flex items-center gap-2">
               <Clock className="w-5 h-5 text-blue-500" />
               <div className="flex flex-col items-end leading-none">
-                <span className="font-bold text-gray-700 text-sm">
+                <span className="font-bold text-gray-700 text-xs mb-0.5">
                   오늘 가용 시간
                 </span>
-                <span className="text-xs text-blue-600 font-bold">
+                <span className="text-sm text-blue-600 font-black">
                   {todayMinutes > 0 ? `${todayMinutes}분` : "일정 없음"}
                 </span>
               </div>
@@ -119,10 +140,11 @@ export default function DashboardPage() {
         {/* 대시보드 그리드 */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           
+          {/* [Left Column] 메인 콘텐츠 */}
           <div className="lg:col-span-2 space-y-6">
             
             {/* A. 오늘의 메인 미션 카드 */}
-            <div className="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-3xl p-8 text-white shadow-xl relative overflow-hidden">
+            <div className="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-3xl p-8 text-white shadow-xl relative overflow-hidden transition-transform hover:scale-[1.01] duration-300">
               <div className="absolute top-0 right-0 w-64 h-64 bg-white opacity-5 rounded-full blur-3xl transform translate-x-1/3 -translate-y-1/3"></div>
               
               <div className="relative z-10 flex justify-between items-start mb-6">
@@ -133,36 +155,47 @@ export default function DashboardPage() {
                       <Clock className="w-3 h-3" /> 목표: {todayMinutes}분
                     </span>
                   </div>
-                  <h2 className="text-3xl font-bold">지수함수 완전 정복</h2>
+                  <h2 className="text-3xl font-bold">
+                    {/* 데이터가 있다면 첫 번째 task의 과목 등을 표시하는 것이 좋음 */}
+                    지수함수 완전 정복
+                  </h2>
                 </div>
-                <div className="bg-white/10 p-4 rounded-2xl backdrop-blur-md border border-white/20 hidden sm:block">
-                  <div className="text-center">
+                
+                {/* 진행률 원형 그래프 (심플 버전) */}
+                <div className="bg-white/10 p-3 rounded-2xl backdrop-blur-md border border-white/20 hidden sm:block">
+                  <div className="text-center min-w-[60px]">
                     <span className="block text-2xl font-bold">{progress}%</span>
-                    <span className="text-[10px] text-blue-200">달성률</span>
+                    <span className="text-[10px] text-blue-200 uppercase tracking-wider">Completed</span>
                   </div>
                 </div>
               </div>
 
               <div className="space-y-3 relative z-10">
-                {tasks.map((task) => (
-                  <div 
-                    key={task.id} 
-                    onClick={() => toggleLocalTask(task.id)}
-                    className={`flex items-center gap-4 p-4 rounded-xl cursor-pointer transition-all border ${
-                      task.done 
-                        ? 'bg-blue-800/50 border-blue-700/50 text-blue-200' 
-                        : 'bg-white/10 border-white/20 hover:bg-white/20 text-white'
-                    }`}
-                  >
-                    <div className={`w-6 h-6 rounded-full flex items-center justify-center border-2 transition-colors ${task.done ? 'bg-white border-white' : 'border-blue-300'}`}>
-                      {task.done && <CheckCircle2 className="w-4 h-4 text-blue-600" />}
+                {currentTasks.length === 0 ? (
+                    <div className="text-blue-200 text-sm text-center py-4 bg-white/5 rounded-xl">
+                        등록된 할 일이 없습니다. 일정을 생성해보세요!
                     </div>
-                    <div className="flex-1">
-                      <p className={`font-medium ${task.done ? 'line-through decoration-blue-400' : ''}`}>{task.title}</p>
+                ) : (
+                    currentTasks.map((task) => (
+                    <div 
+                        key={task.id} 
+                        onClick={() => toggleLocalTask(task.id)}
+                        className={`flex items-center gap-4 p-4 rounded-xl cursor-pointer transition-all border ${
+                        task.done 
+                            ? 'bg-blue-800/40 border-blue-700/30 text-blue-200' 
+                            : 'bg-white/10 border-white/20 hover:bg-white/20 text-white'
+                        }`}
+                    >
+                        <div className={`w-6 h-6 rounded-full flex items-center justify-center border-2 transition-colors ${task.done ? 'bg-white border-white' : 'border-blue-300'}`}>
+                        {task.done && <CheckCircle2 className="w-4 h-4 text-blue-600" />}
+                        </div>
+                        <div className="flex-1">
+                        <p className={`font-medium ${task.done ? 'line-through decoration-blue-400/50' : ''}`}>{task.title}</p>
+                        </div>
+                        <span className="text-xs font-medium bg-white/20 px-2 py-1 rounded text-white">{task.time}분</span>
                     </div>
-                    <span className="text-xs opacity-70">{task.time}분</span>
-                  </div>
-                ))}
+                    ))
+                )}
               </div>
 
               <div className="mt-6 flex justify-end">
@@ -184,12 +217,13 @@ export default function DashboardPage() {
                 
                 <button className="flex items-center gap-1 text-[11px] font-bold text-gray-500 bg-gray-50 px-2.5 py-1.5 rounded-lg hover:bg-gray-100 transition-colors">
                   <History className="w-3 h-3" />
-                  과거 내역 확인하기
+                  과거 내역
                 </button>
               </div>
 
               <div className="grid grid-cols-7 gap-2">
                 {weekDays.map((item, i) => {
+                  // 더미 데이터 강도 (실제로는 DB 데이터 연동 필요)
                   const intensity = item.isFuture ? 0 : [2, 1, 2, 1, 0, 0, 0][i];
                   let bgColor = "bg-white border-gray-100";
                   let dateColor = "text-gray-400";
@@ -206,7 +240,7 @@ export default function DashboardPage() {
                   const dayText = item.isToday ? "text-blue-600 font-extrabold" : "text-gray-400";
 
                   return (
-                    <div key={i} className={`flex flex-col group cursor-pointer gap-1 ${item.isFuture ? 'opacity-40' : 'opacity-100'}`}>
+                    <div key={i} className={`flex flex-col group cursor-pointer gap-1 ${item.isFuture ? 'opacity-40 pointer-events-none' : 'opacity-100'}`}>
                       <div className={`text-[10px] text-center font-medium ${dayText}`}>
                         {item.isToday ? '오늘' : item.day}
                       </div>
@@ -223,21 +257,21 @@ export default function DashboardPage() {
 
           </div>
 
-          {/* [Right Col] */}
+          {/* [Right Column] 사이드 패널 */}
           <div className="space-y-6">
             
             {/* C. AI 코치 메시지 */}
-            <div className="bg-white p-6 rounded-3xl border border-gray-200 shadow-sm relative overflow-hidden">
-              <div className="absolute top-0 right-0 p-4 opacity-10">
+            <div className="bg-white p-6 rounded-3xl border border-gray-200 shadow-sm relative overflow-hidden group hover:border-blue-300 transition-colors">
+              <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
                 <BrainCircuit className="w-20 h-20 text-blue-600" />
               </div>
               <h3 className="font-bold text-gray-800 mb-4 flex items-center gap-2 relative z-10">
                 <Zap className="w-5 h-5 text-yellow-500 fill-yellow-500" /> Mirror AI 코칭
               </h3>
               <div className="bg-blue-50 p-4 rounded-xl text-sm text-gray-700 leading-relaxed mb-4 relative z-10">
-                "민수님, 어제 <span className="font-bold text-blue-600">지수법칙</span> 유형에서 계산 실수가 잦았어요. 오늘은 문제 풀 때 <span className="bg-yellow-200 px-1 font-bold">암산 금지!</span> 풀이 과정을 꼭 적어보세요."
+                "{user?.name || '학생'}님, 어제 <span className="font-bold text-blue-600">지수법칙</span> 유형에서 계산 실수가 잦았어요. 오늘은 문제 풀 때 <span className="bg-yellow-200 px-1 font-bold">암산 금지!</span> 풀이 과정을 꼭 적어보세요."
               </div>
-              <Link href="/student/chat" className="text-xs text-blue-500 hover:underline flex items-center gap-1 relative z-10">
+              <Link href="/student/chat" className="text-xs text-blue-500 hover:underline flex items-center gap-1 relative z-10 font-bold">
                 AI 튜터에게 자세한 조언 듣기 <ChevronRight className="w-3 h-3" />
               </Link>
             </div>
@@ -283,7 +317,7 @@ export default function DashboardPage() {
                 ))}
               </div>
               
-              <button className="w-full mt-6 text-xs text-gray-400 border border-gray-100 py-2 rounded-lg hover:bg-gray-50 flex items-center justify-center gap-1">
+              <button className="w-full mt-6 text-xs text-gray-500 font-medium border border-gray-200 py-3 rounded-xl hover:bg-gray-50 flex items-center justify-center gap-1 transition-colors">
                 <BookOpen className="w-3 h-3" /> 해당 유형 문제 더 풀기
               </button>
             </div>
@@ -294,14 +328,17 @@ export default function DashboardPage() {
                 <h3 className="font-bold flex items-center gap-2">
                   <TrendingUp className="w-5 h-5 text-green-400" /> 실시간 랭킹
                 </h3>
-                <span className="text-xs bg-white/20 px-2 py-1 rounded">교내 12위</span>
+                <span className="text-xs bg-white/20 px-2 py-1 rounded font-medium">교내 12위</span>
               </div>
               <div className="space-y-3">
                 {[1, 2, 3].map((rank) => (
-                  <div key={rank} className="flex items-center gap-3 bg-white/5 p-2 rounded-lg">
+                  <div key={rank} className="flex items-center gap-3 bg-white/5 p-2 rounded-lg border border-white/5">
                     <span className={`w-6 text-center font-bold italic ${rank === 1 ? 'text-yellow-400' : 'text-gray-400'}`}>{rank}</span>
-                    <div className="w-8 h-8 rounded-full bg-gray-600"></div>
-                    <span className="text-sm flex-1">User_{rank * 234}</span>
+                    <div className="w-8 h-8 rounded-full bg-gray-600 flex items-center justify-center text-xs">
+                        {/* 더미 아바타 */}
+                        {String.fromCharCode(65 + rank)} 
+                    </div>
+                    <span className="text-sm flex-1 font-medium">User_{rank * 234}</span>
                     <span className="text-xs text-green-400 font-mono">+{100 - rank * 10}pts</span>
                   </div>
                 ))}

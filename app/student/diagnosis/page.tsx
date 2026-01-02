@@ -7,21 +7,92 @@ import {
   ChevronRight, ChevronLeft, RefreshCcw, 
   Maximize, Map, ListTodo, FileSearch, 
   ChevronDown, ChevronUp, CheckCircle2, ScanLine, 
-  School
+  School, User, FileText, BrainCircuit, AlertCircle
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabase"; 
+import Tesseract from 'tesseract.js'; 
 
 // --- 타입 정의 ---
 type TimeSlotSet = Set<string>;
-type WeekData = { [key: string]: string };
 
+type PlanItem = {
+  day: string;
+  isToday: boolean;
+  type: "Concept" | "Review";
+  subject: string;
+  topic: string;
+  time: number;
+};
+
+// --- 상수 데이터 ---
 const COGNITIVE_TYPES = {
   A: "SPEED_FIRST",
   B: "PRECISION_FIRST",
   C: "BURST_STUDY"
 };
+
+const HOURS = Array.from({ length: 17 }, (_, i) => i + 8); 
+const WEEK_DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+
+const MAIN_SUBJECTS = ["국어", "수학", "영어"];
+const DETAIL_SUBJECTS = [
+  { category: "과학 탐구", items: ["물리", "화학", "생명과학", "지구과학", "통합과학"] },
+  { category: "사회/역사 탐구", items: ["한국사", "윤리", "지리", "역사", "일반사회", "통합사회"] },
+  { category: "기타", items: ["정보", "제2외국어", "한문", "기가"] }
+];
+
+const SUBJECT_KEYWORDS: Record<string, string[]> = {
+  "국어": ["다음", "글", "문단", "화자", "윗글", "적절한", "가)", "나)", "필자", "문학", "비문학"],
+  "수학": ["함수", "값", "구하시오", "방정식", "실수", "그림", "x", "y", "=", "+", "-", "미분", "적분"],
+  "영어": ["The", "What", "is", "passage", "following", "Reading", "According", "grammar", "paragraph"]
+};
+
+// 백엔드 전송용 과목명 매핑
+const SUBJECT_ENUM_MAP: Record<string, string> = {
+  "국어": "KOREAN",
+  "수학": "MATH",
+  "영어": "ENGLISH",
+  "과학": "SCIENCE", 
+  "사회": "SOCIAL"
+};
+
+const CURRICULUM_DATA: Record<string, Record<string, string[]>> = {
+  "1-1": {
+    "국어": ["고전 시가 이해", "문법 요소의 탐구", "비문학 독해 원리"],
+    "수학": ["다항식의 연산", "나머지 정리와 인수분해", "복소수와 이차방정식"],
+    "영어": ["구문 독해 기초", "주제 찾기 유형 연습", "필수 어휘 500"],
+    "한국사": ["선사 문화와 국가의 형성", "고대의 사회와 경제", "고려의 통치 체제"],
+    "통합과학": ["물질의 규칙성과 결합", "역학적 시스템", "지구 시스템"],
+  },
+  "2-1": {
+    "국어": ["문학의 수용과 생산", "독서의 본질", "화법과 작문 기초"],
+    "수학": ["지수함수와 로그함수", "삼각함수의 그래프", "수열의 극한"],
+    "영어": ["빈칸 추론 마스터", "순서 배열 논리", "수능특강 어휘"],
+    "물리": ["힘과 운동", "에너지와 열", "시간과 공간"],
+    "화학": ["화학의 첫걸음", "원자의 세계", "화학 결합"],
+  },
+  "3-1": {
+    "국어": ["수능특강 문학 분석", "실전 모의고사 풀이", "EBS 연계 독서"],
+    "수학": ["미분가능성과 연속성", "적분법 활용", "확률과 통계 심화"],
+    "영어": ["고난도 빈칸 공략", "실전 모의고사 1회", "장문 독해 전략"],
+    "생명과학": ["생명과학의 이해", "세포와 생명의 연속성", "항상성과 몸의 조절"],
+  }
+};
+
+const USER_TYPES_INFO = {
+  A: { label: "스키마 오버로더", desc: "직관적이고 빠른 '스피드 러너'" },
+  B: { label: "코그니티브 터널러", desc: "깊이 있는 이해를 추구하는 '딥 다이버'" },
+  C: { label: "도파민 디스카운터", desc: "집중력이 폭발하는 '벼락치기 마스터'" }
+};
+
+const QUIZ_QUESTIONS = [
+  { id: 1, question: "문제를 풀 때 나의 모습은?", options: [{ value: "A", label: "빠르게 훑어보고 답을 선택한 뒤 넘어간다", desc: "'대충 맞겠지' 하는 직감적 풀이, 핵심 키워드 위주" }, { value: "B", label: "완벽히 이해할 때까지 붙잡고 고민한다", desc: "이해 안 되면 못 넘어감, 한 문제에 10분 이상 소요" }, { value: "C", label: "문제집을 펼치기까지가 제일 어렵다", desc: "시작하면 잘하는데 시작이 힘듦, 마감 직전 몰아서 함" }]},
+  { id: 2, question: "시험 공부를 할 때 나는?", options: [{ value: "A", label: "여러 문제를 빠르게 풀면서 감을 익힌다", desc: "양치기 선호, 틀린 문제는 가볍게 패스" }, { value: "B", label: "한 개념을 여러 자료로 비교하며 이해한다", desc: "교과서/인강/참고서 모두 확인, 개념 노트 정리" }, { value: "C", label: "평소엔 안 하다가 시험 직전에 집중한다", desc: "시험 기간에만 도서관 행, 압박감을 즐김" }]},
+  { id: 3, question: "학습 후 복습할 때 나는?", options: [{ value: "A", label: "복습은 잘 안 한다. 한 번 푼 건 끝", desc: "'이건 아니까 패스', 실수도 '아차' 하고 끝냄" }, { value: "B", label: "틀린 문제를 완전히 이해할 때까지 파고든다", desc: "원인 분석, 관련 개념 확인, 복습 노트 작성" }, { value: "C", label: "복습 계획은 세우지만 실천은 잘 안 된다", desc: "'내일부터 해야지' 미루다가 시험 직전 벼락치기" }]},
+  { id: 4, question: "계획대로 공부가 안 될 때 나는?", options: [{ value: "A", label: "유연하게 넘기고 다른 과목부터 한다", desc: "융통성 있음, 계획 변경이 빠름" }, { value: "B", label: "못 지킨 부분 때문에 스트레스 받는다", desc: "완벽주의, 하나 밀리면 와르르 무너짐" }, { value: "C", label: "에라 모르겠다 하고 놀아버린다", desc: "포기가 빠름, 기분파" }]}
+];
 
 export default function DiagnosisPage() {
   const { updateSchedule } = useStudy(); 
@@ -30,253 +101,270 @@ export default function DiagnosisPage() {
   const [step, setStep] = useState<number>(1);
   const [isSubmitting, setIsSubmitting] = useState(false); 
   
-  const [info, setInfo] = useState({ school: "high", grade: "", semester: "1", subjects: [] as string[] });
+  // 기본 정보 상태
+  const [info, setInfo] = useState({ 
+    name: "", 
+    school: "high", 
+    grade: "", 
+    semester: "1", 
+    subjects: [] as string[] 
+  });
+  
   const [answers, setAnswers] = useState<Record<number, string>>({});
 
-  // Step 3: 과목별 이미지 관리를 위한 State
+  // OCR 관련 상태
   const [activeSubjectTab, setActiveSubjectTab] = useState<string>(""); 
   const [subjectImages, setSubjectImages] = useState<Record<string, string>>({}); 
   const [ocrAnalysis, setOcrAnalysis] = useState<Record<string, string>>({}); 
-
   const [ocrStatus, setOcrStatus] = useState<"idle" | "scanning" | "analyzing" | "done">("idle");
   const [ocrResult, setOcrResult] = useState<string>(""); 
 
+  const [fileObjects, setFileObjects] = useState<File[]>([]); 
+  const [fileSubjects, setFileSubjects] = useState<string[]>([]); 
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // 시간표 관련 상태
   const [selectedSlots, setSelectedSlots] = useState<TimeSlotSet>(new Set());
+  const [weeklyPlan, setWeeklyPlan] = useState<PlanItem[]>([]);
   const isDragging = useRef(false);
   const dragAction = useRef<"add" | "remove">("add"); 
-
   const [showSubSubjects, setShowSubSubjects] = useState(false);
 
-  const HOURS = Array.from({ length: 17 }, (_, i) => i + 8); 
-  const WEEK_DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-  
-  const MAIN_SUBJECTS = ["국어", "수학", "영어"];
-  const DETAIL_SUBJECTS = [
-    { category: "과학 탐구", items: ["물리", "화학", "생명과학", "지구과학", "통합과학"] },
-    { category: "사회/역사 탐구", items: ["한국사", "윤리", "지리", "역사", "일반사회", "통합사회"] },
-    { category: "기타", items: ["정보", "제2외국어", "한문", "기가"] }
-  ];
-
-  // 선택된 메인 과목들 추출 (국영수 중 선택한 것만)
+  // --- [수정] 주요 과목 필터링 및 정렬 (국어 -> 수학 -> 영어 순서 보장) ---
   const selectedMainSubjects = useMemo(() => {
-    return info.subjects.filter(sub => MAIN_SUBJECTS.includes(sub));
+    // 1. 메인 과목만 필터링
+    const filtered = info.subjects.filter(sub => MAIN_SUBJECTS.includes(sub));
+    
+    // 2. MAIN_SUBJECTS 배열의 순서대로 정렬 (국 -> 수 -> 영)
+    return filtered.sort((a, b) => {
+      return MAIN_SUBJECTS.indexOf(a) - MAIN_SUBJECTS.indexOf(b);
+    });
   }, [info.subjects]);
 
-  // 메인 과목 선택 여부 확인
   const hasMainSubject = selectedMainSubjects.length > 0;
 
-  // Step 3 진입 시 첫 번째 과목을 탭으로 자동 설정
+  // Step 3 진입 시 첫 번째 과목 자동 선택
   useEffect(() => {
     if (step === 3 && selectedMainSubjects.length > 0 && !activeSubjectTab) {
       setActiveSubjectTab(selectedMainSubjects[0]);
     }
   }, [step, selectedMainSubjects, activeSubjectTab]);
 
-  const USER_TYPES_INFO = {
-    A: { label: "스키마 오버로더", desc: "직관적이고 빠른 '스피드 러너'" },
-    B: { label: "코그니티브 터널러", desc: "깊이 있는 이해를 추구하는 '딥 다이버'" },
-    C: { label: "도파민 디스카운터", desc: "집중력이 폭발하는 '벼락치기 마스터'" }
-  };
-
-  const QUIZ_QUESTIONS = [
-    { id: 1, question: "문제를 풀 때 나의 모습은?", options: [{ value: "A", label: "빠르게 훑어보고 답을 선택한 뒤 넘어간다", desc: "'대충 맞겠지' 하는 직감적 풀이, 핵심 키워드 위주" }, { value: "B", label: "완벽히 이해할 때까지 붙잡고 고민한다", desc: "이해 안 되면 못 넘어감, 한 문제에 10분 이상 소요" }, { value: "C", label: "문제집을 펼치기까지가 제일 어렵다", desc: "시작하면 잘하는데 시작이 힘듦, 마감 직전 몰아서 함" }]},
-    { id: 2, question: "시험 공부를 할 때 나는?", options: [{ value: "A", label: "여러 문제를 빠르게 풀면서 감을 익힌다", desc: "양치기 선호, 틀린 문제는 가볍게 패스" }, { value: "B", label: "한 개념을 여러 자료로 비교하며 이해한다", desc: "교과서/인강/참고서 모두 확인, 개념 노트 정리" }, { value: "C", label: "평소엔 안 하다가 시험 직전에 집중한다", desc: "시험 기간에만 도서관 행, 압박감을 즐김" }]},
-    { id: 3, question: "학습 후 복습할 때 나는?", options: [{ value: "A", label: "복습은 잘 안 한다. 한 번 푼 건 끝", desc: "'이건 아니까 패스', 실수도 '아차' 하고 끝냄" }, { value: "B", label: "틀린 문제를 완전히 이해할 때까지 파고든다", desc: "원인 분석, 관련 개념 확인, 복습 노트 작성" }, { value: "C", label: "복습 계획은 세우지만 실천은 잘 안 된다", desc: "'내일부터 해야지' 미루다가 시험 직전 벼락치기" }]},
-    { id: 4, question: "계획대로 공부가 안 될 때 나는?", options: [{ value: "A", label: "유연하게 넘기고 다른 과목부터 한다", desc: "융통성 있음, 계획 변경이 빠름" }, { value: "B", label: "못 지킨 부분 때문에 스트레스 받는다", desc: "완벽주의, 하나 밀리면 와르르 무너짐" }, { value: "C", label: "에라 모르겠다 하고 놀아버린다", desc: "포기가 빠름, 기분파" }]}
-  ];
-
   const toggleSubject = (subject: string) => { setInfo(prev => { const exists = prev.subjects.includes(subject); return { ...prev, subjects: exists ? prev.subjects.filter(s => s !== subject) : [...prev.subjects, subject] }; }); };
-  
-  const schedule = useMemo(() => { 
-    const data: WeekData = {}; 
-    WEEK_DAYS.forEach((day, idx) => { 
-      let count = 0; 
-      selectedSlots.forEach(slot => { 
-        const [d] = slot.split('-'); 
-        if (parseInt(d) === idx) count++; 
-      }); 
-      data[day] = (count * 60).toString(); 
-    }); 
-    return data; 
-  }, [selectedSlots]);
-
   const updateSlot = (dayIdx: number, hour: number, action: "add" | "remove") => { const key = `${dayIdx}-${hour}`; setSelectedSlots(prev => { const next = new Set(prev); if (action === "add") next.add(key); else next.delete(key); return next; }); };
   const handleMouseDown = (dayIdx: number, hour: number) => { isDragging.current = true; const key = `${dayIdx}-${hour}`; dragAction.current = selectedSlots.has(key) ? "remove" : "add"; updateSlot(dayIdx, hour, dragAction.current); };
   const handleMouseEnter = (dayIdx: number, hour: number) => { if (!isDragging.current) return; updateSlot(dayIdx, hour, dragAction.current); };
-  
-  useEffect(() => { 
-    const onUp = () => { isDragging.current = false; }; 
-    window.addEventListener("mouseup", onUp); 
-    return () => window.removeEventListener("mouseup", onUp); 
-  }, []);
-
+  useEffect(() => { const onUp = () => { isDragging.current = false; }; window.addEventListener("mouseup", onUp); return () => window.removeEventListener("mouseup", onUp); }, []);
   const clearCurrentWeek = () => setSelectedSlots(new Set());
   const fillCurrentWeek = () => { const next = new Set<string>(); for (let d = 0; d < 7; d++) { for (let h of HOURS) next.add(`${d}-${h}`); } setSelectedSlots(next); };
   const calculateTotalHours = () => selectedSlots.size;
+  const finalTime = Math.round((selectedSlots.size * 60) / 7).toString(); 
 
-  const handleFileUpload = () => {
-    if (!activeSubjectTab) return;
-    
-    setOcrStatus("scanning");
-    setTimeout(() => setOcrStatus("analyzing"), 2000);
-    setTimeout(() => {
-      setOcrStatus("done");
-      setSubjectImages(prev => ({ ...prev, [activeSubjectTab]: "uploaded" }));
-      setOcrAnalysis(prev => ({ 
-        ...prev, 
-        [activeSubjectTab]: `${activeSubjectTab}: 풀이 과정은 좋으나 계산 실수가 잦습니다.` 
-      }));
-      setOcrResult(`${activeSubjectTab}: 풀이 과정은 좋으나 계산 실수가 잦습니다.`);
-    }, 4500);
+  const generateWeeklyPlan = () => {
+    const key = `${info.grade}-${info.semester}`; 
+    const dataSet = CURRICULUM_DATA[key] || CURRICULUM_DATA["1-1"]; 
+    const activeDaysIndex = new Set<number>();
+    const timePerDay: Record<number, number> = {}; 
+    selectedSlots.forEach(slot => { const [dayStr] = slot.split("-"); const dayIdx = parseInt(dayStr); activeDaysIndex.add(dayIdx); timePerDay[dayIdx] = (timePerDay[dayIdx] || 0) + 60; });
+    const sortedDays = Array.from(activeDaysIndex).sort((a, b) => a - b);
+    if (sortedDays.length === 0) return; 
+    const newPlan: PlanItem[] = sortedDays.map((dayIdx, index) => {
+      const dayName = WEEK_DAYS[dayIdx];
+      const subject = info.subjects.length > 0 ? info.subjects[index % info.subjects.length] : "자습";
+      const topics = dataSet[subject] || ["기초 개념 학습", "심화 문제 풀이", "오답 노트 정리"];
+      const topic = topics[index % topics.length];
+      return { day: dayName, isToday: index === 0, type: index % 2 === 0 ? "Concept" : "Review", subject: subject, topic: topic, time: timePerDay[dayIdx] };
+    });
+    setWeeklyPlan(newPlan);
   };
 
-  const startAnalysis = () => { setStep(5); setTimeout(() => setStep(6), 3000); };
-  
-  const calculateUserType = (): "A" | "B" | "C" => { 
-    const counts = { A: 0, B: 0, C: 0 }; 
-    Object.values(answers).forEach((val) => { 
-      if (val === 'A' || val === 'B' || val === 'C') { counts[val]++; } 
-    }); 
-    const max = Math.max(counts.A, counts.B, counts.C); 
-    if (counts.B === max) return "B"; 
-    if (counts.C === max) return "C"; 
-    return "A"; 
+  const triggerFileInput = () => {
+    if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+    }
+    fileInputRef.current?.click();
+  };
+
+  // --- [수정됨] OCR 핸들러 (로그 강화 + 강제 통과) ---
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !activeSubjectTab) return;
+
+    setOcrStatus("scanning"); 
+
+    try {
+      const { data: { text } } = await Tesseract.recognize(
+        file,
+        'kor+eng', // 한글+영어 동시 인식
+        { logger: m => console.log("[Tesseract Progress]", m) } // 진행 상황 로그
+      );
+
+      // 🔍 [로그 확인 포인트] F12 콘솔을 열어보세요
+      console.log("---------------------------------------------------");
+      console.log(`📸 [${activeSubjectTab}] OCR 원본 추출 텍스트:`);
+      console.log(text); 
+      console.log("---------------------------------------------------");
+
+      // 2. 키워드 검증
+      const keywords = SUBJECT_KEYWORDS[activeSubjectTab] || [];
+      const isMatch = keywords.some(keyword => text.includes(keyword));
+
+      // ✅ 성공 시 로직
+      const successLogic = () => {
+        setOcrStatus("analyzing");
+        setTimeout(() => {
+          setOcrStatus("done");
+          setSubjectImages(prev => ({ ...prev, [activeSubjectTab]: "uploaded" }));
+          
+          const analysisText = `${activeSubjectTab}: 문제 풀이 패턴 분석 결과가 여기에 표시됩니다.`;
+          setOcrAnalysis(prev => ({ ...prev, [activeSubjectTab]: analysisText }));
+          setOcrResult("분석 완료");
+        }, 1500);
+        
+        // 파일 저장
+        setFileObjects(prev => [...prev, file]);
+        setFileSubjects(prev => [...prev, activeSubjectTab]);
+      };
+
+      if (isMatch) {
+        // OCR 검증 성공
+        console.log("✅ 키워드 매칭 성공!");
+        successLogic();
+      } else {
+        // ❌ OCR 검증 실패했지만, 사용자에게 물어보고 강제 통과
+        console.warn("⚠️ 키워드 매칭 실패");
+        setOcrStatus("idle");
+        
+        // 인식된 텍스트 앞부분만 조금 보여줌
+        const previewText = text.replace(/\s+/g, ' ').slice(0, 50);
+        
+        const forcePass = window.confirm(
+          `⚠️ OCR이 '${activeSubjectTab}' 키워드를 찾지 못했습니다.\n\n` +
+          `[인식된 내용 일부]\n"${previewText}..."\n\n` +
+          `그래도 '${activeSubjectTab}' 문제가 맞다면 [확인]을 눌러 진행하세요.`
+        );
+
+        if (forcePass) {
+            console.log("⏩ 사용자 강제 통과");
+            successLogic(); // 강제 실행
+        } else {
+            // 취소 시 초기화
+            if (fileInputRef.current) fileInputRef.current.value = "";
+        }
+      }
+
+    } catch (error) {
+      console.error("OCR Error:", error);
+      setOcrStatus("idle");
+      alert("이미지 분석 중 오류가 발생했습니다.");
+    }
+  };
+
+  const startAnalysis = () => { setStep(5); generateWeeklyPlan(); setTimeout(() => setStep(6), 3000); };
+  const calculateUserType = (): "A" | "B" | "C" => { const counts = { A: 0, B: 0, C: 0 }; Object.values(answers).forEach((val) => { if (val === 'A' || val === 'B' || val === 'C') { counts[val]++; } }); const max = Math.max(counts.A, counts.B, counts.C); if (counts.B === max) return "B"; if (counts.C === max) return "C"; return "A"; };
+  const getAnalysisText = () => USER_TYPES_INFO[calculateUserType()].desc;
+
+  const saveAllData = async () => {
+    setIsSubmitting(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const accessToken = session?.access_token;
+      const userId = session?.user?.id;
+
+      if (!userId || !accessToken) {
+        alert("로그인이 필요합니다.");
+        router.push('/login');
+        return false;
+      }
+
+      const jsonHeaders = { 
+        "Content-Type": "application/json", 
+        "Authorization": `Bearer ${accessToken}` 
+      };
+
+      const basicInfoRes = await fetch("https://mirror-backend-5j11.onrender.com/setup/basic-info", { 
+        method: "POST", headers: jsonHeaders,
+        body: JSON.stringify({
+          user_id: userId,
+          student_name: info.name,
+          school_grade: parseInt(info.grade), 
+          semester: parseInt(info.semester), 
+          subjects: info.subjects
+        }),
+      });
+      if (!basicInfoRes.ok) throw new Error("기본 정보 저장 실패");
+
+      const cognitiveType = COGNITIVE_TYPES[calculateUserType()];
+      const styleRes = await fetch("https://mirror-backend-5j11.onrender.com/setup/style-quiz", { 
+        method: "POST", headers: jsonHeaders,
+        body: JSON.stringify({ user_id: userId, cognitive_type: cognitiveType }),
+      });
+      if (!styleRes.ok) throw new Error("성향 진단 저장 실패");
+
+      if (fileObjects.length > 0) {
+        const formData = new FormData();
+        formData.append("user_id", userId);
+        fileObjects.forEach((file) => formData.append("files", file));
+        fileSubjects.forEach((sub) => {
+          const enumName = SUBJECT_ENUM_MAP[sub] || "ETC";
+          formData.append("subjects", enumName);
+        });
+
+        const ocrRes = await fetch("https://mirror-backend-5j11.onrender.com/setup/solving-image", { 
+            method: "POST",
+            headers: { "Authorization": `Bearer ${accessToken}` },
+            body: formData
+        });
+        if (!ocrRes.ok) console.warn("OCR 서버 저장 실패");
+      }
+
+      console.log("✅ 모든 데이터 저장 완료");
+      return true;
+
+    } catch (error) {
+      console.error("Save Error:", error);
+      alert("데이터 저장 중 오류가 발생했습니다. 다시 시도해주세요.");
+      return false;
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleNext = async () => {
+    if (step === 1) { setStep(2); return; }
+    if (step === 2) { if (!hasMainSubject) { const success = await saveAllData(); if (success) setStep(4); } else { setStep(3); } return; }
+    if (step === 3) { const success = await saveAllData(); if (success) setStep(4); return; }
+    if (step === 4) { updateSchedule({}); startAnalysis(); return; }
+    setStep(step + 1);
+  };
+
+  const handleBack = async () => {
+      if (step === 1) {
+        const ok = window.confirm("역할 선택 화면으로 돌아가시겠습니까?\n입력한 내용은 저장되지 않습니다.");
+        if (ok) {
+           const { data: { session } } = await supabase.auth.getSession();
+           if (session?.user) {
+              await supabase.from('users').update({ role: null }).eq('id', session.user.id);
+              router.replace('/onboarding/role');
+           }
+        }
+        return;
+      }
+      if (step === 4 && !hasMainSubject) { setStep(2); } else { setStep(step - 1); }
   };
 
   const canGoNext = () => {
-    if (step === 1) return info.grade && info.semester && info.subjects.length > 0;
+    if (step === 1) return info.name.trim().length > 0 && info.grade && info.semester && info.subjects.length > 0;
     if (step === 2) return Object.keys(answers).length === 4; 
     if (step === 3) return Object.keys(subjectImages).length > 0; 
     if (step === 4) return selectedSlots.size > 0;
     return false;
   };
 
-  const finalTime = Math.round((selectedSlots.size * 60) / 7).toString(); 
-
-  // === handleNext 함수 수정 (끊김 해결 및 정수형 변환 적용) ===
-  const handleNext = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    const accessToken = session?.access_token;
-    const userId = session?.user?.id; 
-
-    // [Step 1] 기본 정보 저장
-    if (step === 1) {
-      if (isSubmitting) return;
-      setIsSubmitting(true);
-
-      try {
-        // 명세서에 따라 String -> Integer로 변환
-        const requestBody = {
-          user_id: userId,
-          school_grade: parseInt(info.grade), // 숫자 변환
-          semester: parseInt(info.semester),  // 숫자 변환
-          subjects: info.subjects
-        };
-
-        const response = await fetch("https://mirror-backend-5j11.onrender.com/setup/basic-info", { 
-          method: "POST",
-          headers: { 
-            "Content-Type": "application/json", 
-            "Authorization": accessToken ? `Bearer ${accessToken}` : "" 
-          },
-          body: JSON.stringify(requestBody),
-        });
-
-        const result = await response.json();
-        
-        if (response.ok && result.success) {
-          console.log("✅ Step 1 성공:", result.message);
-          setStep(step + 1);
-        } else {
-          console.warn("⚠️ 백엔드 오류:", result);
-          alert(`저장 실패: ${result.message || result.detail || "알 수 없는 에러"}`);
-        }
-      } catch (error) { 
-        console.error("통신 에러:", error); 
-        alert("서버 연결 실패 (백엔드 로그를 확인하세요)");
-      } finally { 
-        setIsSubmitting(false); 
-      }
-      return;
-    }
-
-    // [Step 2] 성향 분석 저장
-    if (step === 2) {
-      if (isSubmitting) return;
-      setIsSubmitting(true);
-
-      try {
-        if (!userId || !accessToken) {
-           alert("로그인 세션이 만료되었습니다.");
-           router.push('/login');
-           return;
-        }
-
-        const typeKey = calculateUserType();
-        const cognitiveType = COGNITIVE_TYPES[typeKey];
-
-        const response = await fetch("https://mirror-backend-5j11.onrender.com/setup/style-quiz", { 
-          method: "POST",
-          headers: { 
-            "Content-Type": "application/json", 
-            "Authorization": accessToken ? `Bearer ${accessToken}` : "" 
-          },
-          body: JSON.stringify({ 
-            user_id: userId, 
-            cognitive_type: cognitiveType 
-          }),
-        });
-
-        const result = await response.json();
-
-        if (response.ok && result.success) {
-           console.log("✅ Step 2 성공:", cognitiveType);
-           // ★ 핵심 로직: 메인 과목(국/영/수)이 있으면 Step 3(OCR), 없으면 Step 4(시간표)로 점프
-           if (hasMainSubject) {
-             setStep(3);
-           } else {
-             console.log("⏩ 메인 과목 없음 -> OCR 단계 건너뜀");
-             setStep(4);
-           }
-        } else {
-           alert(`저장 실패: ${result.message || result.detail}`);
-        }
-      } catch (error) { 
-        console.error("통신 에러:", error); 
-        alert("서버 통신 에러"); 
-      } finally { 
-        setIsSubmitting(false); 
-      }
-      return;
-    }    
-    
-    // [Step 4] 시간표 완료
-    if (step === 4) {
-      updateSchedule({});
-      startAnalysis(); 
-      return;
-    }
-    
-    // 그 외 일반적인 단계 이동
-    setStep(step + 1);
-  };
-
-  // 뒤로 가기 핸들러 (건너뛰기 로직 반영)
-  const handleBack = () => {
-      if (step === 4 && !hasMainSubject) {
-        // 메인 과목 없으면 Step 3가 스킵되었으므로, 바로 Step 2로 이동
-        setStep(2);
-      } else {
-        setStep(step - 1);
-      }
-  };
-
-  const getAnalysisText = () => USER_TYPES_INFO[calculateUserType()].desc;
-
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-6 select-none">
       
-      {/* Progress Bar */}
       {step < 5 && (
         <div className="w-full max-w-md mb-8">
           <div className="flex justify-between text-xs font-bold text-gray-400 mb-2 uppercase tracking-wide">
@@ -291,7 +379,6 @@ export default function DiagnosisPage() {
         </div>
       )}
 
-      {/* --- STEP 1: 기본 정보 --- */}
       {step === 1 && (
         <div className="bg-white max-w-md w-full p-8 rounded-3xl shadow-xl space-y-6 animate-fade-in-up">
           <div className="text-center">
@@ -299,10 +386,21 @@ export default function DiagnosisPage() {
               <School className="w-6 h-6 text-blue-600" />
             </div>
             <h2 className="text-2xl font-bold text-gray-900">고등학교 학습 진단</h2>
-            <p className="text-gray-500 text-sm mt-1">학년과 집중할 과목을 선택해주세요.</p>
+            <p className="text-gray-500 text-sm mt-1">학생 정보와 집중할 과목을 선택해주세요.</p>
           </div>
-          
           <div className="space-y-6">
+            <div>
+              <label className="block text-xs font-bold text-gray-500 mb-2 ml-1 flex items-center gap-1">
+                <User className="w-3 h-3" /> 이름 (실명)
+              </label>
+              <input 
+                type="text" 
+                value={info.name}
+                onChange={(e) => setInfo({...info, name: e.target.value})}
+                placeholder="홍길동"
+                className="w-full p-4 rounded-xl border-2 border-gray-200 focus:border-blue-500 focus:outline-none focus:bg-blue-50/30 font-bold text-gray-900 placeholder-gray-300 transition-colors"
+              />
+            </div>
             <div className="space-y-3">
               <div className="flex gap-3">
                 <div className="flex-1">
@@ -357,7 +455,6 @@ export default function DiagnosisPage() {
         </div>
       )}
 
-      {/* --- STEP 2: 학습 성향 (MBTI) --- */}
       {step === 2 && (
         <div className="bg-white max-w-xl w-full p-8 rounded-3xl shadow-xl space-y-8 animate-fade-in-up">
           <div className="text-center">
@@ -396,17 +493,15 @@ export default function DiagnosisPage() {
         </div>
       )}
 
-      {/* --- STEP 3: 풀이 습관 진단 (OCR) - 탭 UI 적용 --- */}
       {step === 3 && hasMainSubject && (
         <div className="bg-white max-w-md w-full p-8 rounded-3xl shadow-xl space-y-6 animate-fade-in-up">
           <div className="text-center">
             <h2 className="text-2xl font-bold text-gray-900">풀이 습관 진단</h2>
             <p className="text-gray-500 text-sm mt-1">
-              {ocrStatus === "done" ? "분석이 완료되었습니다." : "과목별 문제 풀이 사진을 올려주세요."}
+              {ocrStatus === "done" ? "분석이 완료되었습니다!" : "과목별 문제 풀이 사진을 올려주세요."}
             </p>
           </div>
 
-          {/* [추가] 과목 탭 버튼 */}
           <div className="flex bg-gray-100 p-1 rounded-xl">
             {selectedMainSubjects.map((subject) => {
               const isActive = activeSubjectTab === subject;
@@ -426,40 +521,48 @@ export default function DiagnosisPage() {
             })}
           </div>
           
+          <input 
+            type="file" 
+            ref={fileInputRef} 
+            onChange={handleFileUpload} 
+            accept="image/*" 
+            className="hidden" 
+          />
+
           <div className="relative min-h-[300px]">
-            {/* 분석 결과가 있을 때 */}
             {subjectImages[activeSubjectTab] === "uploaded" && ocrStatus === "done" ? (
-               <div className="border-2 border-green-100 rounded-2xl p-6 bg-green-50 animate-fade-in h-full flex flex-col justify-center">
-                <div className="flex items-center gap-2 mb-3">
-                   <FileSearch className="w-5 h-5 text-green-600" />
-                   <h3 className="font-bold text-green-800">{activeSubjectTab} 분석 완료</h3>
+               <div className="border-2 border-green-100 rounded-2xl p-6 bg-green-50 animate-fade-in h-full flex flex-col items-center justify-center text-center">
+                <div className="flex items-center justify-center w-16 h-16 bg-green-100 rounded-full mb-4 animate-bounce-subtle">
+                   <CheckCircle2 className="w-8 h-8 text-green-600" />
                 </div>
-                <p className="text-sm text-green-700 font-medium leading-relaxed">
-                  "{ocrAnalysis[activeSubjectTab]}"
+                <h3 className="font-bold text-xl text-green-800 mb-2">{activeSubjectTab} 분석 완료</h3>
+                <p className="text-sm text-green-700 font-medium leading-relaxed mb-6">
+                  풀이 습관 데이터가 저장되었습니다.<br/>
+                  <span className="font-bold underline">최종 리포트</span>에서 결과를 확인하세요!
                 </p>
                 <button 
                   onClick={() => {
                       setSubjectImages(prev => { const n = {...prev}; delete n[activeSubjectTab]; return n; });
                       setOcrStatus("idle");
+                      if (fileInputRef.current) fileInputRef.current.value = "";
                   }}
-                  className="mt-4 text-xs text-gray-400 underline"
+                  className="text-xs text-gray-400 underline hover:text-gray-600"
                 >
-                  다시 업로드하기
+                  다른 사진으로 다시 올리기
                 </button>
               </div>
             ) : (
-                /* 업로드 전 */
                 <>
                     {(ocrStatus === "idle") && (
                     <div 
-                        onClick={handleFileUpload}
+                        onClick={triggerFileInput} 
                         className="h-full border-2 border-dashed border-gray-300 rounded-2xl p-10 flex flex-col items-center justify-center cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition-all group"
                     >
                         <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4 group-hover:bg-blue-100 transition-colors">
                         <Camera className="w-8 h-8 text-gray-400 group-hover:text-blue-500" />
                         </div>
                         <p className="font-bold text-gray-600">{activeSubjectTab} 풀이 사진</p>
-                        <p className="text-xs text-gray-400 mt-1">클릭하여 업로드</p>
+                        <p className="text-xs text-gray-400 mt-1">클릭하여 업로드 (OCR 자동 검사)</p>
                     </div>
                     )}
 
@@ -467,7 +570,9 @@ export default function DiagnosisPage() {
                     <div className="h-full border-2 border-blue-100 rounded-2xl p-10 flex flex-col items-center justify-center bg-blue-50 relative overflow-hidden">
                         <ScanLine className="w-16 h-16 text-blue-500 animate-pulse mb-4" />
                         <div className="absolute top-0 left-0 w-full h-1 bg-blue-400 shadow-[0_0_20px_rgba(59,130,246,0.8)] animate-[scan_2s_ease-in-out_infinite]"></div>
-                        <p className="font-bold text-blue-700 animate-pulse">{activeSubjectTab} 분석 중...</p>
+                        <p className="font-bold text-blue-700 animate-pulse">
+                            {ocrStatus === "scanning" ? "글자 읽는 중..." : "과목 일치 여부 확인 중..."}
+                        </p>
                     </div>
                     )}
                 </>
@@ -476,7 +581,6 @@ export default function DiagnosisPage() {
         </div>
       )}
 
-      {/* --- STEP 4: 시간표 그리드 --- */}
       {step === 4 && (
         <div className="bg-white max-w-xl w-full p-6 rounded-3xl shadow-xl space-y-4 animate-fade-in-up">
           <div className="text-center">
@@ -532,18 +636,16 @@ export default function DiagnosisPage() {
         </div>
       )}
 
-      {/* --- 네비게이션 버튼 --- */}
       {step < 5 && (
         <div className="max-w-md w-full mt-6 flex gap-3">
-          {step > 1 && (
-            <button 
-              onClick={handleBack} 
-              disabled={isSubmitting}
-              className="px-6 py-4 bg-gray-200 text-gray-700 rounded-xl font-bold hover:bg-gray-300 transition-colors disabled:opacity-50"
-            >
-              <ChevronLeft className="w-6 h-6" />
-            </button>
-          )}
+          <button 
+            onClick={handleBack} 
+            disabled={isSubmitting}
+            className="px-6 py-4 bg-gray-200 text-gray-700 rounded-xl font-bold hover:bg-gray-300 transition-colors disabled:opacity-50"
+          >
+            <ChevronLeft className="w-6 h-6" />
+          </button>
+          
           <button 
             onClick={handleNext}
             disabled={!canGoNext() || isSubmitting}
@@ -564,26 +666,23 @@ export default function DiagnosisPage() {
         </div>
       )}
 
-      {/* --- STEP 5: AI 분석 중 --- */}
       {step === 5 && (
         <div className="text-center space-y-6 animate-fade-in">
           <Loader2 className="w-16 h-16 text-blue-600 animate-spin mx-auto" />
           <h2 className="text-2xl font-bold text-gray-900">Mirror AI가 분석 중입니다...</h2>
           <div className="space-y-3 text-gray-500">
             <p>🧠 학습 성향 분석: {getAnalysisText()}</p>
-            {/* [수정] 메인 과목 미선택 시 문구 조정 */}
             <p>📝 풀이 습관: {hasMainSubject ? (ocrResult || '분석 중...') : '분석 생략됨 (주요 과목 미선택)'}</p>
             <p>📐 하루 평균 가용 시간: {Math.round((selectedSlots.size * 60) / 7)}분</p>
           </div>
         </div>
       )}
 
-      {/* --- STEP 6: 최종 처방 --- */}
       {step === 6 && (
         <div className="max-w-6xl w-full space-y-6 animate-scale-in pb-10">
           <div className="text-center space-y-2 mb-8">
             <h2 className="text-3xl font-bold text-gray-900">
-              고{info.grade} {info.semester}학기 <span className="text-blue-600">Mirror Morphing</span> 솔루션
+              {info.name}님의 고{info.grade} {info.semester}학기 <span className="text-blue-600">Mirror Morphing</span> 솔루션
             </h2>
             <div className="inline-flex items-center gap-2 bg-blue-50 px-3 py-1 rounded-full">
               <span className="text-sm font-bold text-blue-700">{getAnalysisText()}</span>
@@ -591,76 +690,129 @@ export default function DiagnosisPage() {
           </div>
           
           <div className="grid md:grid-cols-12 gap-6">
-            {/* 결과 화면 UI는 기존과 동일하게 유지 */}
-            <div className="md:col-span-7 bg-white p-6 rounded-3xl shadow-xl border border-gray-100 flex flex-col h-full">
-               <div className="flex items-center justify-between mb-6">
-                 <div className="flex items-center gap-2">
-                   <div className="p-2 rounded-lg bg-blue-100">
-                     <Map className="w-5 h-5 text-blue-600" />
-                   </div>
-                   <h3 className="font-bold text-gray-800 text-lg">
-                     이번 주 맞춤 커리큘럼
-                   </h3>
-                 </div>
-                 <span className="text-xs font-bold text-gray-400 bg-gray-100 px-2 py-1 rounded">AI Generated</span>
-               </div>
+            <div className="md:col-span-7 flex flex-col gap-6">
                
-               <div className="flex-1 overflow-hidden">
-                  <div className="bg-gray-50 rounded-2xl p-4 h-full">
-                    <div className="space-y-3">
-                      {["Mon", "Tue", "Wed", "Thu", "Fri"].map((day, idx) => {
-                          const isToday = idx === 0; 
-                          return (
-                           <div key={day} className={`flex items-center gap-3 p-3 rounded-xl transition-all ${isToday ? 'bg-white shadow-md border border-blue-200 scale-102' : 'hover:bg-white hover:shadow-sm'}`}>
-                             <div className={`w-12 py-2 rounded-lg text-center font-bold text-sm ${isToday ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-500'}`}>{day}</div>
-                             <div className="flex-1">
-                               <div className="flex items-center gap-2 mb-0.5">
-                                 <span className={`text-xs font-bold px-1.5 rounded ${idx % 2 === 0 ? 'bg-indigo-100 text-indigo-700' : 'bg-green-100 text-green-700'}`}>{idx % 2 === 0 ? "진도(Concept)" : "복습(Review)"}</span>
-                                 {isToday && <span className="text-[10px] font-bold text-red-500 animate-pulse">● Today</span>}
+               <div className="bg-white p-6 rounded-3xl shadow-xl border border-gray-100 flex flex-col h-full">
+                 <div className="flex items-center justify-between mb-6">
+                   <div className="flex items-center gap-2">
+                     <div className="p-2 rounded-lg bg-blue-100">
+                       <Map className="w-5 h-5 text-blue-600" />
+                     </div>
+                     <h3 className="font-bold text-gray-800 text-lg">
+                       이번 주 맞춤 커리큘럼
+                     </h3>
+                   </div>
+                   <span className="text-xs font-bold text-gray-400 bg-gray-100 px-2 py-1 rounded">AI Generated</span>
+                 </div>
+                 
+                 <div className="flex-1 overflow-hidden">
+                    <div className="bg-gray-50 rounded-2xl p-4 h-full overflow-y-auto custom-scrollbar">
+                      {weeklyPlan.length === 0 ? (
+                        <div className="text-center text-gray-400 py-10">설정된 공부 시간이 없습니다.</div>
+                      ) : (
+                        <div className="space-y-3">
+                          {weeklyPlan.map((plan, idx) => (
+                             <div key={`${plan.day}-${idx}`} className={`flex items-center gap-3 p-3 rounded-xl transition-all ${plan.isToday ? 'bg-white shadow-md border border-blue-200 scale-102' : 'hover:bg-white hover:shadow-sm'}`}>
+                               <div className={`w-12 py-2 rounded-lg text-center font-bold text-sm ${plan.isToday ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-500'}`}>
+                                 {plan.day}
                                </div>
-                               <p className={`text-sm font-semibold ${isToday ? 'text-gray-900' : 'text-gray-500'}`}>{idx % 2 === 0 ? "수학 I: 지수함수와 로그함수" : "지수함수 필수 유형 문제풀이"}</p>
+                               <div className="flex-1">
+                                 <div className="flex items-center gap-2 mb-0.5">
+                                   <span className={`text-xs font-bold px-1.5 rounded ${plan.type === 'Concept' ? 'bg-indigo-100 text-indigo-700' : 'bg-green-100 text-green-700'}`}>
+                                     {plan.type === 'Concept' ? "진도(Concept)" : "복습(Review)"}
+                                   </span>
+                                   {plan.isToday && <span className="text-[10px] font-bold text-red-500 animate-pulse">● Today</span>}
+                                 </div>
+                                 <p className={`text-sm font-semibold ${plan.isToday ? 'text-gray-900' : 'text-gray-500'}`}>
+                                   {plan.subject}: {plan.topic}
+                                 </p>
+                               </div>
+                               <div className="text-right min-w-15">
+                                 <span className="text-xs font-bold text-gray-400 block">목표</span>
+                                 <span className={`text-sm font-bold ${plan.isToday ? 'text-blue-600' : 'text-gray-600'}`}>
+                                   {plan.time}분
+                                 </span>
+                               </div>
                              </div>
-                             <div className="text-right min-w-15"><span className="text-xs font-bold text-gray-400 block">목표</span><span className={`text-sm font-bold ${isToday ? 'text-blue-600' : 'text-gray-600'}`}>{finalTime}분</span></div>
-                           </div>
-                          )
-                      })}
+                          ))}
+                        </div>
+                      )}
                     </div>
-                  </div>
+                 </div>
                </div>
             </div>
 
-            <div className="md:col-span-5 flex flex-col h-full">
-              <div className="bg-blue-600 text-white p-6 rounded-3xl shadow-xl shadow-blue-200 flex flex-col relative overflow-hidden h-full">
+            <div className="md:col-span-5 flex flex-col gap-6">
+              
+              <div className="bg-blue-600 text-white p-6 rounded-3xl shadow-xl shadow-blue-200 flex flex-col relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-64 h-64 bg-white opacity-5 rounded-full blur-3xl transform translate-x-1/2 -translate-y-1/2"></div>
                 <div className="flex items-center gap-2 mb-6 relative z-10">
                   <div className="bg-white/20 p-2 rounded-lg"><ListTodo className="w-5 h-5 text-white" /></div>
                   <h3 className="font-bold text-lg">오늘의 미션 (Today)</h3>
                 </div>
-                <div className="flex-1 space-y-4 relative z-10">
+                
+                {weeklyPlan.length > 0 && (
+                <div className="space-y-4 relative z-10">
                   <div className="bg-white/10 rounded-2xl p-5 border border-white/10 backdrop-blur-sm">
                     <div className="flex justify-between items-end mb-4 border-b border-white/20 pb-4">
                       <span className="text-blue-100 text-sm font-medium">확보 시간</span>
                       <div className="text-right">
-                        <span className="text-3xl font-bold">{finalTime}분</span>
+                        <span className="text-3xl font-bold">{weeklyPlan[0].time}분</span>
                         <span className="text-xs text-blue-200 block">예상 성취도 +1.5%</span>
                       </div>
                     </div>
                     <ul className="space-y-0">
                       <li className="flex gap-4 pb-6 border-l-2 border-blue-400/30 pl-4 relative">
                         <div className="absolute -left-2.25 top-0 w-4 h-4 rounded-full bg-blue-400 border-4 border-blue-600"></div>
-                        <div><span className="text-xs font-bold text-blue-200 block mb-1">워밍업</span><p className="font-bold">기출 오답 복습</p></div>
+                        <div>
+                          <span className="text-xs font-bold text-blue-200 block mb-1">워밍업</span>
+                          <p className="font-bold">지난 주 {weeklyPlan[0].subject} 오답 확인</p>
+                        </div>
                       </li>
                         <li className="flex gap-4 pl-4 relative">
                         <div className="absolute -left-2.25 top-0 w-4 h-4 rounded-full bg-white border-4 border-blue-600"></div>
-                        <div><span className="text-xs font-bold text-white bg-blue-500/50 px-2 py-0.5 rounded-full mb-1 inline-block">메인</span><p className="font-bold text-xl">필수 유형 10선 풀이</p></div>
+                        <div>
+                          <span className="text-xs font-bold text-white bg-blue-500/50 px-2 py-0.5 rounded-full mb-1 inline-block">메인 학습</span>
+                          <p className="font-bold text-xl">{weeklyPlan[0].topic}</p>
+                        </div>
                       </li>
                     </ul>
                   </div>
                   <div className="mt-auto">
-                    <Link href="/student/dashboard" className="w-full bg-white text-blue-600 py-4 rounded-xl font-bold text-center block">시작하기</Link>
+                    <Link href="/student/dashboard" className="w-full bg-white text-blue-600 py-4 rounded-xl font-bold text-center block hover:bg-blue-50 transition-colors">
+                      {weeklyPlan[0].subject} 학습 시작하기
+                    </Link>
                   </div>
                 </div>
+                )}
               </div>
+
+              {Object.keys(ocrAnalysis).length > 0 && (
+                <div className="bg-white p-6 rounded-3xl shadow-lg border border-purple-100 relative overflow-hidden">
+                   <div className="absolute top-0 right-0 p-6 opacity-10">
+                     <BrainCircuit className="w-24 h-24 text-purple-600" />
+                   </div>
+                   <div className="relative z-10">
+                     <h3 className="font-bold text-gray-800 text-lg flex items-center gap-2 mb-4">
+                       <FileText className="w-5 h-5 text-purple-600" />
+                       AI 풀이 습관 분석
+                     </h3>
+                     <div className="space-y-3">
+                       {Object.entries(ocrAnalysis).map(([subject, analysis]) => (
+                         <div key={subject} className="bg-purple-50 p-4 rounded-xl border border-purple-100">
+                           <h4 className="font-bold text-purple-700 text-sm mb-1 flex items-center gap-2">
+                             <AlertCircle className="w-3 h-3"/> {subject}
+                           </h4>
+                           <p className="text-xs text-gray-600 leading-relaxed font-medium">
+                             {analysis}
+                           </p>
+                         </div>
+                       ))}
+                     </div>
+                   </div>
+                </div>
+              )}
+
             </div>
           </div>
         </div>
