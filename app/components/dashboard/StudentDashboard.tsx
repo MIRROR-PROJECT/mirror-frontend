@@ -69,6 +69,7 @@ export default function StudentDashboard({ user }: { user: UserProps }) {
   // selectedSubject 상태는 더 이상 필요 없으므로 삭제하거나 유지해도 무방 (여기선 삭제)
   const [mounted, setMounted] = useState(false);
   const [timeline, setTimeline] = useState<TimeSlot[]>([]);
+  const [missionDate, setMissionDate] = useState<string>("");
 
   const currentTasksList = tasks || [];
 
@@ -107,8 +108,8 @@ export default function StudentDashboard({ user }: { user: UserProps }) {
           if (data.success) {
             console.log("✅ [StudentDashboard] API 요청 성공");
             console.log("🔍 [StudentDashboard] data.data 구조:", data.data);
-            console.log("🔍 [StudentDashboard] data.data.tasks 타입:", typeof data.data?.tasks);
-            console.log("🔍 [StudentDashboard] data.data.tasks 값:", data.data?.tasks);
+            console.log("🔍 [StudentDashboard] data.data.schedule 타입:", typeof data.data?.schedule);
+            console.log("🔍 [StudentDashboard] data.data.schedule 값:", data.data?.schedule);
 
             // data.data가 없는 경우 처리
             if (!data.data) {
@@ -117,8 +118,13 @@ export default function StudentDashboard({ user }: { user: UserProps }) {
               return;
             }
 
-            // tasks가 배열인지 확인 (실제 API는 'schedule'이 아니라 'tasks' 사용)
-            const schedule = data.data.tasks;
+            // mission_date 저장
+            if (data.data.mission_date) {
+              setMissionDate(data.data.mission_date);
+            }
+
+            // schedule이 배열인지 확인 (API 명세서대로 schedule 사용)
+            const schedule = data.data.schedule;
 
             if (schedule === undefined || schedule === null) {
               console.warn("⚠️ [StudentDashboard] schedule이 undefined 또는 null입니다. 빈 배열로 처리합니다.");
@@ -173,9 +179,40 @@ export default function StudentDashboard({ user }: { user: UserProps }) {
               }
             });
 
-            const sortedTimeline = tempTimeline.sort((a, b) => a.startHour - b.startHour);
-            console.log("✅ [StudentDashboard] 최종 타임라인 설정:", sortedTimeline);
-            setTimeline(sortedTimeline);
+            // [NEW] 연속된 같은 일정 병합 로직
+            const mergedTimeline: TimeSlot[] = [];
+            let i = 0;
+
+            while (i < tempTimeline.length) {
+              const current = tempTimeline[i];
+              let duration = 1;
+              let endHour = current.endHour;
+
+              // 다음 슬롯들이 같은 제목과 타입을 가지고 연속되는지 확인
+              while (
+                i + duration < tempTimeline.length &&
+                tempTimeline[i + duration].label === current.label &&
+                tempTimeline[i + duration].type === current.type &&
+                tempTimeline[i + duration].startHour === endHour
+              ) {
+                endHour = tempTimeline[i + duration].endHour;
+                duration++;
+              }
+
+              // 병합된 타임슬롯 생성
+              mergedTimeline.push({
+                ...current,
+                endHour: endHour,
+                duration: duration
+              });
+
+              i += duration;
+            }
+
+            console.log("🔗 [StudentDashboard] 병합 전 타임라인:", tempTimeline.length, "개");
+            console.log("🔗 [StudentDashboard] 병합 후 타임라인:", mergedTimeline.length, "개");
+            console.log("✅ [StudentDashboard] 최종 타임라인 설정:", mergedTimeline);
+            setTimeline(mergedTimeline);
           } else {
             console.warn("⚠️ [StudentDashboard] API success=false:", data.message);
             setTimeline([]);
@@ -243,6 +280,11 @@ export default function StudentDashboard({ user }: { user: UserProps }) {
                 <div>
                   <div className="flex items-center gap-2 mb-1">
                     <span className="bg-blue-100 px-2 py-1 rounded text-xs font-bold text-blue-600">Today's Schedule</span>
+                    {missionDate && (
+                      <span className="text-xs text-gray-400 font-medium">
+                        📅 {new Date(missionDate + 'T00:00:00').toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' })}
+                      </span>
+                    )}
                   </div>
                   <h2 className="text-2xl font-bold text-gray-800">오늘의 학습 시간표</h2>
                 </div>

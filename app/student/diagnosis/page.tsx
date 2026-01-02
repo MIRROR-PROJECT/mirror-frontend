@@ -423,15 +423,11 @@ export default function DiagnosisPage() {
           setAiWeeklyData(planData);
 
           // UI 호환성을 위해 PlanItem 형식으로 변환하여 weeklyPlan 업데이트
-          // [Fix] UTC가 아닌 로컬 타임 기준으로 오늘 날짜 계산
-          const today = new Date();
-          const offset = today.getTimezoneOffset() * 60000;
-          const todayStr = new Date(today.getTime() - offset).toISOString().split('T')[0];
-
-          console.log("📅 [AI계획] Local Today:", todayStr);
+          // [Fix] 백엔드 데이터를 신뢰 - 첫 번째 날을 "오늘"로 간주
+          console.log("📅 [AI계획] 백엔드 날짜 기준 사용 (로컬 비교 제거)");
           console.log("📅 [AI계획] API Dates:", planData.weekly_plan.map(p => p.date));
 
-          const convertedPlan: PlanItem[] = planData.weekly_plan.map((day) => {
+          const convertedPlan: PlanItem[] = planData.weekly_plan.map((day, index) => {
             // 요일 매핑 (MONDAY -> Mon)
             const dayMap: Record<string, string> = { "MONDAY": "Mon", "TUESDAY": "Tue", "WEDNESDAY": "Wed", "THURSDAY": "Thu", "FRIDAY": "Fri", "SATURDAY": "Sat", "SUNDAY": "Sun" };
             const dayShort = dayMap[day.day_of_week] || day.day_of_week;
@@ -443,7 +439,7 @@ export default function DiagnosisPage() {
 
             return {
               day: dayShort,
-              isToday: day.date === todayStr, // 실제 날짜 비교
+              isToday: index === 0, // 백엔드가 보낸 첫 번째 날을 "오늘"로 간주
               type: "Concept",
               subject: subject,
               topic: topic,
