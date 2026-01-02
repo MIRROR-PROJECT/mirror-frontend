@@ -7,14 +7,14 @@ import {
   ChevronRight, ChevronLeft, RefreshCcw, 
   Maximize, Map, ListTodo, FileSearch, 
   ChevronDown, ChevronUp, CheckCircle2, ScanLine, 
-  School, User, FileText, BrainCircuit, AlertCircle
+  School, User, FileText, BrainCircuit, AlertCircle, Hash
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabase"; 
 import Tesseract from 'tesseract.js'; 
 
-// --- 타입 정의 ---
+// --- [타입 정의] ---
 type TimeSlotSet = Set<string>;
 
 type PlanItem = {
@@ -26,7 +26,13 @@ type PlanItem = {
   time: number;
 };
 
-// --- 상수 데이터 ---
+// 분석 결과 타입 (내용 + 태그)
+interface AnalysisResult {
+  content: string;
+  tags: string[];
+}
+
+// --- [상수 데이터] ---
 const COGNITIVE_TYPES = {
   A: "SPEED_FIRST",
   B: "PRECISION_FIRST",
@@ -49,13 +55,18 @@ const SUBJECT_KEYWORDS: Record<string, string[]> = {
   "영어": ["The", "What", "is", "passage", "following", "Reading", "According", "grammar", "paragraph"]
 };
 
-// 백엔드 전송용 과목명 매핑
+// 백엔드 전송용 과목명 매핑 (한글 -> Enum)
 const SUBJECT_ENUM_MAP: Record<string, string> = {
   "국어": "KOREAN",
   "수학": "MATH",
   "영어": "ENGLISH",
   "과학": "SCIENCE", 
   "사회": "SOCIAL"
+};
+
+// 백엔드 응답용 역매핑 함수 (Enum -> 한글)
+const getSubjectNameFromEnum = (enumKey: string) => {
+  return Object.keys(SUBJECT_ENUM_MAP).find(key => SUBJECT_ENUM_MAP[key] === enumKey) || enumKey;
 };
 
 const CURRICULUM_DATA: Record<string, Record<string, string[]>> = {
@@ -95,13 +106,13 @@ const QUIZ_QUESTIONS = [
 ];
 
 export default function DiagnosisPage() {
-  const { updateSchedule } = useStudy(); 
+  const { updateSchedule, updateUserInfo } = useStudy(); 
   const router = useRouter();
   
   const [step, setStep] = useState<number>(1);
   const [isSubmitting, setIsSubmitting] = useState(false); 
   
-  // 기본 정보 상태
+  // 사용자 정보
   const [info, setInfo] = useState({ 
     name: "", 
     school: "high", 
@@ -110,15 +121,19 @@ export default function DiagnosisPage() {
     subjects: [] as string[] 
   });
   
+  // 퀴즈 답안
   const [answers, setAnswers] = useState<Record<number, string>>({});
 
   // OCR 관련 상태
   const [activeSubjectTab, setActiveSubjectTab] = useState<string>(""); 
   const [subjectImages, setSubjectImages] = useState<Record<string, string>>({}); 
-  const [ocrAnalysis, setOcrAnalysis] = useState<Record<string, string>>({}); 
+  
+  // [수정] 최종 분석 결과 (내용 + 태그)
+  const [ocrAnalysis, setOcrAnalysis] = useState<Record<string, AnalysisResult>>({}); 
   const [ocrStatus, setOcrStatus] = useState<"idle" | "scanning" | "analyzing" | "done">("idle");
-  const [ocrResult, setOcrResult] = useState<string>(""); 
+  const [ocrResult, setOcrResult] = useState<string>(""); // (임시용)
 
+  // 서버 전송용 파일 리스트
   const [fileObjects, setFileObjects] = useState<File[]>([]); 
   const [fileSubjects, setFileSubjects] = useState<string[]>([]); 
 
@@ -131,12 +146,9 @@ export default function DiagnosisPage() {
   const dragAction = useRef<"add" | "remove">("add"); 
   const [showSubSubjects, setShowSubSubjects] = useState(false);
 
-  // --- [수정] 주요 과목 필터링 및 정렬 (국어 -> 수학 -> 영어 순서 보장) ---
+  // 주요 과목 정렬 및 필터링
   const selectedMainSubjects = useMemo(() => {
-    // 1. 메인 과목만 필터링
     const filtered = info.subjects.filter(sub => MAIN_SUBJECTS.includes(sub));
-    
-    // 2. MAIN_SUBJECTS 배열의 순서대로 정렬 (국 -> 수 -> 영)
     return filtered.sort((a, b) => {
       return MAIN_SUBJECTS.indexOf(a) - MAIN_SUBJECTS.indexOf(b);
     });
@@ -144,13 +156,13 @@ export default function DiagnosisPage() {
 
   const hasMainSubject = selectedMainSubjects.length > 0;
 
-  // Step 3 진입 시 첫 번째 과목 자동 선택
   useEffect(() => {
     if (step === 3 && selectedMainSubjects.length > 0 && !activeSubjectTab) {
       setActiveSubjectTab(selectedMainSubjects[0]);
     }
   }, [step, selectedMainSubjects, activeSubjectTab]);
 
+  // --- [이벤트 핸들러] ---
   const toggleSubject = (subject: string) => { setInfo(prev => { const exists = prev.subjects.includes(subject); return { ...prev, subjects: exists ? prev.subjects.filter(s => s !== subject) : [...prev.subjects, subject] }; }); };
   const updateSlot = (dayIdx: number, hour: number, action: "add" | "remove") => { const key = `${dayIdx}-${hour}`; setSelectedSlots(prev => { const next = new Set(prev); if (action === "add") next.add(key); else next.delete(key); return next; }); };
   const handleMouseDown = (dayIdx: number, hour: number) => { isDragging.current = true; const key = `${dayIdx}-${hour}`; dragAction.current = selectedSlots.has(key) ? "remove" : "add"; updateSlot(dayIdx, hour, dragAction.current); };
@@ -159,8 +171,7 @@ export default function DiagnosisPage() {
   const clearCurrentWeek = () => setSelectedSlots(new Set());
   const fillCurrentWeek = () => { const next = new Set<string>(); for (let d = 0; d < 7; d++) { for (let h of HOURS) next.add(`${d}-${h}`); } setSelectedSlots(next); };
   const calculateTotalHours = () => selectedSlots.size;
-  const finalTime = Math.round((selectedSlots.size * 60) / 7).toString(); 
-
+  
   const generateWeeklyPlan = () => {
     const key = `${info.grade}-${info.semester}`; 
     const dataSet = CURRICULUM_DATA[key] || CURRICULUM_DATA["1-1"]; 
@@ -186,7 +197,7 @@ export default function DiagnosisPage() {
     fileInputRef.current?.click();
   };
 
-  // --- [수정됨] OCR 핸들러 (로그 강화 + 강제 통과) ---
+  // --- [OCR 핸들러] ---
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !activeSubjectTab) return;
@@ -194,51 +205,39 @@ export default function DiagnosisPage() {
     setOcrStatus("scanning"); 
 
     try {
+      // 1. 클라이언트단 Tesseract OCR 검사 (키워드 매칭용)
       const { data: { text } } = await Tesseract.recognize(
         file,
-        'kor+eng', // 한글+영어 동시 인식
-        { logger: m => console.log("[Tesseract Progress]", m) } // 진행 상황 로그
+        'kor+eng',
+        { logger: m => console.log("[Tesseract Progress]", m) }
       );
 
-      // 🔍 [로그 확인 포인트] F12 콘솔을 열어보세요
-      console.log("---------------------------------------------------");
-      console.log(`📸 [${activeSubjectTab}] OCR 원본 추출 텍스트:`);
-      console.log(text); 
-      console.log("---------------------------------------------------");
+      console.log(`📸 [${activeSubjectTab}] OCR 원본 추출 텍스트:`, text);
 
-      // 2. 키워드 검증
       const keywords = SUBJECT_KEYWORDS[activeSubjectTab] || [];
       const isMatch = keywords.some(keyword => text.includes(keyword));
 
-      // ✅ 성공 시 로직
       const successLogic = () => {
         setOcrStatus("analyzing");
         setTimeout(() => {
           setOcrStatus("done");
           setSubjectImages(prev => ({ ...prev, [activeSubjectTab]: "uploaded" }));
-          
-          const analysisText = `${activeSubjectTab}: 문제 풀이 패턴 분석 결과가 여기에 표시됩니다.`;
-          setOcrAnalysis(prev => ({ ...prev, [activeSubjectTab]: analysisText }));
-          setOcrResult("분석 완료");
-        }, 1500);
+          setOcrResult("분석 준비 완료"); 
+        }, 1000);
         
-        // 파일 저장
+        // 🚀 중요: 파일을 리스트에 쌓아둠 (Step 4 완료 후 일괄 전송)
         setFileObjects(prev => [...prev, file]);
         setFileSubjects(prev => [...prev, activeSubjectTab]);
       };
 
       if (isMatch) {
-        // OCR 검증 성공
         console.log("✅ 키워드 매칭 성공!");
         successLogic();
       } else {
-        // ❌ OCR 검증 실패했지만, 사용자에게 물어보고 강제 통과
         console.warn("⚠️ 키워드 매칭 실패");
         setOcrStatus("idle");
         
-        // 인식된 텍스트 앞부분만 조금 보여줌
         const previewText = text.replace(/\s+/g, ' ').slice(0, 50);
-        
         const forcePass = window.confirm(
           `⚠️ OCR이 '${activeSubjectTab}' 키워드를 찾지 못했습니다.\n\n` +
           `[인식된 내용 일부]\n"${previewText}..."\n\n` +
@@ -246,10 +245,8 @@ export default function DiagnosisPage() {
         );
 
         if (forcePass) {
-            console.log("⏩ 사용자 강제 통과");
-            successLogic(); // 강제 실행
+            successLogic();
         } else {
-            // 취소 시 초기화
             if (fileInputRef.current) fileInputRef.current.value = "";
         }
       }
@@ -265,7 +262,18 @@ export default function DiagnosisPage() {
   const calculateUserType = (): "A" | "B" | "C" => { const counts = { A: 0, B: 0, C: 0 }; Object.values(answers).forEach((val) => { if (val === 'A' || val === 'B' || val === 'C') { counts[val]++; } }); const max = Math.max(counts.A, counts.B, counts.C); if (counts.B === max) return "B"; if (counts.C === max) return "C"; return "A"; };
   const getAnalysisText = () => USER_TYPES_INFO[calculateUserType()].desc;
 
+  // --- [서버 전송 및 분석 로직] ---
   const saveAllData = async () => {
+    // 🔍 [확인용 코드 시작] ---------------------------------
+    console.log("=== 📦 전송 데이터 확인 ===");
+    console.log(`총 파일 개수: ${fileObjects.length}개`);
+    console.log(`총 과목 개수: ${fileSubjects.length}개`);
+    
+    // 파일과 과목이 짝이 맞는지 확인
+    fileSubjects.forEach((sub, index) => {
+        console.log(`👉 ${index + 1}번째 파일: 과목 [${sub}] / 파일명 [${fileObjects[index]?.name}]`);
+    });
+    console.log("========================================");
     setIsSubmitting(true);
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -283,7 +291,8 @@ export default function DiagnosisPage() {
         "Authorization": `Bearer ${accessToken}` 
       };
 
-      const basicInfoRes = await fetch("https://mirror-backend-5j11.onrender.com/setup/basic-info", { 
+      // 1️⃣ 기본 정보 저장
+      await fetch("https://mirror-backend-5j11.onrender.com/setup/basic-info", { 
         method: "POST", headers: jsonHeaders,
         body: JSON.stringify({
           user_id: userId,
@@ -293,30 +302,65 @@ export default function DiagnosisPage() {
           subjects: info.subjects
         }),
       });
-      if (!basicInfoRes.ok) throw new Error("기본 정보 저장 실패");
 
+      // Context에도 정보 업데이트
+      updateUserInfo({
+        name: info.name,
+        grade: info.grade,
+        semester: info.semester,
+        subjects: info.subjects
+      });
+
+      // 2️⃣ 성향 진단 저장
       const cognitiveType = COGNITIVE_TYPES[calculateUserType()];
-      const styleRes = await fetch("https://mirror-backend-5j11.onrender.com/setup/style-quiz", { 
+      await fetch("https://mirror-backend-5j11.onrender.com/setup/style-quiz", { 
         method: "POST", headers: jsonHeaders,
         body: JSON.stringify({ user_id: userId, cognitive_type: cognitiveType }),
       });
-      if (!styleRes.ok) throw new Error("성향 진단 저장 실패");
 
+      // 3️⃣ [이미지 일괄 전송] 및 [분석 결과 수신]
       if (fileObjects.length > 0) {
         const formData = new FormData();
         formData.append("user_id", userId);
+        
+        // 파일 리스트 추가
         fileObjects.forEach((file) => formData.append("files", file));
+        
+        // 과목 리스트 추가 (Enum 변환)
         fileSubjects.forEach((sub) => {
           const enumName = SUBJECT_ENUM_MAP[sub] || "ETC";
           formData.append("subjects", enumName);
         });
 
+        // 백엔드 요청
         const ocrRes = await fetch("https://mirror-backend-5j11.onrender.com/setup/solving-image", { 
             method: "POST",
             headers: { "Authorization": `Bearer ${accessToken}` },
             body: formData
         });
-        if (!ocrRes.ok) console.warn("OCR 서버 저장 실패");
+        
+        if (!ocrRes.ok) {
+            console.warn("OCR 서버 저장 실패");
+        } else {
+            const responseData = await ocrRes.json();
+            
+            if (responseData.success && responseData.data) {
+                console.log("✅ OCR 분석 결과 수신:", responseData.data);
+                
+                // 수신된 데이터 파싱 (Enum -> 한글, 태그 포함)
+                const newAnalysisData: Record<string, AnalysisResult> = {};
+                
+                responseData.data.forEach((item: any) => {
+                    const koreanSubject = getSubjectNameFromEnum(item.subject);
+                    newAnalysisData[koreanSubject] = {
+                      content: item.extracted_content,
+                      tags: item.detected_tags || [] // 태그가 없으면 빈 배열
+                    };
+                });
+
+                setOcrAnalysis(newAnalysisData);
+            }
+        }
       }
 
       console.log("✅ 모든 데이터 저장 완료");
@@ -324,29 +368,35 @@ export default function DiagnosisPage() {
 
     } catch (error) {
       console.error("Save Error:", error);
-      alert("데이터 저장 중 오류가 발생했습니다. 다시 시도해주세요.");
+      alert("데이터 저장 중 오류가 발생했습니다.");
       return false;
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  // --- [Step 이동 핸들러] ---
   const handleNext = async () => {
     if (step === 1) { setStep(2); return; }
-    if (step === 2) { if (!hasMainSubject) { const success = await saveAllData(); if (success) setStep(4); } else { setStep(3); } return; }
-    if (step === 3) { const success = await saveAllData(); if (success) setStep(4); return; }
-    if (step === 4) { updateSchedule({}); startAnalysis(); return; }
+    if (step === 2) { if (!hasMainSubject) { setStep(4); } else { setStep(3); } return; }
+    if (step === 3) { setStep(4); return; }
+    if (step === 4) { 
+      updateSchedule({}); 
+      const success = await saveAllData(); 
+      if (success) startAnalysis(); 
+      return; 
+    }
     setStep(step + 1);
   };
 
   const handleBack = async () => {
       if (step === 1) {
-        const ok = window.confirm("역할 선택 화면으로 돌아가시겠습니까?\n입력한 내용은 저장되지 않습니다.");
+        const ok = window.confirm("역할 선택 화면으로 돌아가시겠습니까?");
         if (ok) {
            const { data: { session } } = await supabase.auth.getSession();
            if (session?.user) {
-              await supabase.from('users').update({ role: null }).eq('id', session.user.id);
-              router.replace('/onboarding/role');
+             await supabase.from('users').update({ role: null }).eq('id', session.user.id);
+             router.replace('/onboarding/role');
            }
         }
         return;
@@ -365,6 +415,7 @@ export default function DiagnosisPage() {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-6 select-none">
       
+      {/* Progress Bar */}
       {step < 5 && (
         <div className="w-full max-w-md mb-8">
           <div className="flex justify-between text-xs font-bold text-gray-400 mb-2 uppercase tracking-wide">
@@ -379,6 +430,7 @@ export default function DiagnosisPage() {
         </div>
       )}
 
+      {/* --- STEP 1: Basic Info --- */}
       {step === 1 && (
         <div className="bg-white max-w-md w-full p-8 rounded-3xl shadow-xl space-y-6 animate-fade-in-up">
           <div className="text-center">
@@ -455,6 +507,7 @@ export default function DiagnosisPage() {
         </div>
       )}
 
+      {/* --- STEP 2: Study Style Quiz --- */}
       {step === 2 && (
         <div className="bg-white max-w-xl w-full p-8 rounded-3xl shadow-xl space-y-8 animate-fade-in-up">
           <div className="text-center">
@@ -493,6 +546,7 @@ export default function DiagnosisPage() {
         </div>
       )}
 
+      {/* --- STEP 3: OCR Diagnosis --- */}
       {step === 3 && hasMainSubject && (
         <div className="bg-white max-w-md w-full p-8 rounded-3xl shadow-xl space-y-6 animate-fade-in-up">
           <div className="text-center">
@@ -531,9 +585,9 @@ export default function DiagnosisPage() {
 
           <div className="relative min-h-[300px]">
             {subjectImages[activeSubjectTab] === "uploaded" && ocrStatus === "done" ? (
-               <div className="border-2 border-green-100 rounded-2xl p-6 bg-green-50 animate-fade-in h-full flex flex-col items-center justify-center text-center">
+                <div className="border-2 border-green-100 rounded-2xl p-6 bg-green-50 animate-fade-in h-full flex flex-col items-center justify-center text-center">
                 <div className="flex items-center justify-center w-16 h-16 bg-green-100 rounded-full mb-4 animate-bounce-subtle">
-                   <CheckCircle2 className="w-8 h-8 text-green-600" />
+                    <CheckCircle2 className="w-8 h-8 text-green-600" />
                 </div>
                 <h3 className="font-bold text-xl text-green-800 mb-2">{activeSubjectTab} 분석 완료</h3>
                 <p className="text-sm text-green-700 font-medium leading-relaxed mb-6">
@@ -581,6 +635,7 @@ export default function DiagnosisPage() {
         </div>
       )}
 
+      {/* --- STEP 4: Time Table Grid --- */}
       {step === 4 && (
         <div className="bg-white max-w-xl w-full p-6 rounded-3xl shadow-xl space-y-4 animate-fade-in-up">
           <div className="text-center">
@@ -636,8 +691,10 @@ export default function DiagnosisPage() {
         </div>
       )}
 
+      {/* --- NAVIGATION BUTTONS --- */}
       {step < 5 && (
         <div className="max-w-md w-full mt-6 flex gap-3">
+          
           <button 
             onClick={handleBack} 
             disabled={isSubmitting}
@@ -666,6 +723,7 @@ export default function DiagnosisPage() {
         </div>
       )}
 
+      {/* --- STEP 5: AI Analysis --- */}
       {step === 5 && (
         <div className="text-center space-y-6 animate-fade-in">
           <Loader2 className="w-16 h-16 text-blue-600 animate-spin mx-auto" />
@@ -678,6 +736,7 @@ export default function DiagnosisPage() {
         </div>
       )}
 
+      {/* --- STEP 6: Final Solution (OCR 결과 & 태그 포함) --- */}
       {step === 6 && (
         <div className="max-w-6xl w-full space-y-6 animate-scale-in pb-10">
           <div className="text-center space-y-2 mb-8">
@@ -692,6 +751,7 @@ export default function DiagnosisPage() {
           <div className="grid md:grid-cols-12 gap-6">
             <div className="md:col-span-7 flex flex-col gap-6">
                
+               {/* 1. 주간 커리큘럼 */}
                <div className="bg-white p-6 rounded-3xl shadow-xl border border-gray-100 flex flex-col h-full">
                  <div className="flex items-center justify-between mb-6">
                    <div className="flex items-center gap-2">
@@ -744,6 +804,7 @@ export default function DiagnosisPage() {
 
             <div className="md:col-span-5 flex flex-col gap-6">
               
+              {/* 2. 오늘의 미션 */}
               <div className="bg-blue-600 text-white p-6 rounded-3xl shadow-xl shadow-blue-200 flex flex-col relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-64 h-64 bg-white opacity-5 rounded-full blur-3xl transform translate-x-1/2 -translate-y-1/2"></div>
                 <div className="flex items-center gap-2 mb-6 relative z-10">
@@ -787,6 +848,7 @@ export default function DiagnosisPage() {
                 )}
               </div>
 
+              {/* 3. [최종] AI 풀이 습관 분석 리포트 */}
               {Object.keys(ocrAnalysis).length > 0 && (
                 <div className="bg-white p-6 rounded-3xl shadow-lg border border-purple-100 relative overflow-hidden">
                    <div className="absolute top-0 right-0 p-6 opacity-10">
@@ -797,15 +859,25 @@ export default function DiagnosisPage() {
                        <FileText className="w-5 h-5 text-purple-600" />
                        AI 풀이 습관 분석
                      </h3>
-                     <div className="space-y-3">
-                       {Object.entries(ocrAnalysis).map(([subject, analysis]) => (
-                         <div key={subject} className="bg-purple-50 p-4 rounded-xl border border-purple-100">
-                           <h4 className="font-bold text-purple-700 text-sm mb-1 flex items-center gap-2">
+                     <div className="space-y-4">
+                       {Object.entries(ocrAnalysis).map(([subject, result]) => (
+                         <div key={subject} className="bg-purple-50 p-4 rounded-xl border border-purple-100 shadow-sm">
+                           <h4 className="font-bold text-purple-700 text-sm mb-2 flex items-center gap-2">
                              <AlertCircle className="w-3 h-3"/> {subject}
                            </h4>
-                           <p className="text-xs text-gray-600 leading-relaxed font-medium">
-                             {analysis}
+                           <p className="text-sm text-gray-700 leading-relaxed font-medium mb-3">
+                             {result.content}
                            </p>
+                           {/* 태그 (Detected Tags) 표시 */}
+                           {result.tags && result.tags.length > 0 && (
+                             <div className="flex flex-wrap gap-1.5">
+                               {result.tags.map((tag, i) => (
+                                 <span key={i} className="inline-flex items-center gap-0.5 px-2 py-1 rounded-md bg-white border border-purple-200 text-[10px] font-bold text-purple-600 shadow-sm">
+                                   <Hash className="w-2.5 h-2.5 opacity-50"/> {tag}
+                                 </span>
+                               ))}
+                             </div>
+                           )}
                          </div>
                        ))}
                      </div>

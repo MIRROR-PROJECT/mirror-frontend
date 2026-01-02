@@ -21,25 +21,50 @@ type Book = {
   aiAnalysis: string; 
 };
 
-// [NEW] 시간표 타입 (Key: "요일인덱스-시간", Value: "study" | "fixed")
-// 예: "0-19" (월요일 19시) -> "study"
+// 시간표 타입
 export type ScheduleMap = Record<string, "study" | "fixed">;
 
+// [NEW] 유저 기본 정보 타입 (진단 페이지에서 넘어오는 데이터)
+export type UserInfo = {
+  name: string;
+  grade: string;
+  semester: string;
+  subjects: string[];
+};
+
 interface StudyContextType {
-  user: { name: string; streak: number; role: "student" | "teacher" | "parent" };
+  // 유저 상태 (학습 연속일, 역할)
+  user: { streak: number; role: "student" | "teacher" | "parent" };
+  
+  // 데이터
   tasks: Task[];
   books: Book[];
-  schedule: ScheduleMap; // 🆕 전역 시간표 데이터
+  schedule: ScheduleMap;
+  
+  // [NEW] 유저 기본 정보 (이름, 학년 등)
+  userInfo: UserInfo;
+
+  // 액션 함수들
   toggleTask: (taskId: number) => void;
-  updateSchedule: (newSchedule: ScheduleMap) => void; // 🆕 시간표 업데이트 함수
+  updateSchedule: (newSchedule: ScheduleMap) => void;
+  updateUserInfo: (info: UserInfo) => void; // [NEW] 정보 업데이트 함수
 }
 
 const StudyContext = createContext<StudyContextType | undefined>(undefined);
 
 export function StudyProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState({ name: "", streak: 14, role: "student" as const });
+  // 1. 유저 상태 (Streak, Role)
+  const [user] = useState({ streak: 14, role: "student" as const });
 
-  // --- 기존 데이터 ---
+  // 2. [NEW] 유저 기본 정보 (초기값 빈 값)
+  const [userInfo, setUserInfo] = useState<UserInfo>({
+    name: "",
+    grade: "",
+    semester: "",
+    subjects: [],
+  });
+
+  // 3. 책 데이터 (더미)
   const [books, setBooks] = useState<Book[]>([
     { id: 1, title: "수학 I : 쎈 (SSEN)", subject: "수학", progress: 65, lastStudied: "2시간 전", coverColor: "bg-blue-600", aiAnalysis: "취약 유형: 로그함수" },
     { id: 2, title: "수능특강 영어 독해연습", subject: "영어", progress: 32, lastStudied: "어제", coverColor: "bg-green-600", aiAnalysis: "안정권 진입 중" },
@@ -47,16 +72,17 @@ export function StudyProvider({ children }: { children: ReactNode }) {
     { id: 4, title: "매3비 (매일 3개 비문학)", subject: "국어", progress: 88, lastStudied: "1주 전", coverColor: "bg-orange-500", aiAnalysis: "마무리 단계" },
   ]);
 
+  // 4. 할 일 데이터 (더미)
   const [tasks, setTasks] = useState<Task[]>([
     { id: 1, title: "워밍업: 지난 오답 3문제", time: 10, done: false, bookId: 1 },
     { id: 2, title: "메인: 지수함수 필수 유형 15선", time: 60, done: false, bookId: 1 },
     { id: 3, title: "마무리: 해설 강의 & 복습", time: 20, done: false, bookId: 1 },
   ]);
 
-  // --- [NEW] 시간표 데이터 (초기값: 월~금 19시~22시 자습) ---
+  // 5. 시간표 데이터
   const [schedule, setSchedule] = useState<ScheduleMap>(() => {
     const initial: ScheduleMap = {};
-    // 예시: 월(0) ~ 금(4) 저녁 19시~22시는 공부 시간
+    // 초기값: 월(0) ~ 금(4) 저녁 19시~22시 자습
     for (let d = 0; d < 5; d++) {
       for (let h = 19; h <= 22; h++) {
         initial[`${d}-${h}`] = "study";
@@ -65,7 +91,9 @@ export function StudyProvider({ children }: { children: ReactNode }) {
     return initial;
   });
 
-  // Task 토글 함수
+  // --- Actions ---
+
+  // Task 토글
   const toggleTask = (taskId: number) => {
     const targetTask = tasks.find(t => t.id === taskId);
     if (!targetTask) return;
@@ -85,15 +113,28 @@ export function StudyProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  // [NEW] 시간표 업데이트 함수
+  // 시간표 업데이트
   const updateSchedule = (newSchedule: ScheduleMap) => {
     setSchedule(newSchedule);
-    // 나중에는 여기서 서버로 DB 저장 요청을 보내면 됩니다.
-    console.log("시간표가 업데이트되었습니다:", newSchedule);
+  };
+
+  // [NEW] 유저 정보 업데이트
+  const updateUserInfo = (info: UserInfo) => {
+    setUserInfo(info);
+    console.log("✅ 유저 정보 Context 업데이트 완료:", info);
   };
 
   return (
-    <StudyContext.Provider value={{ user, tasks, books, schedule, toggleTask, updateSchedule }}>
+    <StudyContext.Provider value={{ 
+      user, 
+      userInfo, // 추가됨
+      tasks, 
+      books, 
+      schedule, 
+      toggleTask, 
+      updateSchedule, 
+      updateUserInfo // 추가됨
+    }}>
       {children}
     </StudyContext.Provider>
   );
