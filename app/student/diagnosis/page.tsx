@@ -836,7 +836,7 @@ export default function DiagnosisPage() {
         <div className="max-w-6xl w-full space-y-6 animate-scale-in pb-10">
           <div className="text-center space-y-2 mb-8">
             <h2 className="text-3xl font-bold text-gray-900">
-              {info.name}님의 고{info.grade} {info.semester}학기 <span className="text-blue-600">Mirror Morphing</span> 솔루션
+              {info.name}님의 고{info.grade} {info.semester}학기 <span className="text-blue-600">Mirror</span> 솔루션
             </h2>
             <div className="relative inline-flex items-center gap-2 bg-blue-50 px-3 py-1 rounded-full">
               <span className="text-sm font-bold text-blue-700">{getAnalysisText()}</span>
