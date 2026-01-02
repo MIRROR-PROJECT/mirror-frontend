@@ -128,10 +128,10 @@ export default function DiagnosisPage() {
   const [activeSubjectTab, setActiveSubjectTab] = useState<string>(""); 
   const [subjectImages, setSubjectImages] = useState<Record<string, string>>({}); 
   
-  // [수정] 최종 분석 결과 (내용 + 태그)
+  // 최종 분석 결과 (내용 + 태그)
   const [ocrAnalysis, setOcrAnalysis] = useState<Record<string, AnalysisResult>>({}); 
   const [ocrStatus, setOcrStatus] = useState<"idle" | "scanning" | "analyzing" | "done">("idle");
-  const [ocrResult, setOcrResult] = useState<string>(""); // (임시용)
+  const [ocrResult, setOcrResult] = useState<string>(""); 
 
   // 서버 전송용 파일 리스트
   const [fileObjects, setFileObjects] = useState<File[]>([]); 
@@ -205,7 +205,6 @@ export default function DiagnosisPage() {
     setOcrStatus("scanning"); 
 
     try {
-      // 1. 클라이언트단 Tesseract OCR 검사 (키워드 매칭용)
       const { data: { text } } = await Tesseract.recognize(
         file,
         'kor+eng',
@@ -225,7 +224,6 @@ export default function DiagnosisPage() {
           setOcrResult("분석 준비 완료"); 
         }, 1000);
         
-        // 🚀 중요: 파일을 리스트에 쌓아둠 (Step 4 완료 후 일괄 전송)
         setFileObjects(prev => [...prev, file]);
         setFileSubjects(prev => [...prev, activeSubjectTab]);
       };
@@ -264,16 +262,6 @@ export default function DiagnosisPage() {
 
   // --- [서버 전송 및 분석 로직] ---
   const saveAllData = async () => {
-    // 🔍 [확인용 코드 시작] ---------------------------------
-    console.log("=== 📦 전송 데이터 확인 ===");
-    console.log(`총 파일 개수: ${fileObjects.length}개`);
-    console.log(`총 과목 개수: ${fileSubjects.length}개`);
-    
-    // 파일과 과목이 짝이 맞는지 확인
-    fileSubjects.forEach((sub, index) => {
-        console.log(`👉 ${index + 1}번째 파일: 과목 [${sub}] / 파일명 [${fileObjects[index]?.name}]`);
-    });
-    console.log("========================================");
     setIsSubmitting(true);
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -303,7 +291,6 @@ export default function DiagnosisPage() {
         }),
       });
 
-      // Context에도 정보 업데이트
       updateUserInfo({
         name: info.name,
         grade: info.grade,
@@ -311,28 +298,87 @@ export default function DiagnosisPage() {
         subjects: info.subjects
       });
 
-      // 2️⃣ 성향 진단 저장
+      // 2️⃣ [수정됨] 시간표(Routine) 저장 (명세서 반영)
+      const routineData: any[] = [];
+      const slotsArray = Array.from(selectedSlots).sort(); 
+      
+      const dayMap: Record<number, number[]> = {}; 
+      slotsArray.forEach(slot => {
+          const [d, h] = slot.split("-").map(Number);
+          if (!dayMap[d]) dayMap[d] = [];
+          dayMap[d].push(h);
+      });
+
+      // 요일별 연속 시간 병합 로직
+      Object.entries(dayMap).forEach(([dayIdxStr, hours]) => {
+          const dayIdx = parseInt(dayIdxStr);
+          const dayCode = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"][dayIdx];
+          
+          hours.sort((a, b) => a - b); 
+
+          let start = hours[0];
+          let end = hours[0];
+
+          for (let i = 1; i < hours.length; i++) {
+              if (hours[i] === end + 1) {
+                  end = hours[i]; // 연속됨
+              } else {
+                  // 끊김 -> 저장
+                  routineData.push({
+                      day_of_week: dayCode,
+                      start_time: `${String(start).padStart(2, '0')}:00`,
+                      end_time: `${String(end + 1).padStart(2, '0')}:00`, // 끝 시간은 +1
+                      total_minutes: (end - start + 1) * 60
+                  });
+                  start = hours[i];
+                  end = hours[i];
+              }
+          }
+          // 마지막 블록 저장
+          routineData.push({
+              day_of_week: dayCode,
+              start_time: `${String(start).padStart(2, '0')}:00`,
+              end_time: `${String(end + 1).padStart(2, '0')}:00`,
+              total_minutes: (end - start + 1) * 60
+          });
+      });
+
+      console.log("🚀 [시간표 전송 데이터]:", routineData);
+
+      // API 전송 (user_id 사용)
+      const routineRes = await fetch("https://mirror-backend-5j11.onrender.com/routines", { 
+        method: "POST", headers: jsonHeaders,
+        body: JSON.stringify({
+            user_id: userId, // 👈 명세서에 맞게 user_id 사용
+            routines: routineData
+        }),
+      });
+      
+      if (!routineRes.ok) {
+          const err = await routineRes.json();
+          console.warn("⚠️ 시간표 저장 실패:", err);
+      } else {
+          console.log("✅ 시간표 저장 성공");
+      }
+
+      // 3️⃣ 성향 진단 저장
       const cognitiveType = COGNITIVE_TYPES[calculateUserType()];
       await fetch("https://mirror-backend-5j11.onrender.com/setup/style-quiz", { 
         method: "POST", headers: jsonHeaders,
         body: JSON.stringify({ user_id: userId, cognitive_type: cognitiveType }),
       });
 
-      // 3️⃣ [이미지 일괄 전송] 및 [분석 결과 수신]
+      // 4️⃣ [이미지 일괄 전송] 및 [분석 결과 수신]
       if (fileObjects.length > 0) {
         const formData = new FormData();
         formData.append("user_id", userId);
         
-        // 파일 리스트 추가
         fileObjects.forEach((file) => formData.append("files", file));
-        
-        // 과목 리스트 추가 (Enum 변환)
         fileSubjects.forEach((sub) => {
           const enumName = SUBJECT_ENUM_MAP[sub] || "ETC";
           formData.append("subjects", enumName);
         });
 
-        // 백엔드 요청
         const ocrRes = await fetch("https://mirror-backend-5j11.onrender.com/setup/solving-image", { 
             method: "POST",
             headers: { "Authorization": `Bearer ${accessToken}` },
@@ -347,14 +393,13 @@ export default function DiagnosisPage() {
             if (responseData.success && responseData.data) {
                 console.log("✅ OCR 분석 결과 수신:", responseData.data);
                 
-                // 수신된 데이터 파싱 (Enum -> 한글, 태그 포함)
                 const newAnalysisData: Record<string, AnalysisResult> = {};
                 
                 responseData.data.forEach((item: any) => {
                     const koreanSubject = getSubjectNameFromEnum(item.subject);
                     newAnalysisData[koreanSubject] = {
                       content: item.extracted_content,
-                      tags: item.detected_tags || [] // 태그가 없으면 빈 배열
+                      tags: item.detected_tags || [] 
                     };
                 });
 
@@ -375,7 +420,6 @@ export default function DiagnosisPage() {
     }
   };
 
-  // --- [Step 이동 핸들러] ---
   const handleNext = async () => {
     if (step === 1) { setStep(2); return; }
     if (step === 2) { if (!hasMainSubject) { setStep(4); } else { setStep(3); } return; }
@@ -430,7 +474,7 @@ export default function DiagnosisPage() {
         </div>
       )}
 
-      {/* --- STEP 1: Basic Info --- */}
+      {/* --- STEP 1: Basic Info (누락된 부분 복구됨) --- */}
       {step === 1 && (
         <div className="bg-white max-w-md w-full p-8 rounded-3xl shadow-xl space-y-6 animate-fade-in-up">
           <div className="text-center">
@@ -479,6 +523,8 @@ export default function DiagnosisPage() {
                   );
                 })}
               </div>
+              
+              {/* [복구됨] 탐구 과목 선택 아코디언 버튼 및 리스트 */}
               <button onClick={() => setShowSubSubjects(!showSubSubjects)} className="w-full flex items-center justify-center gap-1 text-sm text-gray-500 font-medium py-3 hover:bg-gray-50 rounded-lg transition-colors border border-dashed border-gray-300">
                 {showSubSubjects ? "탐구 및 기타 과목 접기" : "탐구 및 기타 과목 선택하기"}
                 {showSubSubjects ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
