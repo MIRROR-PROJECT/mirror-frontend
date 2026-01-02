@@ -238,7 +238,7 @@ export default function DiagnosisResult({
                             <div className="bg-white/20 p-2 rounded-lg"><ListTodo className="w-5 h-5 text-white" /></div>
                             <h3 className="font-bold text-lg">
                                 {/* 선택된 날짜의 미션 표시 (날짜 제거, 요일만 표시) */}
-                                {selectedPlan.isToday ? "오늘의 미션 (Today)" : `데일리 미션 (${selectedPlan.day})`}
+                                {selectedPlan?.isToday ? "오늘의 미션 (Today)" : `데일리 미션 (${selectedPlan?.day || '로딩중'})`}
                             </h3>
                         </div>
 
@@ -246,10 +246,18 @@ export default function DiagnosisResult({
                             // 선택된 날짜의 데이터 사용
                             const targetPlan = selectedPlan;
 
+                            if (!targetPlan) {
+                                return (
+                                    <div className="text-center text-blue-100 py-8">
+                                        데이터를 불러오는 중입니다...
+                                    </div>
+                                );
+                            }
+
                             // 요일별 가용시간 찾기 key 매핑 필요 (MON -> MONDAY)
                             const fullDayNames: Record<string, string> = { "Mon": "MONDAY", "Tue": "TUESDAY", "Wed": "WEDNESDAY", "Thu": "THURSDAY", "Fri": "FRIDAY", "Sat": "SATURDAY", "Sun": "SUNDAY" };
-                            const targetDayFull = fullDayNames[targetPlan.day] || targetPlan.day.toUpperCase();
-                            const availableMinutes = weeklyAvailableTime[targetDayFull] || targetPlan.time;
+                            const targetDayFull = fullDayNames[targetPlan.day] || targetPlan.day?.toUpperCase() || "MONDAY";
+                            const availableMinutes = weeklyAvailableTime[targetDayFull] || targetPlan.time || 0;
 
                             return (
                                 <div className="space-y-4 relative z-10">
