@@ -779,7 +779,7 @@ export default function DiagnosisPage() {
                     </ul>
                   </div>
                   <div className="mt-auto">
-                    <Link href="/student/dashboard" className="w-full bg-white text-blue-600 py-4 rounded-xl font-bold text-center block hover:bg-blue-50 transition-colors">
+                    <Link href="/dashboard" className="w-full bg-white text-blue-600 py-4 rounded-xl font-bold text-center block hover:bg-blue-50 transition-colors">
                       {weeklyPlan[0].subject} 학습 시작하기
                     </Link>
                   </div>

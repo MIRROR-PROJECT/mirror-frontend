@@ -1,26 +1,36 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { useStudy } from "../../context/StudyContext"; 
 import { 
   CheckCircle2, TrendingUp, Calendar, 
   Flame, Zap, BrainCircuit, Target,
-  ChevronRight, Clock, MessageCircle, BookOpen, History
+  ChevronRight, Clock, MessageCircle, BookOpen, History,
+  Settings, Lock, Edit3
 } from "lucide-react";
 import Link from "next/link";
 
-// --- 타입 정의 (유지보수를 위해 명시) ---
+// --- 타입 정의 ---
 interface UserProps {
   id: string;
   name: string;
   role: string;
-  streak?: number; // DB에 없을 수도 있으니 옵셔널
+  streak?: number;
 }
 
 interface WeaknessItem {
   label: string;
   score: number;
   color: string;
+}
+
+interface TimeSlot {
+  hour: number;
+  type: "study" | "school" | "academy" | "rest" | "sleep";
+  label: string;
+  taskId?: number;   // 매핑된 태스크 ID (study인 경우)
+  isDone?: boolean;  // 태스크 완료 여부
+  isLocked?: boolean; // 클릭 불가능 여부
 }
 
 // 더미 데이터: 과목별 취약점
@@ -42,64 +52,92 @@ const WEAKNESS_DATA: { [key: string]: WeaknessItem[] } = {
 };
 
 export default function StudentDashboard({ user }: { user: UserProps }) {
-  // 1. Context에서 user는 제외하고 가져옵니다. (Props user와 충돌 방지)
   const { tasks, schedule, toggleTask } = useStudy();
   
   const [selectedSubject, setSelectedSubject] = useState("수학");
   const [mounted, setMounted] = useState(false);
-  const [weekDays, setWeekDays] = useState<{ day: string, date: number, isToday: boolean, isFuture: boolean }[]>([]);
   const [todayMinutes, setTodayMinutes] = useState(0);
+  
+  // 시간표 렌더링을 위한 상태
+  const [timeline, setTimeline] = useState<TimeSlot[]>([]);
 
-  // 2. 날짜 및 시간 계산 로직을 useEffect로 통합 (하이드레이션 에러 방지)
   useEffect(() => {
     setMounted(true);
     const today = new Date();
     
-    // --- 주간 캘린더 생성 ---
-    const tempWeek = [];
-    const dayNames = ['일', '월', '화', '수', '목', '금', '토']; 
+    // 1. 요일 인덱스 보정 (월:0 ~ 일:6)
+    // today.getDay()는 일:0, 월:1 ... 토:6
+    const jsDay = today.getDay(); 
+    const scheduleDayKey = jsDay === 0 ? 6 : jsDay - 1; // 월(0) ~ 일(6) 형태로 변환
 
-    for (let i = -3; i <= 3; i++) {
-      const d = new Date(today);
-      d.setDate(today.getDate() + i); 
-      tempWeek.push({
-        day: dayNames[d.getDay()],
-        date: d.getDate(),
-        isToday: i === 0,
-        isFuture: i > 0
-      });
+    // 2. 가용 시간 계산 및 타임라인 생성
+    let slotsCount = 0;
+    const tempTimeline: TimeSlot[] = [];
+    const currentTasks = tasks || []; // Context에서 가져온 할 일 목록
+    let taskIndex = 0;
+
+    // 오전 9시부터 밤 23시까지 표시 (범위 조절 가능)
+    const startHour = 9;
+    const endHour = 23;
+
+    for (let h = startHour; h <= endHour; h++) {
+      const key = `${scheduleDayKey}-${h}`; // 예: "0-9" (월요일 9시)
+      
+      // schedule 데이터가 없으면 기본값 'rest'
+      // schedule 값 예시: "school", "academy", "study", "rest" 등
+      const activityType = schedule ? (schedule[key] as string) || "rest" : "rest";
+      
+      let slot: TimeSlot = {
+        hour: h,
+        type: "rest",
+        label: "휴식",
+        isLocked: true
+      };
+
+      if (activityType === "school") {
+        slot = { ...slot, type: "school", label: "학교 수업", isLocked: true };
+      } else if (activityType === "academy") {
+        slot = { ...slot, type: "academy", label: "학원", isLocked: true };
+      } else if (activityType === "sleep") {
+        slot = { ...slot, type: "sleep", label: "수면", isLocked: true };
+      } else if (activityType === "study") {
+        slotsCount++;
+        // "study" 슬롯에 tasks를 순서대로 매핑
+        const assignedTask = currentTasks[taskIndex];
+        
+        slot = {
+          hour: h,
+          type: "study",
+          label: assignedTask ? assignedTask.title : "자율 학습", // 할 일이 부족하면 자율 학습
+          taskId: assignedTask ? assignedTask.id : undefined,
+          isDone: assignedTask ? assignedTask.done : false,
+          isLocked: false // 클릭 가능!
+        };
+
+        // 다음 할 일로 인덱스 이동 (할 일이 있으면)
+        if (assignedTask) taskIndex++;
+      }
+
+      tempTimeline.push(slot);
     }
-    setWeekDays(tempWeek);
 
-    // --- 오늘 가용 시간 계산 ---
-    // schedule Key: "0-9" (월요일 9시) ~ "6-23" (일요일 23시)
-    // today.getDay(): 0(일) ~ 6(토)
-    // 변환: 일(0)->6, 월(1)->0, 화(2)->1 ...
-    const internalDay = (today.getDay() + 6) % 7; 
-    
-    let slots = 0;
-    if (schedule) {
-      Object.entries(schedule).forEach(([key, val]) => {
-        if (val === "study" && key.startsWith(`${internalDay}-`)) {
-          slots++;
-        }
-      });
-    }
-    setTodayMinutes(slots * 60);
+    setTimeline(tempTimeline);
+    setTodayMinutes(slotsCount * 60);
 
-  }, [schedule]); // schedule이 로드되면 다시 계산
+  }, [schedule, tasks]); 
+  // tasks가 업데이트(체크)될 때마다 타임라인도 다시 그려짐
 
-  const toggleLocalTask = (id: number) => {
-    toggleTask(id);
+  const handleSlotClick = (slot: TimeSlot) => {
+    if (slot.isLocked || !slot.taskId) return;
+    toggleTask(slot.taskId);
   };
 
-  // tasks가 undefined일 경우 방어
+  // 진행률 계산
   const currentTasks = tasks || [];
   const progress = currentTasks.length > 0 
     ? Math.round((currentTasks.filter(t => t.done).length / currentTasks.length) * 100) 
     : 0;
 
-  // 화면이 클라이언트에 마운트되기 전에는 아무것도 보여주지 않음 (UI 깨짐 방지)
   if (!mounted) return <div className="min-h-screen bg-gray-50" />;
 
   return (
@@ -119,139 +157,154 @@ export default function StudentDashboard({ user }: { user: UserProps }) {
           <div className="flex gap-3">
             <div className="bg-white px-4 py-2 rounded-xl border border-gray-200 shadow-sm flex items-center gap-2">
               <Flame className="w-5 h-5 text-orange-500 fill-orange-500" />
-              {/* user.streak가 없으면 0일로 처리 */}
               <span className="font-bold text-gray-700">{user?.streak || 1}일 연속</span>
             </div>
             
-            <div className="bg-white px-4 py-2 rounded-xl border border-gray-200 shadow-sm flex items-center gap-2">
-              <Clock className="w-5 h-5 text-blue-500" />
-              <div className="flex flex-col items-end leading-none">
-                <span className="font-bold text-gray-700 text-xs mb-0.5">
-                  오늘 가용 시간
-                </span>
-                <span className="text-sm text-blue-600 font-black">
-                  {todayMinutes > 0 ? `${todayMinutes}분` : "일정 없음"}
-                </span>
-              </div>
-            </div>
+            <Link 
+              href="/student/schedule/edit" 
+              className="bg-white px-4 py-2 rounded-xl border border-gray-200 shadow-sm flex items-center gap-2 hover:bg-gray-50 transition-colors text-gray-700"
+            >
+              <Edit3 className="w-4 h-4" />
+              <span className="font-bold text-xs">시간표 수정하기</span>
+            </Link>
           </div>
         </header>
 
         {/* 대시보드 그리드 */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           
-          {/* [Left Column] 메인 콘텐츠 */}
+          {/* [Left Column] 메인 콘텐츠: 시간표 */}
           <div className="lg:col-span-2 space-y-6">
             
-            {/* A. 오늘의 메인 미션 카드 */}
-            <div className="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-3xl p-8 text-white shadow-xl relative overflow-hidden transition-transform hover:scale-[1.01] duration-300">
-              <div className="absolute top-0 right-0 w-64 h-64 bg-white opacity-5 rounded-full blur-3xl transform translate-x-1/3 -translate-y-1/3"></div>
+            {/* 시간표 카드 */}
+            <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-gray-200">
               
-              <div className="relative z-10 flex justify-between items-start mb-6">
+              {/* 헤더 부분 */}
+              <div className="flex justify-between items-end mb-6">
                 <div>
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="bg-white/20 px-2 py-1 rounded text-xs font-bold text-blue-100 backdrop-blur-sm">Today's Mission</span>
-                    <span className="flex items-center gap-1 text-xs text-blue-200">
-                      <Clock className="w-3 h-3" /> 목표: {todayMinutes}분
-                    </span>
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="bg-blue-100 px-2 py-1 rounded text-xs font-bold text-blue-600">Today's Schedule</span>
                   </div>
-                  <h2 className="text-3xl font-bold">
-                    {/* 데이터가 있다면 첫 번째 task의 과목 등을 표시하는 것이 좋음 */}
-                    지수함수 완전 정복
+                  <h2 className="text-2xl font-bold text-gray-800">
+                    오늘의 학습 시간표
                   </h2>
                 </div>
                 
-                {/* 진행률 원형 그래프 (심플 버전) */}
-                <div className="bg-white/10 p-3 rounded-2xl backdrop-blur-md border border-white/20 hidden sm:block">
-                  <div className="text-center min-w-[60px]">
-                    <span className="block text-2xl font-bold">{progress}%</span>
-                    <span className="text-[10px] text-blue-200 uppercase tracking-wider">Completed</span>
+                {/* 진행률 표시 */}
+                <div className="flex items-center gap-3">
+                  <div className="text-right hidden sm:block">
+                    <span className="block text-xs text-gray-400 font-medium">달성률</span>
+                    <span className="block text-xl font-bold text-blue-600">{progress}%</span>
+                  </div>
+                  <div className="w-12 h-12 rounded-full border-4 border-gray-100 flex items-center justify-center relative">
+                    <div 
+                      className="absolute inset-0 rounded-full border-4 border-blue-500"
+                      style={{ 
+                        clipPath: `inset(${100 - progress}% 0 0 0)` // 간단한 CSS 클리핑으로 게이지 효과
+                      }}
+                    ></div>
+                    <CheckCircle2 className={`w-5 h-5 ${progress === 100 ? 'text-blue-500' : 'text-gray-300'}`} />
                   </div>
                 </div>
               </div>
 
-              <div className="space-y-3 relative z-10">
-                {currentTasks.length === 0 ? (
-                    <div className="text-blue-200 text-sm text-center py-4 bg-white/5 rounded-xl">
-                        등록된 할 일이 없습니다. 일정을 생성해보세요!
-                    </div>
-                ) : (
-                    currentTasks.map((task) => (
-                    <div 
-                        key={task.id} 
-                        onClick={() => toggleLocalTask(task.id)}
-                        className={`flex items-center gap-4 p-4 rounded-xl cursor-pointer transition-all border ${
-                        task.done 
-                            ? 'bg-blue-800/40 border-blue-700/30 text-blue-200' 
-                            : 'bg-white/10 border-white/20 hover:bg-white/20 text-white'
-                        }`}
-                    >
-                        <div className={`w-6 h-6 rounded-full flex items-center justify-center border-2 transition-colors ${task.done ? 'bg-white border-white' : 'border-blue-300'}`}>
-                        {task.done && <CheckCircle2 className="w-4 h-4 text-blue-600" />}
-                        </div>
-                        <div className="flex-1">
-                        <p className={`font-medium ${task.done ? 'line-through decoration-blue-400/50' : ''}`}>{task.title}</p>
-                        </div>
-                        <span className="text-xs font-medium bg-white/20 px-2 py-1 rounded text-white">{task.time}분</span>
-                    </div>
-                    ))
-                )}
-              </div>
+              {/* 타임라인 (시간표) */}
+              <div className="space-y-3 relative">
+                {/* 세로줄 장식 */}
+                <div className="absolute left-[3.25rem] top-4 bottom-4 w-0.5 bg-gray-100 hidden md:block"></div>
 
-              <div className="mt-6 flex justify-end">
-                <Link href="/student/chat" className="bg-white text-blue-700 px-6 py-3 rounded-xl font-bold text-sm hover:bg-blue-50 transition-colors shadow-lg flex items-center gap-2">
-                  <MessageCircle className="w-4 h-4" />
-                  모르는 문제 AI에게 질문하기
-                </Link>
-              </div>
-            </div>
-
-            {/* B. 나의 학습 리듬 */}
-            <div className="bg-white p-5 rounded-3xl border border-gray-200 shadow-sm">
-              <div className="flex justify-between items-center mb-4">
-                <div>
-                  <h3 className="font-bold text-gray-800 text-base flex items-center gap-2">
-                    <TrendingUp className="w-4 h-4 text-blue-600" /> 나의 학습 리듬
-                  </h3>
-                </div>
-                
-                <button className="flex items-center gap-1 text-[11px] font-bold text-gray-500 bg-gray-50 px-2.5 py-1.5 rounded-lg hover:bg-gray-100 transition-colors">
-                  <History className="w-3 h-3" />
-                  과거 내역
-                </button>
-              </div>
-
-              <div className="grid grid-cols-7 gap-2">
-                {weekDays.map((item, i) => {
-                  // 더미 데이터 강도 (실제로는 DB 데이터 연동 필요)
-                  const intensity = item.isFuture ? 0 : [2, 1, 2, 1, 0, 0, 0][i];
-                  let bgColor = "bg-white border-gray-100";
-                  let dateColor = "text-gray-400";
+                {timeline.map((slot) => {
+                  // 스타일 로직
+                  const isStudy = slot.type === "study";
+                  const isCompleted = slot.isDone;
                   
-                  if (intensity === 1) { 
-                    bgColor = "bg-blue-50 border-blue-100";
-                    dateColor = "text-blue-600";
-                  } else if (intensity === 2) { 
-                    bgColor = "bg-blue-600 border-blue-600 shadow-sm";
-                    dateColor = "text-white";
+                  // 배경색 및 테두리 결정
+                  let cardClass = "border border-gray-100 bg-gray-50 text-gray-400"; // 기본 (잠김)
+                  
+                  if (isStudy) {
+                    if (isCompleted) {
+                      cardClass = "bg-blue-600 border-blue-600 text-white shadow-md ring-2 ring-blue-200 ring-offset-1";
+                    } else {
+                      cardClass = "bg-white border-blue-200 text-gray-700 hover:border-blue-400 hover:shadow-md cursor-pointer group";
+                    }
+                  } else if (slot.type === "school") {
+                    cardClass = "bg-yellow-50 border-yellow-100 text-yellow-600/70";
+                  } else if (slot.type === "academy") {
+                    cardClass = "bg-purple-50 border-purple-100 text-purple-600/70";
                   }
 
-                  const todayBorder = item.isToday ? "ring-2 ring-offset-1 ring-blue-500 border-blue-500" : "";
-                  const dayText = item.isToday ? "text-blue-600 font-extrabold" : "text-gray-400";
-
                   return (
-                    <div key={i} className={`flex flex-col group cursor-pointer gap-1 ${item.isFuture ? 'opacity-40 pointer-events-none' : 'opacity-100'}`}>
-                      <div className={`text-[10px] text-center font-medium ${dayText}`}>
-                        {item.isToday ? '오늘' : item.day}
+                    <div key={slot.hour} className="flex items-center gap-4 relative z-10">
+                      
+                      {/* 시간 표시 (09:00) */}
+                      <div className="w-12 text-right text-sm font-bold text-gray-400 font-mono shrink-0">
+                        {String(slot.hour).padStart(2, '0')}:00
                       </div>
-                      <div className={`h-14 rounded-xl flex flex-col items-center justify-center border transition-all relative overflow-hidden ${bgColor} ${todayBorder}`}>
-                        <span className={`text-sm font-bold ${dateColor}`}>
-                          {item.date}
-                        </span>
+
+                      {/* 시간표 블록 */}
+                      <div 
+                        onClick={() => handleSlotClick(slot)}
+                        className={`flex-1 p-4 rounded-2xl flex justify-between items-center transition-all duration-200 ${cardClass} ${slot.isLocked ? 'cursor-not-allowed opacity-80' : ''}`}
+                      >
+                        <div className="flex items-center gap-3">
+                          {isStudy ? (
+                            // 자습(Study) 아이콘
+                            <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${isCompleted ? 'bg-white/20' : 'bg-blue-50'}`}>
+                              {isCompleted ? <CheckCircle2 className="w-5 h-5 text-white" /> : <BookOpen className="w-4 h-4 text-blue-500" />}
+                            </div>
+                          ) : (
+                            // 기타(학교, 학원 등) 아이콘
+                            <div className="w-8 h-8 rounded-full bg-white/50 flex items-center justify-center">
+                              <Lock className="w-4 h-4 opacity-50" />
+                            </div>
+                          )}
+                          
+                          <div className="flex flex-col">
+                            <span className={`font-bold text-sm ${isStudy && !isCompleted ? 'group-hover:text-blue-600' : ''}`}>
+                              {slot.label}
+                            </span>
+                            {isStudy && (
+                              <span className={`text-[10px] ${isCompleted ? 'text-blue-100' : 'text-gray-400'}`}>
+                                {isCompleted ? '완료됨' : '클릭하여 완료 표시'}
+                              </span>
+                            )}
+                            {!isStudy && (
+                              <span className="text-[10px] opacity-70">
+                                고정 일정
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* 우측 태그 */}
+                        {isStudy && (
+                           <div className={`text-xs px-2 py-1 rounded font-bold ${isCompleted ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-500'}`}>
+                             60분
+                           </div>
+                        )}
+                        {!isStudy && (
+                           <div className="text-xs px-2 py-1 rounded bg-black/5 font-bold opacity-60">
+                             {slot.type === 'school' ? '학교' : slot.type === 'academy' ? '학원' : '휴식'}
+                           </div>
+                        )}
                       </div>
                     </div>
                   );
                 })}
+
+                {/* 빈 시간이 없을 때 안내 */}
+                {timeline.length === 0 && (
+                  <div className="text-center py-10 text-gray-400">
+                    등록된 일정이 없습니다. 시간표를 설정해보세요!
+                  </div>
+                )}
+              </div>
+              
+              <div className="mt-8 flex justify-end">
+                <Link href="/student/chat" className="bg-gray-900 text-white px-6 py-3 rounded-xl font-bold text-sm hover:bg-gray-800 transition-colors shadow-lg flex items-center gap-2">
+                  <MessageCircle className="w-4 h-4" />
+                  시간표가 마음에 안 드나요? AI와 상담하기
+                </Link>
               </div>
             </div>
 
@@ -335,7 +388,6 @@ export default function StudentDashboard({ user }: { user: UserProps }) {
                   <div key={rank} className="flex items-center gap-3 bg-white/5 p-2 rounded-lg border border-white/5">
                     <span className={`w-6 text-center font-bold italic ${rank === 1 ? 'text-yellow-400' : 'text-gray-400'}`}>{rank}</span>
                     <div className="w-8 h-8 rounded-full bg-gray-600 flex items-center justify-center text-xs">
-                        {/* 더미 아바타 */}
                         {String.fromCharCode(65 + rank)} 
                     </div>
                     <span className="text-sm flex-1 font-medium">User_{rank * 234}</span>
