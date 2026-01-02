@@ -118,7 +118,15 @@ export default function DiagnosisResult({
     useEffect(() => {
         if (weeklyPlan.length > 0) {
             const todayIdx = weeklyPlan.findIndex(p => p.isToday);
-            if (todayIdx !== -1) setSelectedDayIndex(todayIdx);
+            console.log("📊 [DiagnosisResult] Weekly Plan Loaded:", weeklyPlan);
+            console.log("📊 [DiagnosisResult] Finding Today... Index:", todayIdx);
+
+            if (todayIdx !== -1) {
+                console.log("✅ [DiagnosisResult] Auto-selecting index:", todayIdx);
+                setSelectedDayIndex(todayIdx);
+            } else {
+                console.warn("⚠️ [DiagnosisResult] Today not found in plan. Defaulting to 0.");
+            }
         }
     }, [weeklyPlan]);
 
@@ -229,8 +237,8 @@ export default function DiagnosisResult({
                         <div className="flex items-center gap-2 mb-6 relative z-10">
                             <div className="bg-white/20 p-2 rounded-lg"><ListTodo className="w-5 h-5 text-white" /></div>
                             <h3 className="font-bold text-lg">
-                                {/* 선택된 날짜의 미션 표시 */}
-                                {selectedPlan.isToday ? "오늘의 미션 (Today)" : `데일리 미션 (${selectedPlan.date || selectedPlan.day})`}
+                                {/* 선택된 날짜의 미션 표시 (날짜 제거, 요일만 표시) */}
+                                {selectedPlan.isToday ? "오늘의 미션 (Today)" : `데일리 미션 (${selectedPlan.day})`}
                             </h3>
                         </div>
 

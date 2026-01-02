@@ -1,14 +1,15 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useStudy } from "../../context/StudyContext"; 
-import { 
-  CheckCircle2, TrendingUp, Flame, 
-  BrainCircuit, Target, ChevronRight, 
+import { useStudy } from "../../context/StudyContext";
+import {
+  CheckCircle2, TrendingUp, Flame,
+  BrainCircuit, Target, ChevronRight,
   MessageCircle, BookOpen, Lock, Edit3,
   PieChart, BarChart3 // 아이콘 추가
 } from "lucide-react";
 import Link from "next/link";
+import { supabase } from "@/app/lib/supabase";
 
 // --- 타입 정의 ---
 interface UserProps {
@@ -16,6 +17,22 @@ interface UserProps {
   name: string;
   role: string;
   streak?: number;
+}
+
+// API 타입
+interface ApiTask {
+  task_id: string;
+  category: string;
+  title: string;
+  subtitle: string;
+  assigned_minutes: number;
+  is_completed: boolean;
+  status: string;
+}
+
+interface ApiScheduleSlot {
+  time_slot: string;
+  task: ApiTask | null;
 }
 
 // [수정] 과목별 미션 현황 데이터 타입
@@ -33,9 +50,9 @@ interface TimeSlot {
   duration: number;
   type: "study" | "rest";
   label: string;
-  taskId?: number;   
-  isDone?: boolean;  
-  isLocked?: boolean; 
+  taskId?: number;
+  isDone?: boolean;
+  isLocked?: boolean;
 }
 
 // [수정] 더미 데이터: 과목별 미션 현황
@@ -48,84 +65,137 @@ const MISSION_STATUS: SubjectMission[] = [
 
 export default function StudentDashboard({ user }: { user: UserProps }) {
   const { schedule, tasks, toggleTask } = useStudy();
-  
+
   // selectedSubject 상태는 더 이상 필요 없으므로 삭제하거나 유지해도 무방 (여기선 삭제)
   const [mounted, setMounted] = useState(false);
   const [timeline, setTimeline] = useState<TimeSlot[]>([]);
-  
+
   const currentTasksList = tasks || [];
 
   useEffect(() => {
     setMounted(true);
-    const today = new Date();
-    const jsDay = today.getDay(); 
-    const scheduleDayKey = jsDay === 0 ? 6 : jsDay - 1; 
 
-    const tempTimeline: TimeSlot[] = [];
-    let taskIndex = 0;
+    const fetchTodayMission = async () => {
+      console.log("🔄 [StudentDashboard] fetchTodayMission 시작");
 
-    const startHour = 9;
-    const endHour = 23;
+      const { data: { session } } = await supabase.auth.getSession();
 
-    for (let h = startHour; h <= endHour; h++) {
-      const key = `${scheduleDayKey}-${h}`;
-      
-      const rawType = schedule ? (schedule[key] as string) : "";
-      const isStudyable = rawType === "study";
-      
-      let currentType: TimeSlot["type"] = "rest";
-      let currentLabel = "일정 있음"; 
-      let currentIsLocked = true;
-      let currentTaskId: number | undefined = undefined;
-      let currentIsDone: boolean | undefined = undefined;
-
-      if (isStudyable) {
-        currentType = "study";
-        currentIsLocked = false;
-        
-        const assignedTask = currentTasksList[taskIndex];
-        if (assignedTask) {
-          currentLabel = assignedTask.title;
-          currentTaskId = assignedTask.id;
-          currentIsDone = assignedTask.done;
-          taskIndex++; 
-        } else {
-          currentLabel = "자율 학습"; 
-        }
-      } else {
-        currentType = "rest";
-        currentLabel = "학습 불가 (일정 있음)";
-        currentIsLocked = true;
+      if (!session?.access_token) {
+        console.warn("⚠️ [StudentDashboard] 세션 토큰이 없습니다.");
+        return;
       }
 
-      const prevSlot = tempTimeline[tempTimeline.length - 1];
-      const canMerge = prevSlot && 
-                       prevSlot.type === currentType && 
-                       currentType !== 'study'; 
+      console.log("✅ [StudentDashboard] 세션 토큰 확인 완료");
 
-      if (canMerge) {
-        prevSlot.endHour = h + 1;
-        prevSlot.duration += 1;
-      } else {
-        tempTimeline.push({
-          startHour: h,
-          endHour: h + 1,
-          duration: 1,
-          type: currentType,
-          label: currentLabel,
-          isLocked: currentIsLocked,
-          taskId: currentTaskId,
-          isDone: currentIsDone
+      try {
+        const apiUrl = `https://mirror-backend-5j11.onrender.com/my/missions/today`;
+        console.log("📡 [StudentDashboard] API 호출:", apiUrl);
+
+        const res = await fetch(apiUrl, {
+          headers: {
+            "Authorization": `Bearer ${session.access_token}`,
+            "Content-Type": "application/json"
+          }
         });
+
+        console.log("📥 [StudentDashboard] API 응답 상태:", res.status, res.statusText);
+
+        if (res.ok) {
+          const data = await res.json();
+          console.log("📦 [StudentDashboard] API 응답 데이터:", JSON.stringify(data, null, 2));
+
+          if (data.success) {
+            console.log("✅ [StudentDashboard] API 요청 성공");
+            console.log("🔍 [StudentDashboard] data.data 구조:", data.data);
+            console.log("🔍 [StudentDashboard] data.data.tasks 타입:", typeof data.data?.tasks);
+            console.log("🔍 [StudentDashboard] data.data.tasks 값:", data.data?.tasks);
+
+            // data.data가 없는 경우 처리
+            if (!data.data) {
+              console.error("❌ [StudentDashboard] data.data가 없습니다!");
+              setTimeline([]);
+              return;
+            }
+
+            // tasks가 배열인지 확인 (실제 API는 'schedule'이 아니라 'tasks' 사용)
+            const schedule = data.data.tasks;
+
+            if (schedule === undefined || schedule === null) {
+              console.warn("⚠️ [StudentDashboard] schedule이 undefined 또는 null입니다. 빈 배열로 처리합니다.");
+              console.log("📋 [StudentDashboard] 미션 정보:", {
+                mission_date: data.data.mission_date,
+                mission_title: data.data.mission_title,
+                total_minutes: data.data.total_minutes,
+                completion_rate: data.data.completion_rate
+              });
+              setTimeline([]);
+              return;
+            }
+
+            if (!Array.isArray(schedule)) {
+              console.error("❌ [StudentDashboard] schedule이 배열이 아닙니다:", schedule);
+              setTimeline([]);
+              return;
+            }
+
+            console.log(`📋 [StudentDashboard] 스케줄 항목 개수: ${schedule.length}`);
+
+            // 빈 배열인 경우 (오늘의 미션이 없음)
+            if (schedule.length === 0) {
+              console.log("ℹ️ [StudentDashboard] 오늘의 미션이 없습니다.");
+              setTimeline([]);
+              return;
+            }
+
+            const tempTimeline: TimeSlot[] = [];
+
+            schedule.forEach((slot: ApiScheduleSlot, index: number) => {
+              console.log(`  ⏰ [${index}] time_slot: ${slot.time_slot}, task:`, slot.task);
+
+              const hour = parseInt(slot.time_slot.split(':')[0]);
+
+              if (!isNaN(hour)) {
+                const timeSlot: TimeSlot = {
+                  startHour: hour,
+                  endHour: hour + 1,
+                  duration: 1,
+                  type: slot.task ? "study" : "rest",
+                  label: slot.task?.title || "일정 없음",
+                  taskId: slot.task ? parseInt(slot.task.task_id) || 0 : undefined,
+                  isDone: slot.task?.is_completed || false,
+                  isLocked: slot.task?.status === "잠김"
+                };
+
+                tempTimeline.push(timeSlot);
+                console.log(`    ➡️ 추가된 타임슬롯:`, timeSlot);
+              } else {
+                console.warn(`    ⚠️ 잘못된 시간 형식: ${slot.time_slot}`);
+              }
+            });
+
+            const sortedTimeline = tempTimeline.sort((a, b) => a.startHour - b.startHour);
+            console.log("✅ [StudentDashboard] 최종 타임라인 설정:", sortedTimeline);
+            setTimeline(sortedTimeline);
+          } else {
+            console.warn("⚠️ [StudentDashboard] API success=false:", data.message);
+            setTimeline([]);
+          }
+        } else {
+          const errorText = await res.text();
+          console.error("❌ [StudentDashboard] API 응답 실패:", res.status, errorText);
+          setTimeline([]);
+        }
+      } catch (err) {
+        console.error("❌ [StudentDashboard] API 호출 중 에러:", err);
+        setTimeline([]);
       }
-    }
+    };
 
-    setTimeline(tempTimeline);
+    fetchTodayMission();
+  }, []);
 
-  }, [schedule, tasks]); 
-
-  const calcProgress = currentTasksList.length > 0 
-    ? Math.round((currentTasksList.filter(t => t.done).length / currentTasksList.length) * 100) 
+  const calcProgress = currentTasksList.length > 0
+    ? Math.round((currentTasksList.filter(t => t.done).length / currentTasksList.length) * 100)
     : 0;
 
   const handleSlotClick = (slot: TimeSlot) => {
@@ -140,7 +210,7 @@ export default function StudentDashboard({ user }: { user: UserProps }) {
   return (
     <div className="min-h-screen bg-gray-50 flex animate-fade-in">
       <main className="flex-1 p-6 md:p-10 max-w-7xl mx-auto">
-        
+
         {/* 상단 헤더 */}
         <header className="flex flex-col md:flex-row md:justify-between md:items-end mb-8 gap-4">
           <div>
@@ -152,7 +222,7 @@ export default function StudentDashboard({ user }: { user: UserProps }) {
             </p>
           </div>
           <div className="flex gap-3">
-             <div className="bg-white px-4 py-2 rounded-xl border border-gray-200 shadow-sm flex items-center gap-2">
+            <div className="bg-white px-4 py-2 rounded-xl border border-gray-200 shadow-sm flex items-center gap-2">
               <Flame className="w-5 h-5 text-orange-500 fill-orange-500" />
               <span className="font-bold text-gray-700">{user?.streak || 1}일 연속</span>
             </div>
@@ -164,10 +234,10 @@ export default function StudentDashboard({ user }: { user: UserProps }) {
         </header>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          
+
           {/* [Left Column] 타임라인 */}
           <div className="lg:col-span-2 space-y-6">
-            
+
             <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-gray-200">
               <div className="flex justify-between items-end mb-6">
                 <div>
@@ -177,7 +247,7 @@ export default function StudentDashboard({ user }: { user: UserProps }) {
                   <h2 className="text-2xl font-bold text-gray-800">오늘의 학습 시간표</h2>
                 </div>
                 <div className="flex items-center gap-3">
-                    <div className="text-right hidden sm:block">
+                  <div className="text-right hidden sm:block">
                     <span className="block text-xs text-gray-400 font-medium">달성률</span>
                     <span className="block text-xl font-bold text-blue-600">{calcProgress}%</span>
                   </div>
@@ -195,9 +265,9 @@ export default function StudentDashboard({ user }: { user: UserProps }) {
                 {timeline.map((slot, index) => {
                   const isStudy = slot.type === "study";
                   const isCompleted = slot.isDone;
-                  
-                  let cardClass = ""; 
-                  
+
+                  let cardClass = "";
+
                   if (isStudy) {
                     if (isCompleted) {
                       cardClass = "bg-blue-600 border-blue-600 text-white shadow-md ring-2 ring-blue-200 ring-offset-1";
@@ -212,17 +282,17 @@ export default function StudentDashboard({ user }: { user: UserProps }) {
 
                   return (
                     <div key={`${slot.startHour}-${index}`} className="flex items-start gap-4 relative z-10">
-                      
+
                       <div className="w-12 text-right pt-4 shrink-0">
                         <div className="text-sm font-bold text-gray-400 font-mono">{startTime}</div>
                         {slot.duration > 1 && (
-                           <div className="text-[10px] text-gray-300 font-mono h-4">
-                             ~ {String(slot.endHour).padStart(2, '0')}:00
-                           </div>
+                          <div className="text-[10px] text-gray-300 font-mono h-4">
+                            ~ {String(slot.endHour).padStart(2, '0')}:00
+                          </div>
                         )}
                       </div>
 
-                      <div 
+                      <div
                         onClick={() => handleSlotClick(slot)}
                         className={`flex-1 p-4 rounded-2xl flex justify-between items-center transition-all duration-200 ${cardClass} ${slot.isLocked ? 'cursor-not-allowed opacity-80' : ''}`}
                       >
@@ -236,7 +306,7 @@ export default function StudentDashboard({ user }: { user: UserProps }) {
                               <Lock className="w-4 h-4 text-gray-400" />
                             </div>
                           )}
-                          
+
                           <div className="flex flex-col">
                             <span className={`font-bold text-sm ${isStudy && !isCompleted ? 'group-hover:text-blue-600' : ''}`}>
                               {slot.label}
@@ -246,22 +316,22 @@ export default function StudentDashboard({ user }: { user: UserProps }) {
                                 {isCompleted ? '완료됨' : '클릭하여 완료 표시'}
                               </span>
                             ) : (
-                               <span className="text-[10px] opacity-70">
-                                 다른 일정 진행 중 ({slot.duration}시간)
-                               </span>
+                              <span className="text-[10px] opacity-70">
+                                다른 일정 진행 중 ({slot.duration}시간)
+                              </span>
                             )}
                           </div>
                         </div>
 
                         {isStudy && (
-                           <div className={`text-xs px-2 py-1 rounded font-bold ${isCompleted ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-500'}`}>
-                             {slot.duration * 60}분
-                           </div>
+                          <div className={`text-xs px-2 py-1 rounded font-bold ${isCompleted ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-500'}`}>
+                            {slot.duration * 60}분
+                          </div>
                         )}
                         {!isStudy && (
-                           <div className="text-xs px-2 py-1 rounded bg-black/5 font-bold opacity-60">
-                             잠김
-                           </div>
+                          <div className="text-xs px-2 py-1 rounded bg-black/5 font-bold opacity-60">
+                            잠김
+                          </div>
                         )}
                       </div>
                     </div>
@@ -274,7 +344,7 @@ export default function StudentDashboard({ user }: { user: UserProps }) {
                   </div>
                 )}
               </div>
-              
+
               <div className="mt-8 flex justify-end">
                 <Link href="/student/chat" className="bg-gray-900 text-white px-6 py-3 rounded-xl font-bold text-sm hover:bg-gray-800 transition-colors shadow-lg flex items-center gap-2">
                   <MessageCircle className="w-4 h-4" />
@@ -286,8 +356,8 @@ export default function StudentDashboard({ user }: { user: UserProps }) {
 
           {/* [Right Column] 사이드 패널 */}
           <div className="space-y-6">
-             {/* 1. Mirror AI 코칭 */}
-             <div className="bg-white p-6 rounded-3xl border border-gray-200 shadow-sm relative overflow-hidden group hover:border-blue-300 transition-colors">
+            {/* 1. Mirror AI 코칭 */}
+            <div className="bg-white p-6 rounded-3xl border border-gray-200 shadow-sm relative overflow-hidden group hover:border-blue-300 transition-colors">
               <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
                 <BrainCircuit className="w-20 h-20 text-blue-600" />
               </div>
@@ -309,7 +379,7 @@ export default function StudentDashboard({ user }: { user: UserProps }) {
                   <BarChart3 className="w-5 h-5 text-indigo-500" /> 과목별 미션 현황
                 </h3>
               </div>
-              
+
               <div className="space-y-5">
                 {MISSION_STATUS.map((item) => (
                   <div key={item.subject}>
@@ -324,20 +394,20 @@ export default function StudentDashboard({ user }: { user: UserProps }) {
                         {item.progress}%
                       </span>
                     </div>
-                    
+
                     {/* 막대 바 */}
                     <div className="h-2.5 bg-gray-100 rounded-full overflow-hidden">
-                      <div 
-                        className={`h-full ${item.color} rounded-full transition-all duration-1000 ease-out`} 
+                      <div
+                        className={`h-full ${item.color} rounded-full transition-all duration-1000 ease-out`}
                         style={{ width: mounted ? `${item.progress}%` : '0%' }}
                       ></div>
                     </div>
                   </div>
                 ))}
               </div>
-              
+
               <p className="text-center text-xs text-gray-400 mt-6 pt-4 border-t border-gray-100">
-                 💡 <span className="font-bold text-indigo-600">영어</span> 미션 2개가 밀려있어요!
+                💡 <span className="font-bold text-indigo-600">영어</span> 미션 2개가 밀려있어요!
               </p>
             </div>
 
@@ -354,7 +424,7 @@ export default function StudentDashboard({ user }: { user: UserProps }) {
                   <div key={rank} className="flex items-center gap-3 bg-white/5 p-2 rounded-lg border border-white/5">
                     <span className={`w-6 text-center font-bold italic ${rank === 1 ? 'text-yellow-400' : 'text-gray-400'}`}>{rank}</span>
                     <div className="w-8 h-8 rounded-full bg-gray-600 flex items-center justify-center text-xs">
-                        {String.fromCharCode(65 + rank)} 
+                      {String.fromCharCode(65 + rank)}
                     </div>
                     <span className="text-sm flex-1 font-medium">User_{rank * 234}</span>
                     <span className="text-xs text-green-400 font-mono">+{100 - rank * 10}pts</span>

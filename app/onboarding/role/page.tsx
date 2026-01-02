@@ -2,15 +2,39 @@
 
 import { useRouter } from "next/navigation";
 import { GraduationCap, School, Users } from "lucide-react";
+import { supabase } from "../../lib/supabase";
 
 export default function RoleSelectionPage() {
   const router = useRouter();
 
-  const selectRole = (role: string) => {
-    // 1. 여기서 백엔드에 '이 유저는 [role]입니다' 라고 업데이트 API 호출 필요
-    // await updateRoleAPI(role);
-    
+  const selectRole = async (role: string) => {
     console.log(`역할 선택됨: ${role}`);
+
+    // 1. 유저 요청으로 역할 저장 스킵 (테스트 목적)
+    console.log("Role saving skipped (Demo Mode)");
+
+    /*
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session?.user) {
+      const { error } = await supabase
+        .from('users')
+        .upsert({
+          id: session.user.id,
+          role: role
+        }, { onConflict: 'id' })
+        .select();
+
+      if (error) {
+        console.error("Role update failed:", error);
+        alert(`역할 저장 실패: ${error.message}`);
+        return;
+      }
+    } else {
+      alert("로그인 세션이 만료되었습니다. 다시 로그인해주세요.");
+      router.push("/login");
+      return;
+    }
+    */
 
     if (role === 'student') {
       // 학생 -> 바로 진단 검사로 이동

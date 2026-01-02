@@ -111,7 +111,20 @@ const SUBJECT_ENUM_MAP: Record<string, string> = {
   "수학": "MATH",
   "영어": "ENGLISH",
   "과학": "SCIENCE",
-  "사회": "SOCIAL"
+  "사회": "SOCIAL",
+  // [Fixed] 과학 탐구 상세 - 개별 과목으로 전송
+  "물리": "PHYSICS",
+  "화학": "CHEMISTRY",
+  "생명과학": "BIOLOGY",
+  "지구과학": "EARTH_SCIENCE",
+  "통합과학": "INTEGRATED_SCIENCE",
+  // [Fixed] 사회/역사 탐구 상세 - 개별 과목으로 전송
+  "한국사": "KOREAN_HISTORY",
+  "윤리": "ETHICS",
+  "지리": "GEOGRAPHY",
+  "역사": "HISTORY",
+  "일반사회": "SOCIAL_STUDIES",
+  "통합사회": "INTEGRATED_SOCIAL"
 };
 
 // 백엔드 응답용 역매핑 함수 (Enum -> 한글)
@@ -217,6 +230,7 @@ export default function DiagnosisPage() {
   const [showTooltip, setShowTooltip] = useState(false);
 
   // 주요 과목 정렬 및 필터링
+  // 주요 과목 정렬 및 필터링 (OCR은 국영수만 진행)
   const selectedMainSubjects = useMemo(() => {
     const filtered = info.subjects.filter(sub => MAIN_SUBJECTS.includes(sub));
     return filtered.sort((a, b) => {
@@ -331,10 +345,13 @@ export default function DiagnosisPage() {
 
         if (responseData.success && responseData.data?.weekly_schedule) {
           const timeMap: Record<string, number> = {};
+          let totalMin = 0;
           responseData.data.weekly_schedule.forEach((item: any) => {
             timeMap[item.day_of_week] = item.recommended_minutes;
+            totalMin += item.recommended_minutes;
             console.log(`📅 [가용시간] ${item.day_of_week}: ${item.recommended_minutes}분`);
           });
+          console.log(`📊 [가용시간] 평균 계산: ${totalMin} ÷ 7 = ${(totalMin / 7).toFixed(1)}분`);
           setWeeklyAvailableTime(timeMap);
           console.log("✅ [가용시간] 주간 가용 시간 가이드 조회 성공:", timeMap);
         } else {
@@ -350,9 +367,21 @@ export default function DiagnosisPage() {
   };
 
   // 6️⃣ [NEW] AI 주간 계획 생성 API 호출
-  const fetchAIWeeklyPlan = async (userId: string, accessToken: string) => {
+  const fetchAIWeeklyPlan = async (userId: string, accessToken: string, subjects: string[]) => {
     console.log("🤖 [AI계획] 주간 학습 계획 생성 시작...");
     try {
+      // [Fix] '이번주 월요일' 계산
+      const todayForCalc = new Date();
+      const dayNum = todayForCalc.getDay();
+      const diffToMon = dayNum === 0 ? 6 : dayNum - 1;
+      const thisMonday = new Date(todayForCalc);
+      thisMonday.setDate(todayForCalc.getDate() - diffToMon);
+
+      const offsetMon = thisMonday.getTimezoneOffset() * 60000;
+      const startDateStr = new Date(thisMonday.getTime() - offsetMon).toISOString().split('T')[0];
+
+      console.log("🤖 [AI계획] Request StartDate:", startDateStr);
+
       const res = await fetch(`https://mirror-backend-5j11.onrender.com/my/missions`, {
         method: "POST",
         headers: {
@@ -360,7 +389,8 @@ export default function DiagnosisPage() {
           "Authorization": `Bearer ${accessToken}`
         },
         body: JSON.stringify({
-          // start_date는 생략 시 다음주 월요일 자동 설정됨
+          start_date: startDateStr,
+          subjects: subjects // [Fix] 과목 명시적 전송
         })
       });
 
@@ -373,10 +403,33 @@ export default function DiagnosisPage() {
           console.log("✅ [AI계획] 생성 성공 - 원본 데이터:");
           console.log(JSON.stringify(planData, null, 2));
           console.log("--------------------------------------------------");
+
+          // [Fix] API 데이터(2023년 등)를 이번 주 날짜로 강제 동기화
+          const baseDate = new Date(thisMonday);
+          console.log("🔍 [AI계획] 수신된 주간 계획 데이터 검증:");
+
+          planData.weekly_plan.forEach((day, idx) => {
+            // [Proof Log] 각 요일별 포함된 과목(카테고리) 확인
+            const taskCategories = day.tasks.map(t => t.category);
+            console.log(`🔍 [AI계획] Day ${idx + 1} (${day.day_of_week}) 과목:`, taskCategories);
+
+            const currentDate = new Date(baseDate);
+            currentDate.setDate(baseDate.getDate() + idx);
+            const offset = currentDate.getTimezoneOffset() * 60000;
+            day.date = new Date(currentDate.getTime() - offset).toISOString().split('T')[0];
+          });
+          console.log("✅ [AI계획] 날짜 강제 동기화 진행:", planData.weekly_plan.map(p => p.date));
+
           setAiWeeklyData(planData);
 
           // UI 호환성을 위해 PlanItem 형식으로 변환하여 weeklyPlan 업데이트
-          const todayStr = new Date().toISOString().split('T')[0];
+          // [Fix] UTC가 아닌 로컬 타임 기준으로 오늘 날짜 계산
+          const today = new Date();
+          const offset = today.getTimezoneOffset() * 60000;
+          const todayStr = new Date(today.getTime() - offset).toISOString().split('T')[0];
+
+          console.log("📅 [AI계획] Local Today:", todayStr);
+          console.log("📅 [AI계획] API Dates:", planData.weekly_plan.map(p => p.date));
 
           const convertedPlan: PlanItem[] = planData.weekly_plan.map((day) => {
             // 요일 매핑 (MONDAY -> Mon)
@@ -402,6 +455,10 @@ export default function DiagnosisPage() {
             };
           });
 
+          // [Fix] 요일 순서대로 정렬 (Mon -> Sun)
+          const daysOrder = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+          convertedPlan.sort((a, b) => daysOrder.indexOf(a.day) - daysOrder.indexOf(b.day));
+
           setWeeklyPlan(convertedPlan);
         } else {
           console.warn("⚠️ [AI계획] 데이터 없음 또는 실패:", responseData);
@@ -426,7 +483,9 @@ export default function DiagnosisPage() {
     const userId = session?.user?.id;
 
     if (accessToken && userId) {
-      await fetchAIWeeklyPlan(userId, accessToken);
+      const mappedSubjects = info.subjects.map(sub => SUBJECT_ENUM_MAP[sub] || sub);
+      console.log("🤖 [AI계획] 전송할 과목(Enum):", mappedSubjects);
+      await fetchAIWeeklyPlan(userId, accessToken, mappedSubjects);
     }
 
     // 로딩 효과를 위해 잠시 대기
@@ -455,7 +514,12 @@ export default function DiagnosisPage() {
       };
 
       // 1️⃣ 기본 정보 저장
+      const mappedSubjects = info.subjects.map(sub => SUBJECT_ENUM_MAP[sub] || sub);
+
       console.log("📝 [기본정보] 학생 정보 저장 시작...");
+      console.log("📝 [기본정보] 선택한 과목(Raw):", info.subjects);
+      console.log("📝 [기본정보] 전송할 과목(Enum):", mappedSubjects);
+
       const basicInfoRes = await fetch("https://mirror-backend-5j11.onrender.com/setup/basic-info", {
         method: "POST", headers: jsonHeaders,
         body: JSON.stringify({
@@ -463,7 +527,7 @@ export default function DiagnosisPage() {
           student_name: info.name,
           school_grade: parseInt(info.grade),
           semester: parseInt(info.semester),
-          subjects: info.subjects
+          subjects: mappedSubjects // [Fix] Enum 매핑된 과목 전송
         }),
       });
 
