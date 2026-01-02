@@ -13,10 +13,57 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabase";
 import Tesseract from 'tesseract.js';
+import DiagnosisResult from "./DiagnosisResult";
 
 // --- [타입 정의] ---
 type TimeSlotSet = Set<string>;
 
+interface Task {
+  task_id: string;
+  sequence: number;
+  category: string;
+  title: string;
+  assigned_minutes: number;
+  time_slot: string;
+  difficulty_level: string;
+  problem_count: number;
+  learning_objective: string;
+  instruction: string;
+  rest_after: number;
+  is_completed: boolean;
+}
+
+interface DailyPlan {
+  date: string;
+  day_of_week: string;
+  total_available_minutes: number;
+  total_planned_minutes: number;
+  daily_focus: string;
+  tasks: Task[];
+  daily_summary: string;
+  energy_distribution: string;
+}
+
+interface WeeklySummary {
+  expected_improvement: string;
+  adaptive_notes: string;
+  weekly_goals: string[];
+}
+
+interface WeeklyPlanResponse {
+  plan_id: string;
+  student_id: string;
+  start_date: string;
+  end_date: string;
+  total_study_minutes: number;
+  subject_distribution: Record<string, number>;
+  focus_areas: string[];
+  weekly_plan: DailyPlan[];
+  weekly_summary: WeeklySummary;
+  created_at: string;
+}
+
+// 기존 PlanItem 호환성을 위해 유지 (UI 렌더링 시 변환하여 사용 예정)
 type PlanItem = {
   day: string;
   isToday: boolean;
@@ -24,6 +71,9 @@ type PlanItem = {
   subject: string;
   topic: string;
   time: number;
+  // 추가된 필드 (API 연동 후 사용)
+  dailyFocus?: string;
+  tasks?: Task[];
 };
 
 // 분석 결과 타입 (내용 + 태그)
@@ -154,6 +204,8 @@ export default function DiagnosisPage() {
   // 시간표 관련 상태
   const [selectedSlots, setSelectedSlots] = useState<TimeSlotSet>(new Set());
   const [weeklyPlan, setWeeklyPlan] = useState<PlanItem[]>([]);
+  // AI 주간 계획 원본 데이터 상태
+  const [aiWeeklyData, setAiWeeklyData] = useState<WeeklyPlanResponse | null>(null);
   const isDragging = useRef(false);
   const dragAction = useRef<"add" | "remove">("add");
   const [showSubSubjects, setShowSubSubjects] = useState(false);
@@ -190,23 +242,8 @@ export default function DiagnosisPage() {
   const fillCurrentWeek = () => { const next = new Set<string>(); for (let d = 0; d < 7; d++) { for (let h of HOURS) next.add(`${d}-${h}`); } setSelectedSlots(next); };
   const calculateTotalHours = () => selectedSlots.size;
 
-  const generateWeeklyPlan = () => {
-    const key = `${info.grade}-${info.semester}`;
-    const dataSet = CURRICULUM_DATA[key] || CURRICULUM_DATA["1-1"];
-    const activeDaysIndex = new Set<number>();
-    const timePerDay: Record<number, number> = {};
-    selectedSlots.forEach(slot => { const [dayStr] = slot.split("-"); const dayIdx = parseInt(dayStr); activeDaysIndex.add(dayIdx); timePerDay[dayIdx] = (timePerDay[dayIdx] || 0) + 60; });
-    const sortedDays = Array.from(activeDaysIndex).sort((a, b) => a - b);
-    if (sortedDays.length === 0) return;
-    const newPlan: PlanItem[] = sortedDays.map((dayIdx, index) => {
-      const dayName = WEEK_DAYS[dayIdx];
-      const subject = info.subjects.length > 0 ? info.subjects[index % info.subjects.length] : "자습";
-      const topics = dataSet[subject] || ["기초 개념 학습", "심화 문제 풀이", "오답 노트 정리"];
-      const topic = topics[index % topics.length];
-      return { day: dayName, isToday: index === 0, type: index % 2 === 0 ? "Concept" : "Review", subject: subject, topic: topic, time: timePerDay[dayIdx] };
-    });
-    setWeeklyPlan(newPlan);
-  };
+  // [삭제됨] 클라이언트 더미 데이터 생성 함수 (이제 API로 대체됨)
+  // const generateWeeklyPlan = () => { ... }
 
   const triggerFileInput = () => {
     if (fileInputRef.current) {
@@ -276,8 +313,9 @@ export default function DiagnosisPage() {
 
   // 주간 가용 시간 가이드 조회
   const fetchWeeklyAvailableTime = async (userId: string, accessToken: string) => {
+    console.log("📡 [가용시간] API 호출 시작 - userId:", userId);
     try {
-      const res = await fetch(`https://mirror-backend-5j11.onrender.com/students/time-slots`, {
+      const res = await fetch(`https://mirror-backend-5j11.onrender.com/my/time-slots`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -285,25 +323,115 @@ export default function DiagnosisPage() {
         }
       });
 
+      console.log("📡 [가용시간] API 응답 상태:", res.status, res.statusText);
+
       if (res.ok) {
         const responseData = await res.json();
+        console.log("📡 [가용시간] 원본 응답 데이터:", JSON.stringify(responseData, null, 2));
+
         if (responseData.success && responseData.data?.weekly_schedule) {
           const timeMap: Record<string, number> = {};
           responseData.data.weekly_schedule.forEach((item: any) => {
             timeMap[item.day_of_week] = item.recommended_minutes;
+            console.log(`📅 [가용시간] ${item.day_of_week}: ${item.recommended_minutes}분`);
           });
           setWeeklyAvailableTime(timeMap);
-          console.log("✅ 주간 가용 시간 가이드 조회 성공:", timeMap);
+          console.log("✅ [가용시간] 주간 가용 시간 가이드 조회 성공:", timeMap);
+        } else {
+          console.warn("⚠️ [가용시간] 응답 데이터 구조 불일치:", responseData);
         }
       } else {
-        console.warn("⚠️ 주간 가용 시간 가이드 조회 실패");
+        const errorText = await res.text();
+        console.warn("⚠️ [가용시간] 주간 가용 시간 가이드 조회 실패 - 상태:", res.status, "응답:", errorText);
       }
     } catch (error) {
-      console.error("주간 가용 시간 가이드 조회 오류:", error);
+      console.error("❌ [가용시간] 주간 가용 시간 가이드 조회 오류:", error);
     }
   };
 
-  const startAnalysis = () => { setStep(5); generateWeeklyPlan(); setTimeout(() => setStep(6), 3000); };
+  // 6️⃣ [NEW] AI 주간 계획 생성 API 호출
+  const fetchAIWeeklyPlan = async (userId: string, accessToken: string) => {
+    console.log("🤖 [AI계획] 주간 학습 계획 생성 시작...");
+    try {
+      const res = await fetch(`https://mirror-backend-5j11.onrender.com/my/missions`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${accessToken}`
+        },
+        body: JSON.stringify({
+          // start_date는 생략 시 다음주 월요일 자동 설정됨
+        })
+      });
+
+      console.log("🤖 [AI계획] API 응답 상태:", res.status);
+
+      if (res.ok) {
+        const responseData = await res.json();
+        if (responseData.success && responseData.data) {
+          const planData = responseData.data as WeeklyPlanResponse;
+          console.log("✅ [AI계획] 생성 성공 - 원본 데이터:");
+          console.log(JSON.stringify(planData, null, 2));
+          console.log("--------------------------------------------------");
+          setAiWeeklyData(planData);
+
+          // UI 호환성을 위해 PlanItem 형식으로 변환하여 weeklyPlan 업데이트
+          const todayStr = new Date().toISOString().split('T')[0];
+
+          const convertedPlan: PlanItem[] = planData.weekly_plan.map((day) => {
+            // 요일 매핑 (MONDAY -> Mon)
+            const dayMap: Record<string, string> = { "MONDAY": "Mon", "TUESDAY": "Tue", "WEDNESDAY": "Wed", "THURSDAY": "Thu", "FRIDAY": "Fri", "SATURDAY": "Sat", "SUNDAY": "Sun" };
+            const dayShort = dayMap[day.day_of_week] || day.day_of_week;
+
+            // 대표 과목 및 주제 추출 (첫 번째 Task 기준)
+            const mainTask = day.tasks && day.tasks.length > 0 ? day.tasks[0] : null;
+            const subject = mainTask ? mainTask.category : "자습";
+            const topic = day.daily_focus; // daily_focus를 topic으로 사용
+
+            return {
+              day: dayShort,
+              isToday: day.date === todayStr, // 실제 날짜 비교
+              type: "Concept",
+              subject: subject,
+              topic: topic,
+              time: day.total_planned_minutes,
+              dailyFocus: day.daily_focus,
+              tasks: day.tasks,
+              date: day.date,           // [NEW] 날짜 추가
+              dailySummary: day.daily_summary // [NEW] 요약 추가
+            };
+          });
+
+          setWeeklyPlan(convertedPlan);
+        } else {
+          console.warn("⚠️ [AI계획] 데이터 없음 또는 실패:", responseData);
+          alert("주간 계획 생성에 실패했습니다: " + responseData.message);
+        }
+      } else {
+        const errText = await res.text();
+        console.error("❌ [AI계획] API 호출 실패:", errText);
+        alert("주간 계획 생성 서버 오류");
+      }
+    } catch (error) {
+      console.error("❌ [AI계획] 네트워크 오류:", error);
+      alert("네트워크 오류가 발생했습니다.");
+    }
+  };
+
+  const startAnalysis = async () => {
+    setStep(5);
+    // API 호출 (토큰 가져오기)
+    const { data: { session } } = await supabase.auth.getSession();
+    const accessToken = session?.access_token;
+    const userId = session?.user?.id;
+
+    if (accessToken && userId) {
+      await fetchAIWeeklyPlan(userId, accessToken);
+    }
+
+    // 로딩 효과를 위해 잠시 대기
+    setTimeout(() => setStep(6), 2000);
+  };
   const calculateUserType = (): "A" | "B" | "C" => { const counts = { A: 0, B: 0, C: 0 }; Object.values(answers).forEach((val) => { if (val === 'A' || val === 'B' || val === 'C') { counts[val]++; } }); const max = Math.max(counts.A, counts.B, counts.C); if (counts.B === max) return "B"; if (counts.C === max) return "C"; return "A"; };
   const getAnalysisText = () => USER_TYPES_INFO[calculateUserType()].desc;
 
@@ -327,7 +455,8 @@ export default function DiagnosisPage() {
       };
 
       // 1️⃣ 기본 정보 저장
-      await fetch("https://mirror-backend-5j11.onrender.com/setup/basic-info", {
+      console.log("📝 [기본정보] 학생 정보 저장 시작...");
+      const basicInfoRes = await fetch("https://mirror-backend-5j11.onrender.com/setup/basic-info", {
         method: "POST", headers: jsonHeaders,
         body: JSON.stringify({
           user_id: userId,
@@ -338,6 +467,15 @@ export default function DiagnosisPage() {
         }),
       });
 
+      if (!basicInfoRes.ok) {
+        const err = await basicInfoRes.json();
+        console.error("❌ [기본정보] 학생 정보 저장 실패:", err);
+        alert("학생 정보 저장에 실패했습니다.");
+        return false;
+      }
+
+      console.log("✅ [기본정보] 학생 정보 저장 성공");
+
       updateUserInfo({
         name: info.name,
         grade: info.grade,
@@ -347,7 +485,7 @@ export default function DiagnosisPage() {
 
       // 2️⃣ [수정됨] 시간표(Routine) 저장 (명세서 반영)
       const routineData: any[] = [];
-      const slotsArray = Array.from(selectedSlots).sort();
+      const slotsArray: string[] = Array.from<string>(selectedSlots).sort();
 
       const dayMap: Record<number, number[]> = {};
       slotsArray.forEach(slot => {
@@ -456,6 +594,9 @@ export default function DiagnosisPage() {
       }
 
       // 5️⃣ 주간 가용 시간 가이드 조회
+      // 백엔드에서 학생 데이터가 완전히 생성될 때까지 잠시 대기
+      console.log("⏳ [가용시간] 백엔드 데이터 처리 대기 중...");
+      await new Promise(resolve => setTimeout(resolve, 500));
       await fetchWeeklyAvailableTime(userId, accessToken);
 
       console.log("✅ 모든 데이터 저장 완료");
@@ -833,179 +974,21 @@ export default function DiagnosisPage() {
 
       {/* --- STEP 6: Final Solution (OCR 결과 & 태그 포함) --- */}
       {step === 6 && (
-        <div className="max-w-6xl w-full space-y-6 animate-scale-in pb-10">
-          <div className="text-center space-y-2 mb-8">
-            <h2 className="text-3xl font-bold text-gray-900">
-              {info.name}님의 고{info.grade} {info.semester}학기 <span className="text-blue-600">Mirror</span> 솔루션
-            </h2>
-            <div className="relative inline-flex items-center gap-2 bg-blue-50 px-3 py-1 rounded-full">
-              <span className="text-sm font-bold text-blue-700">{getAnalysisText()}</span>
-              <div
-                className="relative group"
-                onMouseEnter={() => setShowTooltip(true)}
-                onMouseLeave={() => setShowTooltip(false)}
-              >
-                <Info className="w-4 h-4 text-blue-500 cursor-help" />
-                {showTooltip && (
-                  <div className="absolute left-1/2 -translate-x-1/2 top-full mt-2 z-50 w-72 bg-gray-900 text-white text-xs rounded-lg p-3 shadow-xl animate-fade-in">
-                    <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-gray-900 rotate-45"></div>
-                    <div className="font-bold text-blue-300 mb-1">{USER_TYPES_INFO[calculateUserType()].label}</div>
-                    <div className="text-gray-200">{USER_TYPES_INFO[calculateUserType()].fullDesc}</div>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-
-          <div className="grid md:grid-cols-12 gap-6">
-            <div className="md:col-span-7 flex flex-col gap-6">
-
-              {/* 1. 주간 커리큘럼 */}
-              <div className="bg-white p-6 rounded-3xl shadow-xl border border-gray-100 flex flex-col h-full">
-                <div className="flex items-center justify-between mb-6">
-                  <div className="flex items-center gap-2">
-                    <div className="p-2 rounded-lg bg-blue-100">
-                      <Map className="w-5 h-5 text-blue-600" />
-                    </div>
-                    <h3 className="font-bold text-gray-800 text-lg">
-                      이번 주 맞춤 커리큘럼
-                    </h3>
-                  </div>
-                  <span className="text-xs font-bold text-gray-400 bg-gray-100 px-2 py-1 rounded">AI Generated</span>
-                </div>
-
-                <div className="flex-1 overflow-hidden">
-                  <div className="bg-gray-50 rounded-2xl p-4 h-full overflow-y-auto custom-scrollbar">
-                    {weeklyPlan.length === 0 ? (
-                      <div className="text-center text-gray-400 py-10">설정된 공부 시간이 없습니다.</div>
-                    ) : (
-                      <div className="space-y-3">
-                        {weeklyPlan.map((plan, idx) => (
-                          <div key={`${plan.day}-${idx}`} className={`flex items-center gap-3 p-3 rounded-xl transition-all ${plan.isToday ? 'bg-white shadow-md border border-blue-200 scale-102' : 'hover:bg-white hover:shadow-sm'}`}>
-                            <div className={`w-12 py-2 rounded-lg text-center font-bold text-sm ${plan.isToday ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-500'}`}>
-                              {plan.day}
-                            </div>
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2 mb-0.5">
-                                <span className={`text-xs font-bold px-1.5 rounded ${plan.type === 'Concept' ? 'bg-indigo-100 text-indigo-700' : 'bg-green-100 text-green-700'}`}>
-                                  {plan.type === 'Concept' ? "진도(Concept)" : "복습(Review)"}
-                                </span>
-                                {plan.isToday && <span className="text-[10px] font-bold text-red-500 animate-pulse">● Today</span>}
-                              </div>
-                              <p className={`text-sm font-semibold ${plan.isToday ? 'text-gray-900' : 'text-gray-500'}`}>
-                                {plan.subject}: {plan.topic}
-                              </p>
-                            </div>
-                            <div className="text-right min-w-15">
-                              <span className="text-xs font-bold text-gray-400 block">목표</span>
-                              <span className={`text-sm font-bold ${plan.isToday ? 'text-blue-600' : 'text-gray-600'}`}>
-                                {plan.time}분
-                              </span>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="md:col-span-5 flex flex-col gap-6">
-
-              {/* 2. 오늘의 미션 */}
-              <div className="bg-blue-600 text-white p-6 rounded-3xl shadow-xl shadow-blue-200 flex flex-col relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-64 h-64 bg-white opacity-5 rounded-full blur-3xl transform translate-x-1/2 -translate-y-1/2"></div>
-                <div className="flex items-center gap-2 mb-6 relative z-10">
-                  <div className="bg-white/20 p-2 rounded-lg"><ListTodo className="w-5 h-5 text-white" /></div>
-                  <h3 className="font-bold text-lg">오늘의 미션 (Today)</h3>
-                </div>
-
-                {weeklyPlan.length > 0 && (() => {
-                  // 오늘 요일 계산 (현재 시간 기준)
-                  const today = new Date();
-                  const dayOfWeekIndex = today.getDay(); // 0=일요일, 1=월요일, ..., 6=토요일
-                  const dayNames = ["SUNDAY", "MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY"];
-                  const todayDayName = dayNames[dayOfWeekIndex];
-                  const todayAvailableMinutes = weeklyAvailableTime[todayDayName] || weeklyPlan[0].time;
-
-                  return (
-                    <div className="space-y-4 relative z-10">
-                      <div className="bg-white/10 rounded-2xl p-5 border border-white/10 backdrop-blur-sm">
-                        <div className="flex justify-between items-end mb-4 border-b border-white/20 pb-4">
-                          <span className="text-blue-100 text-sm font-medium">오늘의 가용 시간</span>
-                          <div className="text-right">
-                            <span className="text-3xl font-bold">{todayAvailableMinutes}분</span>
-                            <span className="text-xs text-blue-200 block">예상 성취도 +1.5%</span>
-                          </div>
-                        </div>
-                        <ul className="space-y-0">
-                          <li className="flex gap-4 pb-6 border-l-2 border-blue-400/30 pl-4 relative">
-                            <div className="absolute -left-2.25 top-0 w-4 h-4 rounded-full bg-blue-400 border-4 border-blue-600"></div>
-                            <div>
-                              <span className="text-xs font-bold text-blue-200 block mb-1">워밍업</span>
-                              <p className="font-bold">지난 주 {weeklyPlan[0].subject} 오답 확인</p>
-                            </div>
-                          </li>
-                          <li className="flex gap-4 pl-4 relative">
-                            <div className="absolute -left-2.25 top-0 w-4 h-4 rounded-full bg-white border-4 border-blue-600"></div>
-                            <div>
-                              <span className="text-xs font-bold text-white bg-blue-500/50 px-2 py-0.5 rounded-full mb-1 inline-block">메인 학습</span>
-                              <p className="font-bold text-xl">{weeklyPlan[0].topic}</p>
-                            </div>
-                          </li>
-                        </ul>
-                      </div>
-                      <div className="mt-auto">
-                        <Link href="/dashboard" className="w-full bg-white text-blue-600 py-4 rounded-xl font-bold text-center block hover:bg-blue-50 transition-colors">
-                          {weeklyPlan[0].subject} 학습 시작하기
-                        </Link>
-                      </div>
-                    </div>
-                  );
-                })()}
-              </div>
-
-              {/* 3. [최종] AI 풀이 습관 분석 리포트 */}
-              {Object.keys(ocrAnalysis).length > 0 && (
-                <div className="bg-white p-6 rounded-3xl shadow-lg border border-purple-100 relative overflow-hidden">
-                  <div className="absolute top-0 right-0 p-6 opacity-10">
-                    <BrainCircuit className="w-24 h-24 text-purple-600" />
-                  </div>
-                  <div className="relative z-10">
-                    <h3 className="font-bold text-gray-800 text-lg flex items-center gap-2 mb-4">
-                      <FileText className="w-5 h-5 text-purple-600" />
-                      AI 풀이 습관 분석
-                    </h3>
-                    <div className="space-y-4">
-                      {Object.entries(ocrAnalysis).map(([subject, result]) => (
-                        <div key={subject} className="bg-purple-50 p-4 rounded-xl border border-purple-100 shadow-sm">
-                          <h4 className="font-bold text-purple-700 text-sm mb-2 flex items-center gap-2">
-                            <AlertCircle className="w-3 h-3" /> {subject}
-                          </h4>
-                          <p className="text-sm text-gray-700 leading-relaxed font-medium mb-3">
-                            {result.content}
-                          </p>
-                          {/* 태그 (Detected Tags) 표시 */}
-                          {result.tags && result.tags.length > 0 && (
-                            <div className="flex flex-wrap gap-1.5">
-                              {result.tags.map((tag, i) => (
-                                <span key={i} className="inline-flex items-center gap-0.5 px-2 py-1 rounded-md bg-white border border-purple-200 text-[10px] font-bold text-purple-600 shadow-sm">
-                                  <Hash className="w-2.5 h-2.5 opacity-50" /> {tag}
-                                </span>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              )}
-
-            </div>
-          </div>
-        </div>
+        <DiagnosisResult
+          userName={info.name}
+          grade={info.grade}
+          semester={info.semester}
+          userType={calculateUserType()}
+          userTypeInfo={USER_TYPES_INFO}
+          analysisText={getAnalysisText()}
+          weeklyPlan={weeklyPlan}
+          weeklyAvailableTime={weeklyAvailableTime}
+          ocrAnalysis={ocrAnalysis}
+          showTooltip={showTooltip}
+          onTooltipShow={() => setShowTooltip(true)}
+          onTooltipHide={() => setShowTooltip(false)}
+          aiWeeklyData={aiWeeklyData} // 원본 데이터 전달
+        />
       )}
     </div>
   );
