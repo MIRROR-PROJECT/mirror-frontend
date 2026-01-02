@@ -3,12 +3,13 @@
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useStudy } from "@/app/context/StudyContext";
-import { ROLE_MENUS } from "@/app/constants/navigation"; // 위에서 만든 상수 임포트
+import { ROLE_MENUS } from "@/app/constants/navigation";
+import { Suspense } from "react";
 
-export default function Sidebar() {
+function SidebarContent() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const { user, userInfo } = useStudy(); // user.role이 'student' | 'teacher' | 'parent' 라고 가정
+  const { user, userInfo } = useStudy();
 
   // URL 파라미터로 역할 오버라이드 (데모/테스트용)
   const paramRole = searchParams.get("role");
@@ -61,5 +62,13 @@ export default function Sidebar() {
         </div>
       </div>
     </aside>
+  );
+}
+
+export default function Sidebar() {
+  return (
+    <Suspense fallback={<div className="w-64 bg-white border-r border-gray-200 hidden md:flex" />}>
+      <SidebarContent />
+    </Suspense>
   );
 }
