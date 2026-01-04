@@ -69,6 +69,13 @@ export default function RoleSelectionPage() {
 
       // API 호출 (명세서: POST /onboarding/role)
       console.log("📡 [API] 서버로 POST 요청 전송...");
+      console.log("📡 [API] URL:", "https://mirror-backend-5j11.onrender.com/onboarding/role");
+      console.log("📡 [API] Headers:", {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${session.access_token.substring(0, 20)}...`
+      });
+      console.log("📡 [API] Body:", JSON.stringify({ role }));
+
       const res = await fetch("https://mirror-backend-5j11.onrender.com/onboarding/role", {
         method: "POST",
         headers: {
@@ -79,10 +86,34 @@ export default function RoleSelectionPage() {
       });
 
       console.log(`📥 [API] 응답 상태 코드: ${res.status}`);
+      console.log(`📥 [API] 응답 상태 텍스트: ${res.statusText}`);
+      console.log(`📥 [API] 응답 헤더:`, Object.fromEntries(res.headers.entries()));
 
-      // 응답 파싱
-      const json: RoleResponse | any = await res.json();
-      console.log("📦 [Res] 서버 응답 데이터:", json);
+      // 응답 텍스트 먼저 가져오기 (JSON 파싱 실패 대비)
+      const responseText = await res.text();
+      console.log("📦 [Raw] 서버 응답 원본:", responseText);
+
+      // JSON 파싱 시도
+      let json: RoleResponse | any;
+      try {
+        json = JSON.parse(responseText);
+        console.log("📦 [Parsed] 서버 응답 데이터:", json);
+      } catch (parseError) {
+        console.error("❌ [Parse Error] JSON 파싱 실패:", parseError);
+        console.error("❌ [Parse Error] 응답이 JSON이 아닙니다. 원본:", responseText);
+        alert(`서버 응답 오류: JSON 형식이 아닙니다.\n상태: ${res.status}\n응답: ${responseText.substring(0, 200)}`);
+        return;
+      }
+
+      // 500 에러 상세 로깅
+      if (res.status === 500) {
+        console.error("❌❌❌ [500 Internal Server Error] ❌❌❌");
+        console.error("서버 내부 오류 발생!");
+        console.error("응답 데이터:", json);
+        console.error("에러 메시지:", json.message || json.detail || "메시지 없음");
+        alert(`서버 오류 (500)\n메시지: ${json.message || json.detail || "알 수 없는 오류"}\n\n콘솔을 확인해주세요.`);
+        return;
+      }
 
       // FastAPI 422 Validation Error 처리
       if (res.status === 422 && json.detail) {
