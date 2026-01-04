@@ -907,6 +907,18 @@ export default function DiagnosisPage() {
                 })}
               </div>
 
+              {/* 주요 과목 선택 시 안내 문구 */}
+              {info.subjects.some(s => MAIN_SUBJECTS.includes(s)) && (
+                <div className="mb-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                  <p className="text-xs text-blue-700 font-medium flex items-center gap-2">
+                    <svg className="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                    </svg>
+                    국어, 수학, 영어 중 선택한 과목은 나중에 풀었던 문제를 업로드하여 정확한 진단을 받을 수 있습니다.
+                  </p>
+                </div>
+              )}
+
               {/* [복구됨] 탐구 과목 선택 아코디언 버튼 및 리스트 */}
               <button onClick={() => setShowSubSubjects(!showSubSubjects)} className="w-full flex items-center justify-center gap-1 text-sm text-gray-500 font-medium py-3 hover:bg-gray-50 rounded-lg transition-colors border border-dashed border-gray-300">
                 {showSubSubjects ? "탐구 및 기타 과목 접기" : "탐구 및 기타 과목 선택하기"}

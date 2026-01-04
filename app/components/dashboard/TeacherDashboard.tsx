@@ -112,6 +112,14 @@ export default function TeacherDashboard({ user }: { user: any }) {
 
   const currentClass = classes.find(c => c.id === selectedClassId) || classes[0];
 
+  // 첫 방문 시 튜토리얼로 리다이렉트
+  useEffect(() => {
+    const tutorialCompleted = localStorage.getItem('teacher_tutorial_completed');
+    if (!tutorialCompleted) {
+      window.location.href = '/teacher/tutorial';
+    }
+  }, []);
+
   useEffect(() => {
     const now = new Date();
     const formatted = `${now.getFullYear()}년 ${now.getMonth() + 1}월 ${now.getDate()}일 (${['일', '월', '화', '수', '목', '금', '토'][now.getDay()]})`;

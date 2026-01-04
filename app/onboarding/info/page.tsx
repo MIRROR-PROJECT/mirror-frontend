@@ -16,7 +16,8 @@ function InfoContent() {
   const [formData, setFormData] = useState({
     phoneNumber: "",
     organization: "",
-    childName: ""
+    childName: "",
+    childPhoneNumber: "" // 자녀 전화번호 추가
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -78,7 +79,7 @@ function InfoContent() {
                 "Content-Type": "application/json",
                 "Authorization": `Bearer ${session.access_token}`
               },
-              body: JSON.stringify({ role: role.toUpperCase() })
+              body: JSON.stringify({ role: role.toLowerCase() }) // 백엔드는 소문자 요구!
             });
 
             if (roleRes.ok) {
@@ -143,7 +144,8 @@ function InfoContent() {
               },
               body: JSON.stringify({
                 child_name: formData.childName,
-                parent_phone: formData.phoneNumber
+                parent_phone: formData.phoneNumber,
+                child_phone: formData.childPhoneNumber // 자녀 전화번호로 매칭
               })
             });
 
@@ -203,16 +205,28 @@ function InfoContent() {
 
           {/* 학부모일 때만 표시 */}
           {role === 'parent' && (
-            <div>
-              <label className="block text-sm font-bold text-gray-700 mb-1">자녀 이름</label>
-              <input
-                type="text"
-                placeholder="자녀 이름을 입력하세요"
-                className="w-full px-4 py-3 bg-gray-50 rounded-lg border focus:ring-2 focus:ring-blue-500 outline-none text-gray-900 font-medium placeholder-gray-400"
-                onChange={(e) => setFormData({ ...formData, childName: e.target.value })}
-              />
-              <p className="text-xs text-gray-500 mt-1">* 추후 학생 계정과 연동할 수 있습니다.</p>
-            </div>
+            <>
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-1">자녀 이름</label>
+                <input
+                  type="text"
+                  placeholder="자녀 이름을 입력하세요"
+                  className="w-full px-4 py-3 bg-gray-50 rounded-lg border focus:ring-2 focus:ring-blue-500 outline-none text-gray-900 font-medium placeholder-gray-400"
+                  onChange={(e) => setFormData({ ...formData, childName: e.target.value })}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-1">자녀 전화번호</label>
+                <input
+                  type="tel"
+                  placeholder="010-0000-0000"
+                  className="w-full px-4 py-3 bg-gray-50 rounded-lg border focus:ring-2 focus:ring-blue-500 outline-none text-gray-900 font-medium placeholder-gray-400"
+                  onChange={(e) => setFormData({ ...formData, childPhoneNumber: e.target.value })}
+                />
+                <p className="text-xs text-gray-500 mt-1">* 자녀 전화번호로 학생 계정과 연동됩니다.</p>
+              </div>
+            </>
           )}
 
           <button type="submit" className="w-full bg-blue-600 text-white py-4 rounded-xl font-bold hover:bg-blue-700 transition-colors mt-4">
