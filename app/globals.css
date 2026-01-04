@@ -1,21 +1,60 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Backgrounds */
+  --background: #FFFFFF;
+  /* White (Requested) */
+  --surface: #F7F5F2;
+  /* Oatmeal (Card BG) */
+  --muted: #EBE5DE;
+  /* Light Beige */
+
+  /* Text */
+  --foreground: #3E2723;
+  /* Dark Brown (Primary) */
+  --text-secondary: #5d4037;
+  /* Gray Brown */
+  --text-muted: #A1887F;
+  /* Light Brown */
+
+  /* Brand */
+  --primary: #6D4C41;
+  /* Walnut Wood */
+  --primary-hover: #4E342E;
+  /* Dark Wood */
+  --border: #D7CCC8;
+  /* Latte */
 }
 
 @theme inline {
   --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-muted: var(--muted);
   --color-foreground: var(--foreground);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-muted: var(--text-muted);
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-border: var(--border);
+
+  /* Existing fonts */
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
 @media (prefers-color-scheme: dark) {
+
+  /* Warm Dark Mode (optional override, otherwise use light mode for now as requested) */
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: #1E1B1A;
+    --surface: #2C2826;
+    --muted: #3E3836;
+    --foreground: #EBE5DE;
+    --text-secondary: #D7CCC8;
+    --text-muted: #A1887F;
+    --primary: #8D6E63;
+    --primary-hover: #A1887F;
+    --border: #4E4542;
   }
 }
 
@@ -30,6 +69,7 @@ body {
     opacity: 0;
     transform: translateY(-10px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);

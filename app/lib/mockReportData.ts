@@ -1,103 +1,154 @@
-// Mock 데이터 생성 함수
-import { DailyReport, ReportStats } from "../components/report/types";
+import { DailyReport, SubjectDetail, ReportStats } from "@/app/components/report/types";
 
-export function generateMockReports(count: number = 14): DailyReport[] {
-    const reports: DailyReport[] = [];
-    const today = new Date();
+// 랜덤 데이터 헬퍼
+const SUBJECTS = ["물리", "수학", "영어"];
+const KEYWORDS = ["가속도", "미분", "관계대명사", "빈칸추론", "왜?", "다시설명", "그래프"];
+const getRandomInt = (min: number, max: number) => Math.floor(Math.random() * (max - min + 1)) + min;
+const DAYS = ["일", "월", "화", "수", "목", "금", "토"];
 
-    const subjects = ["수학", "영어", "물리", "화학", "국어"];
-    const days = ["일요일", "월요일", "화요일", "수요일", "목요일", "금요일", "토요일"];
+export const generateMockReports = (count: number): DailyReport[] => {
+    return Array.from({ length: count }).map((_, i) => {
+        const dateObj = new Date();
+        dateObj.setDate(dateObj.getDate() - i);
+        const date = dateObj.toISOString().split('T')[0];
+        const day_of_week = DAYS[dateObj.getDay()];
 
-    for (let i = 0; i < count; i++) {
-        const date = new Date(today);
-        date.setDate(date.getDate() - i);
+        const question_count = getRandomInt(0, 30);
+        // 질문이 많을수록 온도가 올라가는 로직 (기본 36.5도)
+        const passion_temp = Math.min(99, Math.floor(36.5 + question_count * 1.5));
 
-        const dateStr = `${date.getFullYear()}.${String(date.getMonth() + 1).padStart(2, '0')}.${String(date.getDate()).padStart(2, '0')}`;
-        const dayOfWeek = days[date.getDay()];
-
-        const totalTasks = Math.floor(Math.random() * 5) + 5; // 5-10
-        const completedTasks = Math.floor(Math.random() * totalTasks) + Math.floor(totalTasks * 0.5);
-        const achievementRate = Math.round((completedTasks / totalTasks) * 100);
-
-        const numSubjects = Math.floor(Math.random() * 3) + 2; // 2-4 과목
-        const selectedSubjects = subjects
-            .sort(() => Math.random() - 0.5)
-            .slice(0, numSubjects);
-
-        const subjectData = selectedSubjects.map(name => {
-            const totalMissions = Math.floor(Math.random() * 5) + 3; // 3-7 미션
-            const completedMissions = Math.floor(Math.random() * (totalMissions + 1)); // 0-total
-            const completionRate = totalMissions > 0 ? Math.round((completedMissions / totalMissions) * 100) : 0;
+        // 과목별 데이터 생성
+        const subjects: SubjectDetail[] = SUBJECTS.map(sub => {
+            const chats = getRandomInt(0, 10);
+            let badge = "💤 잠잠함";
+            if (chats > 7) badge = "💬 질문 폭발";
+            else if (chats > 3) badge = "🤔 개념 탐구";
+            else if (chats === 0) badge = "🚀 독학 마스터";
 
             return {
-                name,
-                completed_missions: completedMissions,
-                total_missions: totalMissions,
-                completion_rate: completionRate
+                name: sub,
+                total_missions: 5,
+                completed_missions: getRandomInt(2, 5),
+                chat_count: chats,
+                badge
             };
         });
 
-        const totalStudyTime = Math.floor(Math.random() * 180) + 60; // 60-240분
+        const total_study_time_minutes = getRandomInt(60, 300); // 1시간~5시간
+        const achievement_rate = getRandomInt(40, 100);
+        const completed_tasks = subjects.reduce((acc, sub) => acc + sub.completed_missions, 0);
+        const total_tasks = subjects.reduce((acc, sub) => acc + sub.total_missions, 0);
 
-        // 가장 잘한 과목 / 개선 필요 과목
-        const sortedByCompletion = [...subjectData].sort((a, b) => b.completion_rate - a.completion_rate);
-        const bestSubject = sortedByCompletion[0]?.name;
-        const needsImprovementSubject = sortedByCompletion[sortedByCompletion.length - 1]?.name;
+        // [NEW] 향상된 AI 피드백 생성 로직
+        const { title, content } = generateAiFeedback(
+            "김철수",
+            total_study_time_minutes,
+            achievement_rate,
+            question_count,
+            subjects
+        );
 
-        const aiSummaries = [
-            "오늘은 특히 집중력이 좋았어요! 어려운 문제도 끈기있게 풀어냈습니다. 👏",
-            "개념 이해도가 높아지고 있어요. 다만 실수가 조금 있으니 검산을 꼭 해주세요.",
-            "피곤해 보였지만 끝까지 완주했어요. 내일은 조금 더 여유있게 공부해봐요.",
-            "완벽한 하루였어요! 모든 과제를 정확하게 완료했습니다. 🎉",
-            "집중력이 다소 떨어진 날이었어요. 충분한 휴식을 취하고 내일 다시 시작해요."
-        ];
-
-        reports.push({
+        return {
             id: `report-${i}`,
-            user_id: "student-1",
-            user_name: "학생 이름",
-            date: dateStr,
-            day_of_week: dayOfWeek,
-            total_study_time_minutes: totalStudyTime,
-            completed_tasks: completedTasks,
-            total_tasks: totalTasks,
-            achievement_rate: achievementRate,
-            subjects: subjectData,
-            ai_summary: aiSummaries[Math.floor(Math.random() * aiSummaries.length)],
-            ai_highlights: [
-                "문제 풀이 속도가 빨라졌어요",
-                "개념 이해도가 향상되었습니다"
-            ],
-            focus_score: Math.floor(Math.random() * 30) + 70, // 70-100
-            streak_days: i === 0 ? Math.floor(Math.random() * 10) + 1 : undefined, // 최신 리포트만
-            best_subject: bestSubject,
-            needs_improvement_subject: needsImprovementSubject
-        });
+            date,
+            day_of_week,
+            user_name: "김철수", // Mock User Name
+            total_study_time_minutes,
+            achievement_rate,
+            completed_tasks,
+            total_tasks,
+            passion_temp,
+            question_count,
+            keywords: KEYWORDS.sort(() => 0.5 - Math.random()).slice(0, 3),
+            ai_summary_title: title, // [NEW] 제목 연결
+            ai_summary: content,     // [NEW] 내용 연결
+            subjects,
+            focus_score: getRandomInt(40, 100)
+        };
+    });
+};
+
+// [NEW] 상황별 맞춤 피드백 생성 함수 (Modified to return title and content)
+const generateAiFeedback = (
+    name: string,
+    minutes: number,
+    rate: number,
+    questions: number,
+    subjects: SubjectDetail[]
+): { title: string, content: string } => { // Return type changed
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    const timeText = `${hours}시간 ${mins}분`;
+
+    // 1. 가장 많이 질문한 과목 찾기
+    const mostCuriousSubject = subjects.reduce((prev, current) =>
+        (prev.chat_count || 0) > (current.chat_count || 0) ? prev : current
+    );
+
+    let title = "";
+    let goodPoint = "";
+    let improvementPoint = "";
+
+    // 2. 피드백 시나리오 분기
+    if (questions >= 15) {
+        title = "🔥 열정적인 탐구 정신!";
+        goodPoint = `오늘 총 ${questions}번의 질문을 던지며 적극적으로 학습했습니다. 특히 '${mostCuriousSubject.name}' 과목을 깊이 파고든 점이 아주 훌륭해요.`;
+        improvementPoint = `💡 **내일의 집중 포인트**\n질문한 내용을 바탕으로 '나만의 정리 노트'를 만들어보세요. 스스로 정리할 때 진짜 내 것이 된답니다!`;
+    } else if (questions <= 3 && rate >= 85) {
+        title = "🚀 자기주도 학습 능력 탁월!";
+        goodPoint = `AI 튜터에게 의존하지 않고 스스로 문제를 해결하며 ${rate}%의 높은 성취도를 기록했어요. 혼자서도 잘 해내는 힘이 돋보입니다.`;
+        improvementPoint = `💡 **내일의 집중 포인트**\n지금처럼 하되, 혹시 막히는 부분이 생기면 주저 말고 질문해주세요. 더 효율적인 풀이법을 찾을 수도 있으니까요!`;
+    } else if (minutes >= 240) {
+        title = "💪 끈기와 성실함의 승리!";
+        goodPoint = `무려 ${timeText}이나 집중력을 유지했어요. 꾸준히 책상 앞을 지키는 힘은 그 어떤 재능보다 강력한 무기입니다.`;
+        improvementPoint = `💡 **내일의 집중 포인트**\n오래 공부한 만큼 휴식도 중요해요! 내일은 50분 공부하고 10분 쉬는 패턴을 꼭 지켜보세요.`;
+    } else if (rate <= 50) {
+        title = "🌱 포기하지 않는 태도";
+        goodPoint = `목표 달성이 조금 어려웠지만, 그래도 끝까지 학습을 이어나가려 노력한 점을 칭찬해요. 시작이 반입니다!`;
+        improvementPoint = `💡 **내일의 집중 포인트**\n학습량을 조금 줄여서 '작은 성공'을 먼저 경험해보는 건 어떨까요? 쉬운 난이도부터 차근차근 정복해봅시다.`;
+    } else {
+        title = "✨ 균형 잡힌 학습 습관";
+        goodPoint = `${timeText} 동안 성실하게 과제를 수행했습니다. 기복 없이 꾸준히 해나가는 모습이 가장 모범적이에요.`;
+        improvementPoint = `💡 **내일의 집중 포인트**\n내일은 평소에 어려워했던 과목에 30분만 더 투자해보세요. 꾸준함에 '한 스푼의 도전'을 더하면 실력이 급성장할 거예요!`;
     }
 
-    return reports;
-}
+    return {
+        title,
+        content: `**잘한 점**\n${goodPoint}\n\n${improvementPoint}` // Adjust content format if needed
+    };
+};
 
-export function calculateMockStats(reports: DailyReport[]): ReportStats {
-    const totalStudyDays = reports.length;
-    const totalMinutes = reports.reduce((sum, r) => sum + r.total_study_time_minutes, 0);
-    const totalAchievement = reports.reduce((sum, r) => sum + r.achievement_rate, 0);
-    const totalCompleted = reports.reduce((sum, r) => sum + r.completed_tasks, 0);
 
-    // 연속 학습 일수 계산 (간단한 mock)
-    const currentStreak = Math.floor(Math.random() * 7) + 3; // 3-10일
-    const longestStreak = currentStreak + Math.floor(Math.random() * 5); // current보다 조금 더
+// [FIX] 통계 계산 함수 수정
+export const calculateMockStats = (reports: DailyReport[]): ReportStats => {
+    // 데이터가 없을 경우 0으로 초기화
+    if (!reports || reports.length === 0) {
+        return {
+            total_study_days: 0,
+            average_study_time_minutes: 0,
+            average_achievement_rate: 0,
+            total_completed_tasks: 0,
+        };
+    }
 
-    // 주간 목표 달성률 (mock)
-    const weeklyGoalAchievement = Math.floor(Math.random() * 30) + 70; // 70-100%
+    // 1. 총 학습 일수
+    const total_study_days = reports.length;
+
+    // 2. 평균 학습 시간 계산
+    const totalMinutes = reports.reduce((acc, curr) => acc + curr.total_study_time_minutes, 0);
+    const average_study_time_minutes = Math.round(totalMinutes / reports.length);
+
+    // 3. 평균 성취도
+    const totalRate = reports.reduce((acc, curr) => acc + curr.achievement_rate, 0);
+    const average_achievement_rate = Math.round(totalRate / reports.length);
+
+    // 4. 완료한 총 과제 수
+    const total_completed_tasks = reports.reduce((acc, curr) => acc + curr.completed_tasks, 0);
 
     return {
-        total_study_days: totalStudyDays,
-        average_study_time_minutes: Math.round(totalMinutes / totalStudyDays),
-        average_achievement_rate: Math.round(totalAchievement / totalStudyDays),
-        total_completed_tasks: totalCompleted,
-        current_streak: currentStreak,
-        longest_streak: longestStreak,
-        weekly_goal_achievement: weeklyGoalAchievement
+        total_study_days,
+        average_study_time_minutes,
+        average_achievement_rate,
+        total_completed_tasks,
     };
-}
+};

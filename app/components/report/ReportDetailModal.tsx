@@ -1,159 +1,120 @@
 "use client";
 
-import { useState } from "react";
+import { X, Clock, CheckCircle2, ThermometerSun, MessageCircle, Quote, Lightbulb } from "lucide-react";
 import { DailyReport } from "./types";
-import { X, Clock, CheckCircle2, XCircle, Brain, TrendingUp, Calendar } from "lucide-react";
 
-interface ReportDetailModalProps {
+interface Props {
     report: DailyReport | null;
     onClose: () => void;
 }
 
-export default function ReportDetailModal({ report, onClose }: ReportDetailModalProps) {
+export default function ReportDetailModal({ report, onClose }: Props) {
     if (!report) return null;
 
+    // 포맷팅 헬퍼
     const studyTimeHours = Math.floor(report.total_study_time_minutes / 60);
     const studyTimeMinutes = report.total_study_time_minutes % 60;
+    const studyTimeText = `${studyTimeHours}h ${studyTimeMinutes}m`;
+
+    // 온도에 따른 스타일 결정
+    const getTempColor = (t: number) => {
+        if (t >= 80) return "bg-red-50 text-red-600 border-red-100";
+        if (t >= 50) return "bg-orange-50 text-orange-600 border-orange-100";
+        return "bg-blue-50 text-blue-600 border-blue-100";
+    };
 
     return (
-        <div
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in"
-            onClick={onClose}
-        >
-            <div
-                className="bg-white rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl"
-                onClick={(e) => e.stopPropagation()}
-            >
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in">
+            <div className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]" onClick={e => e.stopPropagation()}>
+
                 {/* 헤더 */}
-                <div className="sticky top-0 bg-white border-b border-gray-100 p-6 flex items-center justify-between rounded-t-3xl">
+                <div className="px-6 py-4 border-b flex justify-between items-center bg-gray-50">
                     <div>
-                        <div className="flex items-center gap-2 text-sm text-gray-500 mb-1">
-                            <Calendar className="w-4 h-4" />
-                            <span>{report.day_of_week}</span>
-                        </div>
-                        <h2 className="text-2xl font-bold text-gray-900">{report.date} 학습 리포트</h2>
+                        <span className="text-gray-500 text-xs font-bold">{report.date} 리포트</span>
+                        <h2 className="text-xl font-bold text-gray-800">나의 학습 하루</h2>
                     </div>
-                    <button
-                        onClick={onClose}
-                        className="p-2 hover:bg-gray-100 rounded-xl transition-colors"
-                    >
-                        <X className="w-6 h-6 text-gray-400" />
+                    <button onClick={onClose} className="p-2 hover:bg-gray-200 rounded-full transition-colors">
+                        <X className="w-5 h-5 text-gray-500" />
                     </button>
                 </div>
 
-                {/* 내용 */}
-                <div className="p-6 space-y-6">
-                    {/* 요약 통계 */}
-                    <div className="grid grid-cols-3 gap-4">
-                        <div className="bg-blue-50 rounded-xl p-4 text-center">
-                            <Clock className="w-6 h-6 text-blue-600 mx-auto mb-2" />
-                            <p className="text-sm text-gray-600">학습 시간</p>
-                            <p className="text-xl font-bold text-gray-900 mt-1">
-                                {studyTimeHours}h {studyTimeMinutes}m
-                            </p>
+                {/* 본문 (스크롤) */}
+                <div className="p-6 overflow-y-auto custom-scrollbar space-y-6">
+
+                    {/* 1. 핵심 지표 그리드 */}
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                        <div className="p-3 bg-gray-50 rounded-2xl border flex flex-col items-center justify-center">
+                            <Clock className="w-5 h-5 text-gray-400 mb-1" />
+                            <span className="text-xs text-gray-500">시간</span>
+                            <span className="text-lg font-bold">{studyTimeText}</span>
                         </div>
-                        <div className="bg-green-50 rounded-xl p-4 text-center">
-                            <CheckCircle2 className="w-6 h-6 text-green-600 mx-auto mb-2" />
-                            <p className="text-sm text-gray-600">완료 과제</p>
-                            <p className="text-xl font-bold text-gray-900 mt-1">
-                                {report.completed_tasks}/{report.total_tasks}
-                            </p>
+                        <div className="p-3 bg-gray-50 rounded-2xl border flex flex-col items-center justify-center">
+                            <CheckCircle2 className="w-5 h-5 text-green-500 mb-1" />
+                            <span className="text-xs text-gray-500">달성</span>
+                            <span className="text-lg font-bold">{report.achievement_rate}%</span>
                         </div>
-                        <div className="bg-purple-50 rounded-xl p-4 text-center">
-                            <TrendingUp className="w-6 h-6 text-purple-600 mx-auto mb-2" />
-                            <p className="text-sm text-gray-600">성취도</p>
-                            <p className="text-xl font-bold text-gray-900 mt-1">
-                                {report.achievement_rate}%
-                            </p>
+                        <div className={`p-3 rounded-2xl border flex flex-col items-center justify-center ${getTempColor(report.passion_temp || 36.5)}`}>
+                            <ThermometerSun className="w-5 h-5 mb-1" />
+                            <span className="text-xs opacity-80">열정 온도</span>
+                            <span className="text-lg font-black">{report.passion_temp || 36.5}°C</span>
+                        </div>
+                        <div className="p-3 bg-indigo-50 text-indigo-600 rounded-2xl border border-indigo-100 flex flex-col items-center justify-center">
+                            <MessageCircle className="w-5 h-5 mb-1" />
+                            <span className="text-xs opacity-80">질문</span>
+                            <span className="text-lg font-bold">{report.question_count || 0}회</span>
                         </div>
                     </div>
 
-                    {/* 과목별 미션 완료 현황 */}
-                    <div>
-                        <h3 className="text-lg font-bold text-gray-900 mb-3">과목별 미션 완료</h3>
-                        <div className="space-y-3">
-                            {report.subjects.map((subject, idx) => {
-                                return (
-                                    <div key={idx} className="space-y-2">
-                                        <div className="flex justify-between items-center">
-                                            <span className="font-medium text-gray-700">{subject.name}</span>
-                                            <span className="text-sm text-gray-500">
-                                                {subject.completed_missions}/{subject.total_missions} ({subject.completion_rate}%)
-                                            </span>
-                                        </div>
-                                        <div className="w-full bg-gray-100 rounded-full h-2">
-                                            <div
-                                                className={`h-full rounded-full transition-all ${subject.completion_rate >= 80 ? 'bg-green-500' :
-                                                        subject.completion_rate >= 60 ? 'bg-blue-500' :
-                                                            subject.completion_rate >= 40 ? 'bg-yellow-400' : 'bg-red-400'
-                                                    }`}
-                                                style={{ width: `${subject.completion_rate}%` }}
-                                            ></div>
-                                        </div>
-                                    </div>
-                                );
-                            })}
+                    {/* 2. AI 피드백 (강조) */}
+                    <div className="bg-gradient-to-br from-indigo-50 to-blue-50 p-6 rounded-3xl border border-blue-100 relative">
+                        <Quote className="absolute top-4 left-4 text-blue-200 w-8 h-8 -z-0" />
+                        <div className="relative z-10">
+                            <div className="flex items-center gap-2 mb-2">
+                                <Lightbulb className="w-4 h-4 text-yellow-500 fill-yellow-500" />
+                                <span className="text-sm font-bold text-blue-900">AI 튜터의 피드백</span>
+                            </div>
+                            <h3 className="text-lg font-bold text-gray-900 mb-2">"{report.ai_summary_title}"</h3>
+                            <div className="text-sm text-gray-600 leading-relaxed whitespace-pre-line">
+                                {report.ai_summary}
+                            </div>
                         </div>
                     </div>
 
-                    {/* AI 피드백 */}
-                    <div className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-2xl p-6">
-                        <div className="flex items-center gap-2 mb-3">
-                            <div className="w-10 h-10 rounded-full bg-white border border-gray-200 flex items-center justify-center shadow-sm">
-                                🤖
-                            </div>
-                            <div>
-                                <p className="font-bold text-gray-900 flex items-center gap-1">
-                                    <Brain className="w-4 h-4" /> AI 튜터의 종합 피드백
-                                </p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {/* 3. 키워드 클라우드 */}
+                        <div>
+                            <h3 className="text-sm font-bold text-gray-500 mb-3">💭 오늘의 꽂힌 단어</h3>
+                            <div className="flex flex-wrap gap-2">
+                                {(report.keywords || []).map((kw, i) => (
+                                    <span key={i} className="px-3 py-1 bg-white border rounded-full text-sm text-gray-600 font-medium shadow-sm">
+                                        #{kw}
+                                    </span>
+                                ))}
                             </div>
                         </div>
-                        <p className="text-gray-700 leading-relaxed">
-                            {report.ai_summary}
-                        </p>
 
-                        {report.ai_highlights && report.ai_highlights.length > 0 && (
-                            <div className="mt-4 space-y-2">
-                                {report.ai_highlights.map((highlight, idx) => (
-                                    <div key={idx} className="flex items-start gap-2">
-                                        <span className="text-blue-600 mt-1">•</span>
-                                        <p className="text-sm text-gray-600">{highlight}</p>
+                        {/* 4. 과목별 배지 */}
+                        <div>
+                            <h3 className="text-sm font-bold text-gray-500 mb-3">📚 과목별 상태</h3>
+                            <div className="space-y-2">
+                                {report.subjects.map((sub, i) => (
+                                    <div key={i} className="flex justify-between items-center p-3 bg-white border rounded-xl">
+                                        <span className="text-sm font-bold text-gray-800">{sub.name}</span>
+                                        <span className={`text-[10px] px-2 py-1 rounded-full font-bold ${(sub.badge || "").includes("폭발") ? "bg-red-100 text-red-600" :
+                                            (sub.badge || "").includes("독학") ? "bg-green-100 text-green-600" : "bg-gray-100 text-gray-500"
+                                            }`}>
+                                            {sub.badge}
+                                        </span>
                                     </div>
                                 ))}
                             </div>
-                        )}
-                    </div>
-
-                    {/* 집중도 점수 (부모/강사용) */}
-                    {report.focus_score !== undefined && (
-                        <div>
-                            <h3 className="text-lg font-bold text-gray-900 mb-3">집중도 점수</h3>
-                            <div className="bg-gray-50 rounded-xl p-4">
-                                <div className="flex justify-between items-center mb-2">
-                                    <span className="text-gray-600">전체 집중도</span>
-                                    <span className="text-2xl font-bold text-blue-600">{report.focus_score}/100</span>
-                                </div>
-                                <div className="w-full bg-gray-200 rounded-full h-3">
-                                    <div
-                                        className={`h-full rounded-full ${report.focus_score >= 80 ? 'bg-green-500' :
-                                            report.focus_score >= 60 ? 'bg-yellow-400' : 'bg-red-400'
-                                            }`}
-                                        style={{ width: `${report.focus_score}%` }}
-                                    ></div>
-                                </div>
-                            </div>
                         </div>
-                    )}
+                    </div>
                 </div>
 
-                {/* 푸터 */}
-                <div className="sticky bottom-0 bg-gray-50 border-t border-gray-100 p-6 rounded-b-3xl">
-                    <button
-                        onClick={onClose}
-                        className="w-full py-3 bg-gray-900 text-white rounded-xl font-bold hover:bg-gray-800 transition-colors"
-                    >
-                        닫기
-                    </button>
+                {/* 하단 닫기 (모바일용) */}
+                <div className="p-4 bg-gray-50 border-t md:hidden">
+                    <button onClick={onClose} className="w-full py-3 bg-blue-600 text-white font-bold rounded-xl">닫기</button>
                 </div>
             </div>
         </div>

@@ -6,10 +6,12 @@ import {
   CheckCircle2, Flame,
   BrainCircuit, Target, ChevronRight,
   BookOpen, Lock, Edit3,
-  BarChart3
+  BarChart3, FileText
 } from "lucide-react";
 import Link from "next/link";
 import { supabase } from "@/app/lib/supabase";
+import ReportDetailModal from "../report/ReportDetailModal";
+import { DailyReport } from "../report/types";
 
 // --- 타입 정의 ---
 interface UserProps {
@@ -101,6 +103,9 @@ export default function StudentDashboard({ user }: { user: UserProps }) {
     today_available_minutes: number;
     today_date: string;
   } | null>(null);
+
+  // [NEW] Mock Report State (테스트용)
+  const [showMockReport, setShowMockReport] = useState(false);
 
   // 진척도 계산
   const missionSlots = timeline.filter(t => t.type === "mission");
@@ -517,6 +522,25 @@ export default function StudentDashboard({ user }: { user: UserProps }) {
 
           {/* Right Column (Side Panel) */}
           <div className="space-y-6">
+            {/* [NEW] 리포트 미리보기 버튼 (테스트용) */}
+            <button
+              onClick={() => setShowMockReport(true)}
+              className="w-full bg-gradient-to-r from-primary to-[#8D6E63] text-white p-6 rounded-3xl shadow-2xl hover:shadow-xl transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]"
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="bg-white/20 p-3 rounded-xl">
+                    <FileText className="w-6 h-6 text-white" />
+                  </div>
+                  <div className="text-left">
+                    <div className="font-bold text-lg">학습 리포트 미리보기</div>
+                    <div className="text-xs text-white/80 mt-1">새로운 스타일 확인하기</div>
+                  </div>
+                </div>
+                <ChevronRight className="w-6 h-6" />
+              </div>
+            </button>
+
             <div className="bg-white p-6 rounded-3xl border border-gray-200 shadow-sm relative overflow-hidden group hover:border-blue-300 transition-colors">
               <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
                 <BrainCircuit className="w-20 h-20 text-blue-600" />
@@ -567,6 +591,72 @@ export default function StudentDashboard({ user }: { user: UserProps }) {
           </div>
         </div>
       </main>
+
+      {/* [NEW] Mock Report Modal */}
+      {showMockReport && (
+        <ReportDetailModal
+          report={{
+            id: "mock-001",
+            user_id: user.id,
+            user_name: user.name,
+            date: "2026-01-05",
+            day_of_week: "일요일",
+            total_study_time_minutes: 89,
+            completed_tasks: 6,
+            total_tasks: 9,
+            achievement_rate: 67,
+            chat_message_count: 15,
+            passion_temperature: 72,
+            keywords: [
+              { word: "물리", count: 12, weight: 1.0 },
+              { word: "가속도", count: 8, weight: 0.7 },
+              { word: "그래프", count: 6, weight: 0.5 },
+              { word: "왜?", count: 5, weight: 0.4 },
+              { word: "다시 설명", count: 4, weight: 0.3 }
+            ],
+            subjects: [
+              {
+                name: "물리",
+                completed_missions: 3,
+                total_missions: 4,
+                completion_rate: 75,
+                chat_count: 12,
+                study_minutes: 35,
+                badge_type: "question_burst"
+              },
+              {
+                name: "영어",
+                completed_missions: 0,
+                total_missions: 4,
+                completion_rate: 0,
+                chat_count: 0,
+                study_minutes: 0,
+                badge_type: "quiet"
+              },
+              {
+                name: "수학",
+                completed_missions: 3,
+                total_missions: 3,
+                completion_rate: 100,
+                chat_count: 0,
+                study_minutes: 54,
+                badge_type: "independent"
+              }
+            ],
+            ai_summary: "오늘은 물리에 정말 열심히 집중하셨네요! 가속도 개념에 대해 많이 질문하셨는데, 그래프 해석이 점점 정확해지고 있어요. 수학은 혼자서도 완벽하게 소화하셨고요. 다만 영어는 오늘 전혀 손대지 않으셨는데, 내일은 꼭 챙겨보면 좋겠어요.",
+            ai_highlights: [
+              "물리 학습 중 질문 패턴이 '이해 확인형'에서 '심화 질문형'으로 발전",
+              "수학 독립적 문제 해결 능력 향상 (튜터 도움 없이 3개 미션 완수)",
+              "영어 학습 공백 발생 - 균형잡힌 학습을 위해 내일 우선순위 조정 권장"
+            ],
+            focus_score: 85,
+            streak_days: 5,
+            best_subject: "수학",
+            needs_improvement_subject: "영어"
+          }}
+          onClose={() => setShowMockReport(false)}
+        />
+      )}
     </div>
   );
 }

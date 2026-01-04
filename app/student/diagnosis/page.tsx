@@ -74,6 +74,8 @@ type PlanItem = {
   // 추가된 필드 (API 연동 후 사용)
   dailyFocus?: string;
   tasks?: Task[];
+  date?: string;
+  dailySummary?: string;
 };
 
 // 분석 결과 타입 (내용 + 태그)
@@ -540,6 +542,19 @@ export default function DiagnosisPage() {
 
       console.log("✅ [기본정보] 학생 정보 저장 성공");
 
+      // [NEW] Supabase users 테이블에도 phone_number 저장
+      console.log("📞 [전화번호] Supabase users 테이블 업데이트 중...");
+      const { error: phoneUpdateError } = await supabase
+        .from('users')
+        .update({ phone_number: info.phone })
+        .eq('id', userId);
+
+      if (phoneUpdateError) {
+        console.error("❌ [전화번호] Supabase 업데이트 실패:", phoneUpdateError);
+      } else {
+        console.log("✅ [전화번호] Supabase 업데이트 성공:", info.phone);
+      }
+
       updateUserInfo({
         name: info.name,
         grade: info.grade,
@@ -786,14 +801,14 @@ export default function DiagnosisPage() {
       {step < 5 && (
         <div className="w-full max-w-md mb-8">
           <div className="flex justify-between text-xs font-bold text-gray-400 mb-2 uppercase tracking-wide">
-            <span className={step >= 0 ? "text-blue-600" : ""}>Personal</span>
-            <span className={step >= 1 ? "text-blue-600" : ""}>Info</span>
-            <span className={step >= 2 ? "text-blue-600" : ""}>Style</span>
-            <span className={step >= 3 ? (hasMainSubject ? "text-blue-600" : "text-gray-300 line-through decoration-2") : ""}>Solving</span>
-            <span className={step >= 4 ? "text-blue-600" : ""}>Time</span>
+            <span className={step >= 0 ? "text-primary" : ""}>Personal</span>
+            <span className={step >= 1 ? "text-primary" : ""}>Info</span>
+            <span className={step >= 2 ? "text-primary" : ""}>Style</span>
+            <span className={step >= 3 ? (hasMainSubject ? "text-primary" : "text-gray-300 line-through decoration-2") : ""}>Solving</span>
+            <span className={step >= 4 ? "text-primary" : ""}>Time</span>
           </div>
           <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-            <div className="h-full bg-blue-600 transition-all duration-500 ease-out" style={{ width: `${(step / 4) * 100}%` }}></div>
+            <div className="h-full bg-primary transition-all duration-500 ease-out" style={{ width: `${(step / 4) * 100}%` }}></div>
           </div>
         </div>
       )}
@@ -811,7 +826,7 @@ export default function DiagnosisPage() {
             {/* 이름 */}
             <div>
               <label className="block text-sm font-bold text-gray-700 mb-2 flex items-center gap-2">
-                <User className="w-4 h-4 text-blue-600" />
+                <User className="w-4 h-4 text-primary" />
                 이름
               </label>
               <input
@@ -819,14 +834,14 @@ export default function DiagnosisPage() {
                 value={info.name}
                 onChange={(e) => setInfo({ ...info, name: e.target.value })}
                 placeholder="홍길동"
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-gray-900 font-medium placeholder-gray-400"
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all text-gray-900 font-medium placeholder-gray-400"
               />
             </div>
 
             {/* 전화번호 */}
             <div>
               <label className="block text-sm font-bold text-gray-700 mb-2 flex items-center gap-2">
-                <FileText className="w-4 h-4 text-blue-600" />
+                <FileText className="w-4 h-4 text-primary" />
                 전화번호
               </label>
               <input
@@ -834,7 +849,7 @@ export default function DiagnosisPage() {
                 value={info.phone}
                 onChange={(e) => setInfo({ ...info, phone: e.target.value })}
                 placeholder="010-1234-5678"
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-gray-900 font-medium placeholder-gray-400"
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all text-gray-900 font-medium placeholder-gray-400"
               />
               <p className="text-xs text-gray-500 mt-1">학습 관련 알림을 받을 연락처입니다 (형식: 000-0000-0000)</p>
             </div>
@@ -846,8 +861,8 @@ export default function DiagnosisPage() {
       {step === 1 && (
         <div className="bg-white max-w-md w-full p-8 rounded-3xl shadow-xl space-y-6 animate-fade-in-up">
           <div className="text-center">
-            <div className="inline-flex items-center justify-center p-3 bg-blue-50 rounded-full mb-3">
-              <School className="w-6 h-6 text-blue-600" />
+            <div className="inline-flex items-center justify-center p-3 bg-surface rounded-full mb-3">
+              <School className="w-6 h-6 text-primary" />
             </div>
             <h2 className="text-2xl font-bold text-gray-900">고등학교 학습 진단</h2>
             <p className="text-gray-500 text-sm mt-1">학생 정보와 집중할 과목을 선택해주세요.</p>
@@ -862,18 +877,18 @@ export default function DiagnosisPage() {
                 value={info.name}
                 onChange={(e) => setInfo({ ...info, name: e.target.value })}
                 placeholder="홍길동"
-                className="w-full p-4 rounded-xl border-2 border-gray-200 focus:border-blue-500 focus:outline-none focus:bg-blue-50/30 font-bold text-gray-900 placeholder-gray-300 transition-colors"
+                className="w-full p-4 rounded-xl border-2 border-gray-200 focus:border-primary focus:outline-none focus:bg-surface/30 font-bold text-gray-900 placeholder-gray-300 transition-colors"
               />
             </div>
             <div className="space-y-3">
               <div className="flex gap-3">
                 <div className="flex-1">
                   <label className="block text-xs font-bold text-gray-500 mb-1 ml-1">학년</label>
-                  <div className="flex gap-1">{["1", "2", "3"].map((g) => (<button key={g} onClick={() => setInfo({ ...info, grade: g })} className={`flex-1 py-3 rounded-lg border-2 font-bold ${info.grade === g ? "bg-blue-600 text-white border-blue-600" : "bg-white text-gray-600 border-gray-200 hover:border-blue-300"}`}>{g}학년</button>))}</div>
+                  <div className="flex gap-1">{["1", "2", "3"].map((g) => (<button key={g} onClick={() => setInfo({ ...info, grade: g })} className={`flex-1 py-3 rounded-lg border-2 font-bold ${info.grade === g ? "bg-primary text-white border-primary" : "bg-white text-gray-600 border-gray-200 hover:border-[#A1887F]"}`}>{g}학년</button>))}</div>
                 </div>
                 <div className="flex-1">
                   <label className="block text-xs font-bold text-gray-500 mb-1 ml-1">학기</label>
-                  <div className="flex gap-1">{["1", "2"].map((s) => (<button key={s} onClick={() => setInfo({ ...info, semester: s })} className={`flex-1 py-3 rounded-lg border-2 font-bold ${info.semester === s ? "bg-blue-600 text-white border-blue-600" : "bg-white text-gray-600 border-gray-200 hover:border-blue-300"}`}>{s}학기</button>))}</div>
+                  <div className="flex gap-1">{["1", "2"].map((s) => (<button key={s} onClick={() => setInfo({ ...info, semester: s })} className={`flex-1 py-3 rounded-lg border-2 font-bold ${info.semester === s ? "bg-primary text-white border-primary" : "bg-white text-gray-600 border-gray-200 hover:border-[#A1887F]"}`}>{s}학기</button>))}</div>
                 </div>
               </div>
             </div>
@@ -884,7 +899,7 @@ export default function DiagnosisPage() {
                 {MAIN_SUBJECTS.map((subject) => {
                   const isSelected = info.subjects.includes(subject);
                   return (
-                    <button key={subject} onClick={() => toggleSubject(subject)} className={`py-4 rounded-xl font-bold border-2 transition-all relative ${isSelected ? "bg-blue-600 border-blue-600 text-white shadow-lg transform scale-105" : "bg-white border-gray-200 text-gray-500 hover:border-blue-300 hover:bg-blue-50"}`}>
+                    <button key={subject} onClick={() => toggleSubject(subject)} className={`py-4 rounded-xl font-bold border-2 transition-all relative ${isSelected ? "bg-primary border-primary text-white shadow-lg transform scale-105" : "bg-white border-gray-200 text-gray-500 hover:border-[#A1887F] hover:bg-surface"}`}>
                       {subject}
                       {isSelected && <Check className="w-4 h-4 absolute top-2 right-2 text-white/80" />}
                     </button>
@@ -906,7 +921,7 @@ export default function DiagnosisPage() {
                         {group.items.map((subject) => {
                           const isSelected = info.subjects.includes(subject);
                           return (
-                            <button key={subject} onClick={() => toggleSubject(subject)} className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all ${isSelected ? "bg-indigo-100 border-indigo-500 text-indigo-700 shadow-sm" : "bg-white border-gray-200 text-gray-500 hover:border-gray-300 hover:bg-gray-50"}`}>
+                            <button key={subject} onClick={() => toggleSubject(subject)} className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all ${isSelected ? "bg-[#F5F5F0] border-primary text-primary shadow-sm" : "bg-white border-gray-200 text-gray-500 hover:border-gray-300 hover:bg-gray-50"}`}>
                               {subject}
                             </button>
                           );
@@ -932,7 +947,7 @@ export default function DiagnosisPage() {
             {QUIZ_QUESTIONS.map((q) => (
               <div key={q.id} className="space-y-3">
                 <h3 className="font-bold text-gray-800 text-lg flex items-center gap-2">
-                  <span className="bg-blue-100 text-blue-600 text-xs px-2 py-1 rounded-full">Q{q.id}</span>
+                  <span className="bg-surface text-primary text-xs px-2 py-1 rounded-full">Q{q.id}</span>
                   {q.question}
                 </h3>
                 <div className="grid grid-cols-1 gap-2">
@@ -941,15 +956,15 @@ export default function DiagnosisPage() {
                       key={opt.value}
                       onClick={() => setAnswers({ ...answers, [q.id]: opt.value })}
                       className={`text-left p-4 rounded-xl border-2 transition-all flex items-center justify-between group ${answers[q.id] === opt.value
-                        ? "border-blue-500 bg-blue-50 ring-1 ring-blue-200"
+                        ? "border-primary bg-surface ring-1 ring-[#D7CCC8]"
                         : "border-gray-100 hover:border-gray-300 hover:bg-gray-50"
                         }`}
                     >
                       <div>
-                        <div className={`font-bold text-base mb-1 ${answers[q.id] === opt.value ? "text-blue-700" : "text-gray-800"}`}>{opt.label}</div>
+                        <div className={`font-bold text-base mb-1 ${answers[q.id] === opt.value ? "text-primary" : "text-gray-800"}`}>{opt.label}</div>
                         <div className="text-xs text-gray-500">{opt.desc}</div>
                       </div>
-                      {answers[q.id] === opt.value && <CheckCircle2 className="w-5 h-5 text-blue-500 shrink-0" />}
+                      {answers[q.id] === opt.value && <CheckCircle2 className="w-5 h-5 text-primary shrink-0" />}
                     </button>
                   ))}
                 </div>
@@ -978,7 +993,7 @@ export default function DiagnosisPage() {
                   key={subject}
                   onClick={() => { setActiveSubjectTab(subject); setOcrStatus(isDone ? "done" : "idle"); }}
                   className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all flex items-center justify-center gap-1
-                    ${isActive ? "bg-white text-blue-600 shadow-sm" : "text-gray-400 hover:text-gray-600"}
+                    ${isActive ? "bg-white text-primary shadow-sm" : "text-gray-400 hover:text-gray-600"}
                   `}
                 >
                   {subject}
@@ -1023,10 +1038,10 @@ export default function DiagnosisPage() {
                 {(ocrStatus === "idle") && (
                   <div
                     onClick={triggerFileInput}
-                    className="h-full border-2 border-dashed border-gray-300 rounded-2xl p-10 flex flex-col items-center justify-center cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition-all group"
+                    className="h-full border-2 border-dashed border-gray-300 rounded-2xl p-10 flex flex-col items-center justify-center cursor-pointer hover:border-primary hover:bg-surface transition-all group"
                   >
-                    <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4 group-hover:bg-blue-100 transition-colors">
-                      <Camera className="w-8 h-8 text-gray-400 group-hover:text-blue-500" />
+                    <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4 group-hover:bg-[#EBE5DE] transition-colors">
+                      <Camera className="w-8 h-8 text-gray-400 group-hover:text-primary" />
                     </div>
                     <p className="font-bold text-gray-600">{activeSubjectTab} 풀이 사진</p>
                     <p className="text-xs text-gray-400 mt-1">클릭하여 업로드 (OCR 자동 검사)</p>
@@ -1034,10 +1049,10 @@ export default function DiagnosisPage() {
                 )}
 
                 {(ocrStatus === "scanning" || ocrStatus === "analyzing") && (
-                  <div className="h-full border-2 border-blue-100 rounded-2xl p-10 flex flex-col items-center justify-center bg-blue-50 relative overflow-hidden">
-                    <ScanLine className="w-16 h-16 text-blue-500 animate-pulse mb-4" />
-                    <div className="absolute top-0 left-0 w-full h-1 bg-blue-400 shadow-[0_0_20px_rgba(59,130,246,0.8)] animate-[scan_2s_ease-in-out_infinite]"></div>
-                    <p className="font-bold text-blue-700 animate-pulse">
+                  <div className="h-full border-2 border-[#EBE5DE] rounded-2xl p-10 flex flex-col items-center justify-center bg-surface relative overflow-hidden">
+                    <ScanLine className="w-16 h-16 text-primary animate-pulse mb-4" />
+                    <div className="absolute top-0 left-0 w-full h-1 bg-[#8D6E63] shadow-[0_0_20px_rgba(109,76,65,0.8)] animate-[scan_2s_ease-in-out_infinite]"></div>
+                    <p className="font-bold text-primary animate-pulse">
                       {ocrStatus === "scanning" ? "글자 읽는 중..." : "과목 일치 여부 확인 중..."}
                     </p>
                   </div>
@@ -1061,12 +1076,12 @@ export default function DiagnosisPage() {
           <div className="flex flex-col gap-3 bg-gray-50 p-3 rounded-xl">
             <div className="grid grid-cols-2 gap-2">
               <button onClick={clearCurrentWeek} className="flex items-center justify-center gap-1 py-2 text-xs font-bold text-gray-600 bg-white border border-gray-300 rounded-lg hover:bg-gray-100 shadow-sm"><RefreshCcw className="w-3 h-3" /> 전체 비우기</button>
-              <button onClick={fillCurrentWeek} className="flex items-center justify-center gap-1 py-2 text-xs font-bold text-blue-600 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 shadow-sm"><Maximize className="w-3 h-3" /> 전체 채우기</button>
+              <button onClick={fillCurrentWeek} className="flex items-center justify-center gap-1 py-2 text-xs font-bold text-primary bg-surface border border-[#D7CCC8] rounded-lg hover:bg-[#EBE5DE] shadow-sm"><Maximize className="w-3 h-3" /> 전체 채우기</button>
             </div>
             <div className="flex justify-between items-center px-1 pt-2 border-t border-gray-200">
-              <span className="text-sm font-bold text-gray-700 flex items-center gap-2">확보: <span className="text-blue-600 text-lg font-black">{calculateTotalHours()}시간</span></span>
+              <span className="text-sm font-bold text-gray-700 flex items-center gap-2">확보: <span className="text-primary text-lg font-black">{calculateTotalHours()}시간</span></span>
               <div className="flex items-center gap-2 text-xs text-gray-400">
-                <div className="flex items-center gap-1"><div className="w-3 h-3 bg-blue-500 rounded-sm"></div>공부 가능</div>
+                <div className="flex items-center gap-1"><div className="w-3 h-3 bg-primary rounded-sm"></div>공부 가능</div>
                 <div className="flex items-center gap-1"><div className="w-3 h-3 bg-white border rounded-sm"></div>불가능</div>
               </div>
             </div>
@@ -1093,7 +1108,7 @@ export default function DiagnosisPage() {
                         key={key}
                         onMouseDown={() => handleMouseDown(dayIdx, hour)}
                         onMouseEnter={() => handleMouseEnter(dayIdx, hour)}
-                        className={`cursor-pointer transition-colors duration-75 border-r last:border-r-0 ${isSelected ? "bg-blue-500 hover:bg-blue-400" : "bg-white hover:bg-gray-100"}`}
+                        className={`cursor-pointer transition-colors duration-75 border-r last:border-r-0 ${isSelected ? "bg-primary hover:bg-[#8D6E63]" : "bg-white hover:bg-gray-100"}`}
                       />
                     );
                   })}
@@ -1119,7 +1134,7 @@ export default function DiagnosisPage() {
           <button
             onClick={handleNext}
             disabled={!canGoNext() || isSubmitting}
-            className="flex-1 bg-blue-600 disabled:bg-gray-300 text-white py-4 rounded-xl font-bold text-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 shadow-lg disabled:shadow-none"
+            className="flex-1 bg-primary disabled:bg-gray-300 text-white py-4 rounded-xl font-bold text-lg hover:bg-[#5D4037] transition-colors flex items-center justify-center gap-2 shadow-lg disabled:shadow-none"
           >
             {isSubmitting ? (
               <>
@@ -1139,7 +1154,7 @@ export default function DiagnosisPage() {
       {/* --- STEP 5: AI Analysis --- */}
       {step === 5 && (
         <div className="text-center space-y-6 animate-fade-in">
-          <Loader2 className="w-16 h-16 text-blue-600 animate-spin mx-auto" />
+          <Loader2 className="w-16 h-16 text-primary animate-spin mx-auto" />
           <h2 className="text-2xl font-bold text-gray-900">Mirror AI가 분석 중입니다...</h2>
           <div className="space-y-3 text-gray-500">
             <p>🧠 학습 성향 분석: {getAnalysisText()}</p>

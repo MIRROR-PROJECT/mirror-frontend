@@ -74,21 +74,22 @@ export default function DailyReportCard({
                     <ChevronRight className="w-5 h-5 text-gray-300 group-hover:text-blue-500 shrink-0" />
                 </div>
 
-                {/* AI 피드백 영역 */}
-                <div className="bg-gray-50 rounded-xl p-4 mt-2 flex gap-3">
-                    <div className="shrink-0 mt-1">
-                        <div className="w-8 h-8 rounded-full bg-white border border-gray-200 flex items-center justify-center text-sm shadow-sm">
+                {/* AI 피드백 영역 (타이틀만 표시) */}
+                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-3 mt-3 border border-blue-100/50 flex items-center gap-3 group-hover:bg-blue-50/80 transition-colors">
+                    <div className="shrink-0">
+                        <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center text-sm shadow-sm ring-1 ring-blue-100">
                             🤖
                         </div>
                     </div>
-                    <div>
-                        <p className="text-xs font-bold text-gray-500 mb-1 flex items-center gap-1">
+                    <div className="flex-1 min-w-0">
+                        <p className="text-[10px] font-bold text-blue-500 mb-0.5 flex items-center gap-1 uppercase tracking-wider">
                             <Brain className="w-3 h-3" /> AI 튜터의 코멘트
                         </p>
-                        <p className="text-sm text-gray-700 leading-relaxed">
-                            {report.ai_summary}
+                        <p className="text-sm font-bold text-gray-800 truncate">
+                            {report.ai_summary_title}
                         </p>
                     </div>
+                    <ChevronRight className="w-4 h-4 text-blue-300 group-hover:text-blue-500 transition-colors" />
                 </div>
             </div>
         </div>

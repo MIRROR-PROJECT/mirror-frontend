@@ -33,57 +33,17 @@ export default async function DashboardPage(props: {
     redirect('/onboarding/role');
   }
 
-  // 4. 학생인 경우: 백엔드 진단 완료 여부 체크
+  // 4. 학생인 경우: 진단 완료 여부 체크 (전화번호 기반)
   if (role === 'student') {
-    let shouldRedirectToOnboarding = false;
+    // 전화번호가 있으면 진단 완료로 간주
+    const phoneNumber = userData?.phone_number;
+    console.log('🔍 [Dashboard] 진단 완료 체크 - phone_number:', phoneNumber);
 
-    try {
-      const { data: sessionData } = await supabase.auth.getSession();
-      const accessToken = sessionData.session?.access_token;
-
-      if (accessToken) {
-        // 백엔드에서 진단 완료 여부 확인
-        console.log('🔍 [Dashboard] 진단 완료 체크 시작...');
-        const diagnosisCheckResponse = await fetch('https://mirror-backend-5j11.onrender.com/setup/basic-info', {
-          headers: {
-            'Authorization': `Bearer ${accessToken}`,
-            'Content-Type': 'application/json'
-          },
-          cache: 'no-store'
-        });
-
-        console.log('📥 [Dashboard] 진단 체크 응답 상태:', diagnosisCheckResponse.status);
-
-        let isDiagnosisCompleted = false;
-        if (diagnosisCheckResponse.ok) {
-          const diagnosisData = await diagnosisCheckResponse.json();
-          console.log('📦 [Dashboard] 진단 체크 응답 데이터:', diagnosisData);
-          isDiagnosisCompleted = diagnosisData.success && diagnosisData.data !== null;
-          console.log('🔍 [Dashboard] 백엔드 진단 완료 여부:', isDiagnosisCompleted);
-        } else {
-          const errorData = await diagnosisCheckResponse.text();
-          console.error('❌ [Dashboard] 진단 체크 API 실패:', diagnosisCheckResponse.status, errorData);
-        }
-
-        // 진단을 완료하지 않았으면 플래그 설정
-        if (!isDiagnosisCompleted) {
-          console.log('📋 [Dashboard] 백엔드 진단 미완료 -> 리다이렉트 플래그 설정');
-          shouldRedirectToOnboarding = true;
-        } else {
-          console.log('✅ [Dashboard] 진단 완료 확인 -> 대시보드 표시');
-        }
-      } else {
-        shouldRedirectToOnboarding = true;
-      }
-    } catch (error) {
-      console.error('❌ [Dashboard] 진단 체크 에러:', error);
-      shouldRedirectToOnboarding = true;
-    }
-
-    // try-catch 밖에서 리다이렉트 (에러 무한 루프 방지)
-    if (shouldRedirectToOnboarding) {
-      console.log('🔄 [Dashboard] /onboarding/role로 리다이렉트 실행');
+    if (!phoneNumber) {
+      console.log('📋 [Dashboard] 전화번호 없음 -> 진단 미완료 -> /onboarding/role로 리다이렉트');
       redirect('/onboarding/role');
+    } else {
+      console.log('✅ [Dashboard] 전화번호 확인 -> 진단 완료 -> 대시보드 표시');
     }
 
     return <StudentDashboard user={userData} />;

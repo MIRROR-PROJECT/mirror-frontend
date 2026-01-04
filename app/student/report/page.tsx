@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { BarChart2 } from "lucide-react";
+// 경로에 맞게 수정해주세요
 import DailyReportCard from "@/app/components/report/DailyReportCard";
 import ReportStatsSection from "@/app/components/report/ReportStatsSection";
 import ReportDetailModal from "@/app/components/report/ReportDetailModal";
@@ -12,7 +13,7 @@ export default function StudentReportPage() {
   const [selectedReport, setSelectedReport] = useState<DailyReport | null>(null);
   const [dateFilter, setDateFilter] = useState<"7days" | "30days" | "all">("30days");
 
-  // Mock 데이터 생성
+  // Mock 데이터 생성 (위에서 만든 함수 사용)
   const allReports = useMemo(() => generateMockReports(30), []);
 
   // 날짜 필터 적용
@@ -26,7 +27,7 @@ export default function StudentReportPage() {
   const stats = useMemo(() => calculateMockStats(filteredReports), [filteredReports]);
 
   return (
-    <div className="p-8 max-w-5xl mx-auto space-y-8 animate-fade-in">
+    <div className="p-6 md:p-8 max-w-5xl mx-auto space-y-8 animate-fade-in pb-20">
 
       {/* 1. 페이지 헤더 */}
       <div>
@@ -45,39 +46,24 @@ export default function StudentReportPage() {
       {/* 3. 날짜 필터 */}
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-bold text-gray-800">최근 리포트</h2>
-        <div className="flex gap-2">
-          <button
-            onClick={() => setDateFilter("7days")}
-            className={`px-4 py-2 rounded-xl text-sm font-medium transition-colors ${dateFilter === "7days"
-                ? "bg-blue-600 text-white"
-                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-              }`}
-          >
-            최근 7일
-          </button>
-          <button
-            onClick={() => setDateFilter("30days")}
-            className={`px-4 py-2 rounded-xl text-sm font-medium transition-colors ${dateFilter === "30days"
-                ? "bg-blue-600 text-white"
-                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-              }`}
-          >
-            최근 30일
-          </button>
-          <button
-            onClick={() => setDateFilter("all")}
-            className={`px-4 py-2 rounded-xl text-sm font-medium transition-colors ${dateFilter === "all"
-                ? "bg-blue-600 text-white"
-                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-              }`}
-          >
-            전체
-          </button>
+        <div className="flex gap-2 bg-gray-100 p-1 rounded-xl">
+          {(["7days", "30days", "all"] as const).map((filter) => (
+            <button
+              key={filter}
+              onClick={() => setDateFilter(filter)}
+              className={`px-4 py-1.5 rounded-lg text-sm font-bold transition-all ${dateFilter === filter
+                ? "bg-white text-blue-600 shadow-sm"
+                : "text-gray-500 hover:text-gray-700"
+                }`}
+            >
+              {filter === "7days" ? "7일" : filter === "30days" ? "30일" : "전체"}
+            </button>
+          ))}
         </div>
       </div>
 
-      {/* 4. 리포트 리스트 */}
-      <div className="space-y-4">
+      {/* 4. 리포트 리스트 (Grid 레이아웃 적용 추천) */}
+      <div className="grid grid-cols-1 gap-4">
         {filteredReports.map((report) => (
           <DailyReportCard
             key={report.id}
@@ -87,11 +73,13 @@ export default function StudentReportPage() {
         ))}
       </div>
 
-      {/* 5. 상세 보기 모달 */}
-      <ReportDetailModal
-        report={selectedReport}
-        onClose={() => setSelectedReport(null)}
-      />
+      {/* 5. 상세 보기 모달 (새로 만든 컴포넌트 연결) */}
+      {selectedReport && (
+        <ReportDetailModal
+          report={selectedReport}
+          onClose={() => setSelectedReport(null)}
+        />
+      )}
     </div>
   );
 }
