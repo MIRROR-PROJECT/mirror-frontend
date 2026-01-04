@@ -37,53 +37,52 @@ export async function GET(request: Request) {
       return NextResponse.redirect(`${origin}/login?error=no_user_found`);
     }
 
-    // 3. DB에 유저 정보 저장 (upsert)
-    // 신규 유저든 기존 유저든 기본 정보는 항상 최신화
-    const { error: upsertError } = await supabase
-      .from('users')
-      .upsert({
-        id: user.id,
-        email: user.email,
-        name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'User',
-        updated_at: new Date().toISOString(),
-      }, {
-        onConflict: 'id', // id가 이미 있으면 업데이트
-        ignoreDuplicates: false, // 중복이어도 업데이트 수행
-      });
+    // 3. 백엔드 DB에 유저 정보 동기화 (FastAPI)
+    // Supabase Auth 사용자를 FastAPI DB에 등록
+    console.log("🔄 [Backend Sync] FastAPI DB에 사용자 동기화 시작...");
+    console.log("   - User ID:", user.id);
+    console.log("   - Email:", user.email);
+    console.log("   - Name:", user.user_metadata?.full_name || user.email?.split('@')[0]);
 
-    if (upsertError) {
-      console.error("❌ DB 저장 실패:", upsertError.message);
-      // 저장 실패해도 일단 진행 (세션은 이미 있으므로)
-    } else {
-      console.log("✅ DB에 유저 정보 저장/업데이트 완료");
+    try {
+      const { data: { session: currentSession } } = await supabase.auth.getSession();
+
+      if (!currentSession?.access_token) {
+        console.error("❌ [Backend Sync] 세션 토큰이 없습니다.");
+        // 토큰이 없어도 일단 진행 (온보딩으로 이동)
+      } else {
+        const syncResponse = await fetch("https://mirror-backend-5j11.onrender.com/auth/sync-user", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${currentSession.access_token}`
+          },
+          body: JSON.stringify({
+            name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'User',
+            email: user.email
+          })
+        });
+
+        console.log(`📥 [Backend Sync] 응답 상태: ${syncResponse.status}`);
+
+        if (syncResponse.ok) {
+          const syncData = await syncResponse.json();
+          console.log("✅ [Backend Sync] FastAPI DB 동기화 완료:", syncData);
+        } else {
+          const errorData = await syncResponse.json();
+          console.error("❌ [Backend Sync] 동기화 실패:", errorData);
+          // 실패해도 일단 진행 (온보딩으로 이동)
+        }
+      }
+    } catch (syncError) {
+      console.error("❌ [Backend Sync] 네트워크 오류:", syncError);
+      // 에러가 나도 일단 진행 (온보딩으로 이동)
     }
 
-    // 4. DB(users)에서 role 조회
-    const { data: userProfile, error: dbError } = await supabase
-      .from('users')
-      .select('role')
-      .eq('id', user.id)
-      .single();
-
-    if (dbError && dbError.code !== 'PGRST116') {
-      // PGRST116은 '데이터 없음' 에러이므로 신규 유저로 취급하면 되지만, 그 외에는 진짜 DB 에러임
-      console.error("❌ DB 조회 에러:", dbError.message);
-    }
-
-    console.log("🔹 조회된 프로필:", userProfile);
-
-    // 4. 조건별 이동
-    if (!userProfile || !userProfile.role) {
-      console.log("🚀 결론: 신규 유저 -> /onboarding/role 이동");
-      return NextResponse.redirect(`${origin}/onboarding/role`);
-    }
-
-    const role = userProfile.role.toLowerCase();
-
-    console.log(`🚀 결론: 기존 유저(${role}) -> /dashboard로 이동`);
-
-    // 모든 역할을 /dashboard로 보내고, dashboard 페이지에서 역할별 분기 처리
-    return NextResponse.redirect(`${origin}/dashboard`);
+    // 4. 백엔드 DB에서 role 조회 (나중에 구현 예정)
+    // 현재는 Supabase를 사용하지 않고 바로 온보딩으로 이동
+    console.log("🚀 결론: 신규 유저 -> /onboarding/role 이동");
+    return NextResponse.redirect(`${origin}/onboarding/role`);
   }
 
   // 코드가 없는 경우
