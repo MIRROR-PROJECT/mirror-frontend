@@ -51,6 +51,41 @@ interface AcademicEvent {
   type: "csat" | "mock";
 }
 
+// 주간 계획 API 타입
+interface WeeklyPlanTask {
+  task_id: string;
+  sequence: number;
+  category: string;
+  title: string;
+  assigned_minutes: number;
+  is_completed: boolean;
+  completed_at: string | null;
+}
+
+interface DailyPlan {
+  plan_id: string;
+  date: string; // "2026-01-06"
+  day_of_week: string; // "MONDAY"
+  title: string;
+  total_planned_minutes: number;
+  total_completed_minutes: number;
+  completion_rate: number;
+  is_completed: boolean;
+  tasks: WeeklyPlanTask[];
+}
+
+interface WeeklyPlanResponse {
+  success: boolean;
+  code: number;
+  message: string;
+  data: {
+    student_id: string;
+    start_date: string;
+    end_date: string;
+    weekly_plan: DailyPlan[];
+  } | null;
+}
+
 // [NEW] 주간 달성률 데이터 (예시)
 const WEEKLY_STATS = [
   { day: "월", rate: 40 },
@@ -84,6 +119,7 @@ export default function StudyRoomPage() {
   const [todayTasks, setTodayTasks] = useState<ApiTask[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [todayProgress, setTodayProgress] = useState(0);
+  const [weeklyPlans, setWeeklyPlans] = useState<DailyPlan[]>([]);
 
   // 그래프 인터랙션 상태
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
@@ -92,6 +128,7 @@ export default function StudyRoomPage() {
     calculateWeekDates();
     calculateDDay();
     fetchTodayMission();
+    fetchWeeklyPlan();
   }, []);
 
   const calculateWeekDates = () => {
@@ -162,6 +199,43 @@ export default function StudyRoomPage() {
       console.error("Failed to fetch missions:", err);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const fetchWeeklyPlan = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) return;
+
+      // 이번 주 월요일 계산
+      const today = new Date();
+      const dayOfWeek = today.getDay();
+      const monday = new Date(today);
+      monday.setDate(today.getDate() - ((dayOfWeek + 6) % 7));
+      const startDate = monday.toISOString().split('T')[0];
+
+      console.log("📅 [Weekly Plan] 조회 시작:", startDate);
+
+      const res = await fetch(
+        `https://mirror-backend-5j11.onrender.com/studyroom/weekly-plan?start_date=${startDate}`,
+        {
+          headers: { "Authorization": `Bearer ${session.access_token}` }
+        }
+      );
+
+      if (res.ok) {
+        const json: WeeklyPlanResponse = await res.json();
+        console.log("📦 [Weekly Plan] 응답:", json);
+
+        if (json.success && json.data) {
+          setWeeklyPlans(json.data.weekly_plan);
+          console.log("✅ [Weekly Plan] 로드 완료:", json.data.weekly_plan.length, "일");
+        }
+      } else {
+        console.error("❌ [Weekly Plan] API 실패:", res.status);
+      }
+    } catch (err) {
+      console.error("❌ [Weekly Plan] 네트워크 오류:", err);
     }
   };
 
@@ -271,35 +345,30 @@ export default function StudyRoomPage() {
   };
 
   // --- [Graph Helper] ---
-  const getSmoothPath = (points: { x: number, y: number }[]) => {
+  const getGraphPath = (points: { x: number, y: number }[]) => {
     if (points.length === 0) return "";
 
     let d = `M ${points[0].x},${points[0].y}`;
 
-    for (let i = 0; i < points.length - 1; i++) {
-      const p0 = points[i];
-      const p1 = points[i + 1];
-
-      const cp1x = p0.x + (p1.x - p0.x) * 0.5;
-      const cp1y = p0.y;
-      const cp2x = p0.x + (p1.x - p0.x) * 0.5;
-      const cp2y = p1.y;
-
-      d += ` C ${cp1x},${cp1y} ${cp2x},${cp2y} ${p1.x},${p1.y}`;
+    for (let i = 1; i < points.length; i++) {
+      d += ` L ${points[i].x},${points[i].y}`;
     }
     return d;
   };
 
   const graphWidth = 100;
-  const graphHeight = 60;
-  const paddingX = 10;
+  const graphHeight = 80;
+  const paddingY = 10;
+  const paddingX = 5; // 좌우 여백 축소
+
   const points = WEEKLY_STATS.map((d, i) => ({
     x: paddingX + i * ((graphWidth - paddingX * 2) / (WEEKLY_STATS.length - 1)),
-    y: graphHeight - (d.rate / 100) * graphHeight
+    // y: 10(100%) ~ 90(0%)
+    y: (paddingY + graphHeight) - (d.rate / 100) * graphHeight
   }));
 
-  const pathD = getSmoothPath(points);
-  const areaD = `${pathD} L ${points[points.length - 1].x},${graphHeight} L ${points[0].x},${graphHeight} Z`;
+  const pathD = getGraphPath(points);
+  // areaD Removed as it is constructed inline now
 
   return (
     <div className="min-h-screen bg-gray-50 flex relative">
@@ -310,10 +379,10 @@ export default function StudyRoomPage() {
           <div>
             <h1 className="text-2xl font-bold text-gray-900 mb-1 flex items-center gap-2">
               <CalendarDays className="w-6 h-6 text-blue-600" />
-              주간 루틴 스케줄
+              나의 학습방
             </h1>
             <p className="text-gray-500 text-sm">
-              꾸준함이 실력입니다. 오늘의 미션을 확인하세요.
+              매일 조금씩, 꾸준히 성장하는 나를 만나보세요.
             </p>
           </div>
 
@@ -364,73 +433,110 @@ export default function StudyRoomPage() {
             </div>
           </div>
 
-          {/* [우측] 주간 학습 리포트 */}
-          <div className="bg-white p-6 rounded-3xl border border-gray-200 shadow-sm flex flex-col h-full relative overflow-hidden">
-            <div className="flex justify-between items-start mb-6 z-10">
+          {/* [우측] 주간 학습 요약 */}
+          <div className="bg-white p-6 rounded-3xl border border-gray-200 shadow-sm flex flex-col h-full">
+            <div className="flex justify-between items-start mb-4">
               <div>
                 <h3 className="font-bold text-gray-800 flex items-center gap-2">
-                  <TrendingUp className="w-5 h-5 text-indigo-500" /> 주간 학습 리포트
+                  <TrendingUp className="w-5 h-5 text-indigo-500" /> 주간 학습 요약
                 </h3>
                 <p className="text-xs text-gray-400 mt-1">지난주보다 <span className="text-indigo-600 font-bold">12% 더</span> 달성했어요! 🔥</p>
               </div>
-              <button className="text-gray-300 hover:text-gray-500"><MoreHorizontal className="w-5 h-5" /></button>
             </div>
 
-            {/* 그래프 영역 */}
-            <div className="flex-1 w-full relative min-h-[180px] flex flex-col justify-end">
-              <svg className="w-full h-full overflow-visible" viewBox={`0 0 ${graphWidth} ${graphHeight + 20}`} preserveAspectRatio="none">
-                <defs>
-                  <linearGradient id="chartGradient" x1="0" x2="0" y1="0" y2="1">
-                    <stop offset="0%" stopColor="#6366f1" stopOpacity="0.3" />
-                    <stop offset="100%" stopColor="#6366f1" stopOpacity="0" />
-                  </linearGradient>
-                  <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
-                    <feDropShadow dx="0" dy="2" stdDeviation="2" floodColor="#6366f1" floodOpacity="0.3" />
-                  </filter>
-                </defs>
+            {/* 꺾은선 그래프 */}
+            <div className="flex-1 relative mt-2">
+              {/* 그래프 영역 (Padding 포함) */}
+              <div className="relative w-full h-full px-4 pt-2 pb-6">
+                <svg className="absolute inset-0 w-full h-full text-indigo-500 overflow-visible" viewBox="0 0 100 100" preserveAspectRatio="none">
+                  <defs>
+                    <linearGradient id="lineGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="currentColor" stopOpacity="0.2" />
+                      <stop offset="100%" stopColor="currentColor" stopOpacity="0" />
+                    </linearGradient>
+                  </defs>
 
-                {[0, 25, 50, 75, 100].map((line, i) => (
-                  <line key={i} x1="0" y1={graphHeight - (line / 100 * graphHeight)} x2="100" y2={graphHeight - (line / 100 * graphHeight)} stroke="#f3f4f6" strokeWidth="0.5" strokeDasharray="2" />
-                ))}
+                  {/* 배경 그리드 */}
+                  {[0, 50, 100].map((rate, i) => {
+                    const y = 90 - (rate / 100) * 80;
+                    return (
+                      <line
+                        key={i}
+                        x1="0"
+                        y1={y}
+                        x2="100"
+                        y2={y}
+                        stroke="#f3f4f6"
+                        strokeWidth="0.5"
+                        strokeDasharray="2"
+                      />
+                    );
+                  })}
 
-                <path d={areaD} fill="url(#chartGradient)" />
-                <path d={pathD} fill="none" stroke="#6366f1" strokeWidth="1.5" strokeLinecap="round" filter="url(#shadow)" className="drop-shadow-sm" />
+                  <path
+                    d={`${pathD} L ${points[points.length - 1].x},90 L ${points[0].x},90 Z`}
+                    fill="url(#lineGradient)"
+                    stroke="none"
+                  />
 
-                {points.map((p, i) => {
-                  const isHovered = hoveredIndex === i;
-                  const isToday = WEEKLY_STATS[i].day === '금';
+                  <path
+                    d={pathD}
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    vectorEffect="non-scaling-stroke"
+                  />
+                </svg>
 
-                  return (
-                    <g
-                      key={i}
-                      onMouseEnter={() => setHoveredIndex(i)}
-                      onMouseLeave={() => setHoveredIndex(null)}
-                      className="cursor-pointer"
+                {/* 데이터 포인트 (HTML Overlay) */}
+                <div className="absolute inset-0 pointer-events-none">
+                  {WEEKLY_STATS.map((stat, idx) => {
+                    const x = points[idx].x;
+                    const y = points[idx].y;
+                    const isToday = stat.day === '금';
+
+                    return (
+                      <div
+                        key={idx}
+                        className="absolute group pointer-events-auto"
+                        style={{
+                          left: `${x}%`,
+                          top: `${y}%`,
+                          transform: 'translate(-50%, -50%)',
+                        }}
+                      >
+                        {/* Larger hit area */}
+                        <div className="absolute inset-0 -m-3 cursor-pointer" />
+
+                        <div
+                          className={`relative rounded-full bg-white border border-current transition-all duration-300 group-hover:scale-150 shadow-sm ${isToday ? 'w-2.5 h-2.5 border-2 text-indigo-600' : 'w-1.5 h-1.5 border text-indigo-400'}`}
+                        />
+
+                        {/* Tooltip */}
+                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-10">
+                          <div className="relative bg-indigo-600 text-white text-[10px] font-bold px-2 py-1 rounded shadow-lg whitespace-nowrap">
+                            {stat.rate}%
+                            <div className="absolute left-1/2 -translate-x-1/2 top-full w-0 h-0 border-x-4 border-x-transparent border-t-4 border-t-indigo-600" />
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Labels */}
+              <div className="absolute bottom-0 left-0 right-0 flex justify-between px-4">
+                {WEEKLY_STATS.map((stat, idx) => (
+                  <div key={idx} className="flex flex-col items-center" style={{ width: '14%' }}>
+                    <span
+                      className={`text-[10px] ${stat.day === '금' ? 'font-bold text-indigo-600' : 'text-gray-400'}`}
                     >
-                      <circle cx={p.x} cy={p.y} r={isHovered || isToday ? 3 : 2} fill="white" stroke="#6366f1" strokeWidth={isHovered || isToday ? 2 : 1.5} className="transition-all duration-300 ease-out" />
-                      {isToday && (
-                        <circle cx={p.x} cy={p.y} r="6" fill="none" stroke="#6366f1" strokeOpacity="0.3" strokeWidth="1">
-                          <animate attributeName="r" from="3" to="8" dur="1.5s" repeatCount="indefinite" />
-                          <animate attributeName="opacity" from="0.6" to="0" dur="1.5s" repeatCount="indefinite" />
-                        </circle>
-                      )}
-                      {(hoveredIndex === i || isToday) && (
-                        <g transform={`translate(${p.x}, ${p.y - 12})`}>
-                          <rect x="-14" y="-18" width="28" height="16" rx="4" fill="#1e1b4b" fillOpacity="0.9" />
-                          <polygon points="0,0 -3,-3 3,-3" fill="#1e1b4b" fillOpacity="0.9" transform="translate(0, -2)" />
-                          <text x="0" y="-8" textAnchor="middle" fill="white" fontSize="8" fontWeight="bold" dominantBaseline="middle">{WEEKLY_STATS[i].rate}%</text>
-                        </g>
-                      )}
-                    </g>
-                  );
-                })}
-              </svg>
-
-              <div className="flex justify-between px-[10%] mt-2">
-                {WEEKLY_STATS.map((d, i) => (
-                  <span key={i} className={`text-[10px] w-6 text-center transition-colors ${d.day === '금' ? 'font-bold text-indigo-600 bg-indigo-50 rounded-md py-0.5' : 'text-gray-400'}`}>
-                    {d.day}
-                  </span>
+                      {stat.day}
+                    </span>
+                  </div>
                 ))}
               </div>
             </div>
@@ -443,52 +549,83 @@ export default function StudyRoomPage() {
             <h2 className="text-lg font-bold text-gray-900">Weekly Plan</h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-7 gap-3">
-            {weekDates.map((plan, idx) => (
-              <div key={idx} className={`min-h-48 p-3 rounded-2xl border flex flex-col gap-2 transition-all ${plan.isToday ? 'bg-white border-blue-400 shadow-md ring-2 ring-blue-50 transform scale-105 z-10' : 'bg-white border-gray-100 hover:border-blue-200'}`}>
-                <div className={`text-center pb-2 border-b border-gray-50 ${plan.isToday ? 'text-blue-600' : 'text-gray-400'}`}>
-                  <span className="text-xs font-bold block mb-0.5">{plan.day}</span>
-                  <span className="text-lg font-black">{plan.date}</span>
-                </div>
+            {weekDates.map((weekDay, idx) => {
+              // 해당 날짜의 계획 찾기
+              const today = new Date();
+              const currentDay = today.getDay();
+              const dayIndex = (currentDay + 6) % 7;
+              const startOfWeek = new Date(today);
+              startOfWeek.setDate(today.getDate() - dayIndex);
 
-                <div className="flex-1 space-y-1.5 overflow-y-auto custom-scrollbar pr-1 max-h-40">
-                  {plan.isToday ? (
-                    isLoading ? (
-                      <div className="h-full flex items-center justify-center">
-                        <Loader2 className="w-5 h-5 text-blue-500 animate-spin" />
-                      </div>
+              const targetDate = new Date(startOfWeek);
+              targetDate.setDate(startOfWeek.getDate() + idx);
+              const dateStr = targetDate.toISOString().split('T')[0];
+
+              const dailyPlan = weeklyPlans.find(p => p.date === dateStr);
+
+              return (
+                <div key={idx} className={`min-h-48 p-3 rounded-2xl border flex flex-col gap-2 transition-all ${weekDay.isToday ? 'bg-white border-blue-400 shadow-md ring-2 ring-blue-50 transform scale-105 z-10' : 'bg-white border-gray-100 hover:border-blue-200'}`}>
+                  <div className={`text-center pb-2 border-b border-gray-50 ${weekDay.isToday ? 'text-blue-600' : 'text-gray-400'}`}>
+                    <span className="text-xs font-bold block mb-0.5">{weekDay.day}</span>
+                    <span className="text-lg font-black">{weekDay.date}</span>
+                  </div>
+
+                  <div className="flex-1 space-y-1.5 overflow-y-auto custom-scrollbar pr-1 max-h-40">
+                    {weekDay.isToday ? (
+                      // 오늘: 토글 가능한 미션
+                      isLoading ? (
+                        <div className="h-full flex items-center justify-center">
+                          <Loader2 className="w-5 h-5 text-blue-500 animate-spin" />
+                        </div>
+                      ) : (
+                        todayTasks.length > 0 ? (
+                          todayTasks.map((task) => (
+                            <div
+                              key={task.task_id}
+                              onClick={() => handleToggleTask(task.task_id)}
+                              className={`p-2 rounded-lg text-[11px] leading-tight font-medium cursor-pointer transition-all hover:opacity-80 select-none ${task.is_completed
+                                ? 'bg-blue-100 text-blue-400 line-through opacity-60'
+                                : 'bg-blue-50 text-blue-700'
+                                }`}
+                            >
+                              <div className="font-extrabold mb-0.5 opacity-80 flex items-center gap-1">
+                                {task.is_completed && <CheckCircle2 className="w-3 h-3" />}
+                                {task.category || "Mission"}
+                              </div>
+                              <div>{task.title}</div>
+                            </div>
+                          ))
+                        ) : (
+                          <div className="h-full flex flex-col items-center justify-center text-gray-300 gap-1">
+                            <span className="text-[10px]">미션 없음</span>
+                          </div>
+                        )
+                      )
                     ) : (
-                      todayTasks.length > 0 ? (
-                        todayTasks.map((task) => (
+                      // 나머지 날짜: 읽기 전용 계획
+                      dailyPlan && dailyPlan.tasks.length > 0 ? (
+                        dailyPlan.tasks.map((task) => (
                           <div
                             key={task.task_id}
-                            onClick={() => handleToggleTask(task.task_id)}
-                            className={`p-2 rounded-lg text-[11px] leading-tight font-medium cursor-pointer transition-all hover:opacity-80 select-none ${task.is_completed
-                              ? 'bg-blue-100 text-blue-400 line-through opacity-60'
-                              : 'bg-blue-50 text-blue-700'
-                              }`}
+                            className="p-2 rounded-lg text-[11px] leading-tight font-medium bg-gray-50 text-gray-600 cursor-default"
                           >
-                            <div className="font-extrabold mb-0.5 opacity-80 flex items-center gap-1">
-                              {task.is_completed && <CheckCircle2 className="w-3 h-3" />}
-                              {task.category || "Mission"}
+                            <div className="font-extrabold mb-0.5 opacity-80">
+                              {task.category}
                             </div>
                             <div>{task.title}</div>
                           </div>
                         ))
                       ) : (
                         <div className="h-full flex flex-col items-center justify-center text-gray-300 gap-1">
-                          <span className="text-[10px]">미션 없음</span>
+                          <CalendarIcon className="w-4 h-4 opacity-50" />
+                          <span className="text-[10px]">일정 없음</span>
                         </div>
                       )
-                    )
-                  ) : (
-                    <div className="h-full flex flex-col items-center justify-center text-gray-300 gap-1">
-                      <CalendarIcon className="w-4 h-4 opacity-50" />
-                      <span className="text-[10px]">일정 없음</span>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </section>
       </main>
