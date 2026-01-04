@@ -27,14 +27,19 @@ function InfoContent() {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user) {
-        // 컬럼명은 DB 스키마에 따라 다를 수 있으나, 일반적인 snake_case 가정
+        // 1. Supabase users 테이블 업데이트 (기본 정보 + Role)
+        // [Fix] 'organization', 'child_name' 컬럼이 Supabase에 없다면 에러가 발생하므로,
+        // 오직 phone_number와 role만 업데이트합니다.
         const updateData: any = { phone_number: formData.phoneNumber };
 
         // [Fix] Role 정보도 함께 저장 (대문자로 표준화)
         if (role) updateData.role = role.toUpperCase();
 
-        if (role === 'teacher') updateData.organization = formData.organization;
-        if (role === 'parent') updateData.child_name = formData.childName;
+        // (주의) 아래 필드들이 Supabase 'users' 테이블에 실제로 존재하는지 확인 필요
+        // 존재하지 않아서 400 에러가 뜬다면, 백엔드 API로만 전송해야 합니다.
+        // 현재 에러(Could not find the 'organization' column)가 발생하므로 제거합니다.
+        // if (role === 'teacher') updateData.organization = formData.organization;
+        // if (role === 'parent') updateData.child_name = formData.childName;
 
         const { error } = await supabase
           .from('users')
@@ -42,13 +47,106 @@ function InfoContent() {
           .eq('id', session.user.id);
 
         if (error) console.warn("Info update warning:", error);
+
+        // [Fix] 백엔드 DB에 유저가 없을 수 있으므로 동기화(Sync) API를 먼저 호출합니다.
+        try {
+          console.log("🔄 [Backend Sync] 프로필 생성 전 유저 동기화 시도...");
+          const syncRes = await fetch("https://mirror-backend-5j11.onrender.com/auth/sync-user", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${session.access_token}`
+            },
+            body: JSON.stringify({
+              name: session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'User',
+              email: session.user.email
+            })
+          });
+
+          if (syncRes.ok) {
+            console.log("✅ [Backend Sync] 유저 동기화 성공");
+          } else {
+            console.warn("⚠️ [Backend Sync] 유저 동기화 응답:", await syncRes.text());
+          }
+        } catch (syncError) {
+          console.error("❌ [Backend Sync] 호출 중 에러:", syncError);
+        }
+
+        // 2. [NEW] 선생님 프로필 API 호출 (명세서 반영)
+        if (role === 'teacher') {
+          try {
+            const payload = {
+              phone_number: formData.phoneNumber,
+              academy_name: formData.organization
+            };
+            console.log("📤 선생님 프로필 요청 데이터:", payload);
+
+            const apiRes = await fetch("https://mirror-backend-5j11.onrender.com/teacher/profile", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${session.access_token}`
+              },
+              body: JSON.stringify(payload)
+            });
+
+            const apiData = await apiRes.json();
+
+            if (apiRes.ok && apiData.success) {
+              console.log("✅ 선생님 프로필 등록 성공:", apiData);
+              // [Fix] 성공 시에만 대시보드 이동 (선생님)
+              alert("가입이 완료되었습니다! 대시보드로 이동합니다.");
+              router.push(`/dashboard?role=${role}`);
+            } else {
+              console.error("❌ 선생님 프로필 등록 실패:", apiData);
+              // [Fix] 에러 상세 내용을 보여주기 위해 JSON.stringify 사용
+              const errorMsg = apiData.detail
+                ? typeof apiData.detail === 'string' ? apiData.detail : JSON.stringify(apiData.detail, null, 2)
+                : apiData.message || "알 수 없는 오류";
+
+              alert(`선생님 프로필 등록 실패:\n${errorMsg}`);
+            }
+          } catch (apiError) {
+            console.error("❌ 선생님 프로필 API 호출 에러:", apiError);
+            alert("서버 연결 실패. 잠시 후 다시 시도해주세요.");
+          }
+        }
+
+        // 3. [NEW] 학부모 프로필 API 호출 (명세서 반영)
+        if (role === 'parent') {
+          try {
+            const apiRes = await fetch("https://mirror-backend-5j11.onrender.com/parents/profile", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${session.access_token}`
+              },
+              body: JSON.stringify({
+                child_name: formData.childName,
+                parent_phone: formData.phoneNumber
+              })
+            });
+
+            const apiData = await apiRes.json();
+
+            if (apiRes.ok && apiData.success) {
+              console.log("✅ 학부모 프로필 등록 성공:", apiData);
+              // [Fix] 성공 시에만 대시보드 이동 (학부모)
+              alert("가입이 완료되었습니다! 대시보드로 이동합니다.");
+              router.push(`/dashboard?role=${role}`);
+            } else {
+              console.error("❌ 학부모 프로필 등록 실패:", apiData);
+              alert("학부모 프로필 등록 중 문제가 발생했습니다.");
+            }
+          } catch (apiError) {
+            console.error("❌ 학부모 프로필 API 호출 에러:", apiError);
+            alert("서버 연결 실패. 잠시 후 다시 시도해주세요.");
+          }
+        }
       }
     } catch (err) {
       console.error("Info update error:", err);
     }
-
-    // 대시보드로 이동 (중앙 대시보드 라우트 사용 + Role 전달)
-    router.push(`/dashboard?role=${role}`);
   };
 
   return (
