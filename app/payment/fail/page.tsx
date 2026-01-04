@@ -1,9 +1,10 @@
 'use client'
 
+import { Suspense } from 'react';
 import { useSearchParams, useRouter } from "next/navigation";
 import { AlertCircle, RotateCcw } from "lucide-react";
 
-export default function FailPage() {
+function FailContent() {
     const searchParams = useSearchParams();
     const router = useRouter();
 
@@ -31,5 +32,13 @@ export default function FailPage() {
                 </button>
             </div>
         </div>
+    );
+}
+
+export default function FailPage() {
+    return (
+        <Suspense fallback={<div>Loading...</div>}>
+            <FailContent />
+        </Suspense>
     );
 }

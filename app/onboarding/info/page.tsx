@@ -32,8 +32,8 @@ function InfoContent() {
         // 오직 phone_number와 role만 업데이트합니다.
         const updateData: any = { phone_number: formData.phoneNumber };
 
-        // [Fix] Role 정보도 함께 저장 (대문자로 표준화)
-        if (role) updateData.role = role.toUpperCase();
+        // [Fix] Role 정보도 함께 저장 (대문자로 표준화) -> RLS 문제로 백엔드 API 사용 권장
+        // if (role) updateData.role = role.toUpperCase();
 
         // (주의) 아래 필드들이 Supabase 'users' 테이블에 실제로 존재하는지 확인 필요
         // 존재하지 않아서 400 에러가 뜬다면, 백엔드 API로만 전송해야 합니다.
@@ -68,8 +68,28 @@ function InfoContent() {
           } else {
             console.warn("⚠️ [Backend Sync] 유저 동기화 응답:", await syncRes.text());
           }
+
+          // [Fix] Role 설정을 위한 API 호출 (Role Update RLS 우회)
+          if (role) {
+            console.log(`🔄 [Role Setup] Role 설정 API 호출: ${role}`);
+            const roleRes = await fetch("https://mirror-backend-5j11.onrender.com/onboarding/role", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${session.access_token}`
+              },
+              body: JSON.stringify({ role: role.toUpperCase() })
+            });
+
+            if (roleRes.ok) {
+              console.log("✅ [Role Setup] Role 설정 성공");
+            } else {
+              console.warn("⚠️ [Role Setup] Role 설정 실패:", await roleRes.text());
+            }
+          }
+
         } catch (syncError) {
-          console.error("❌ [Backend Sync] 호출 중 에러:", syncError);
+          console.error("❌ [Backend Sync/Role] 호출 중 에러:", syncError);
         }
 
         // 2. [NEW] 선생님 프로필 API 호출 (명세서 반영)
