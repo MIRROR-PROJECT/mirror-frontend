@@ -21,9 +21,9 @@ export default function RoleSelectionPage() {
   const router = useRouter();
   const [checking, setChecking] = useState(true);
 
-  // 페이지 로드 시 이미 role이 있는지 확인
+  // 페이지 로드 시 로그인 확인만 수행 (role 체크 제거)
   useEffect(() => {
-    const checkExistingRole = async () => {
+    const checkAuth = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
 
@@ -32,25 +32,15 @@ export default function RoleSelectionPage() {
           return;
         }
 
-        const { data: userData } = await supabase
-          .from('users')
-          .select('role')
-          .eq('id', session.user.id)
-          .single();
-
-        if (userData?.role) {
-          console.log(`이미 role이 있음: ${userData.role} -> /dashboard로 이동`);
-          router.replace('/dashboard');
-          return;
-        }
+        console.log('✅ [Role Selection] 로그인 확인 완료');
       } catch (error) {
-        console.error("Role 체크 에러:", error);
+        console.error("Auth 체크 에러:", error);
       } finally {
         setChecking(false);
       }
     };
 
-    checkExistingRole();
+    checkAuth();
   }, [router]);
 
   const selectRole = async (role: string) => {

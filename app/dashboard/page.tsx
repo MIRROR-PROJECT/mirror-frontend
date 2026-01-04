@@ -18,54 +18,65 @@ export default async function DashboardPage(props: {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect('/login');
 
-  // 2. 역할 및 정보 확인
+  // 2. 역할 확인 (Supabase users 테이블)
   const { data: userData } = await supabase
     .from('users')
     .select('*')
     .eq('id', user.id)
     .single();
 
-  // DB에 역할이 없으면 URL 파라미터(paramRole) 사용 (데모/테스트용)
-  if ((!userData || !userData.role) && !paramRole) redirect('/onboarding/role');
-
   const role = (userData?.role || paramRole || "").toLowerCase();
 
-  // 3. 역할에 따라 컴포넌트 분기
+  // 3. Role이 없으면 무조건 /onboarding/role로
+  if (!role && !paramRole) {
+    console.log('📋 [Dashboard] Role 없음 -> /onboarding/role로 리다이렉트');
+    redirect('/onboarding/role');
+  }
+
+  // 4. 학생인 경우: 백엔드 진단 완료 여부 체크
   if (role === 'student') {
-    // [NEW] 학생의 경우: 오늘의 미션이 있는지 체크
+    let shouldRedirectToOnboarding = false;
+
     try {
       const { data: sessionData } = await supabase.auth.getSession();
       const accessToken = sessionData.session?.access_token;
 
       if (accessToken) {
-        const missionResponse = await fetch('https://mirror-backend-5j11.onrender.com/my/missions/today', {
+        // 백엔드에서 진단 완료 여부 확인
+        const diagnosisCheckResponse = await fetch('https://mirror-backend-5j11.onrender.com/setup/basic-info', {
           headers: {
             'Authorization': `Bearer ${accessToken}`,
             'Content-Type': 'application/json'
           },
-          cache: 'no-store' // 서버 컴포넌트에서 캐시 방지
+          cache: 'no-store'
         });
 
-        if (missionResponse.ok) {
-          const missionData = await missionResponse.json();
-
-          // 미션이 없거나 schedule이 비어있으면 진단 페이지로
-          if (!missionData.success || !missionData.data?.schedule || missionData.data.schedule.length === 0) {
-            console.log('📋 [Dashboard] 오늘의 미션 없음 -> /student/diagnosis로 리다이렉트');
-            redirect('/student/diagnosis');
-          }
-
-          console.log('✅ [Dashboard] 오늘의 미션 있음 -> 대시보드 표시');
-        } else {
-          // API 에러 시에도 진단 페이지로
-          console.log('❌ [Dashboard] 미션 API 에러 -> /student/diagnosis로 리다이렉트');
-          redirect('/student/diagnosis');
+        let isDiagnosisCompleted = false;
+        if (diagnosisCheckResponse.ok) {
+          const diagnosisData = await diagnosisCheckResponse.json();
+          isDiagnosisCompleted = diagnosisData.success && diagnosisData.data !== null;
+          console.log('🔍 [Dashboard] 백엔드 진단 완료 여부:', isDiagnosisCompleted);
         }
+
+        // 진단을 완료하지 않았으면 플래그 설정
+        if (!isDiagnosisCompleted) {
+          console.log('📋 [Dashboard] 백엔드 진단 미완료 -> 리다이렉트 플래그 설정');
+          shouldRedirectToOnboarding = true;
+        } else {
+          console.log('✅ [Dashboard] 진단 완료 확인 -> 대시보드 표시');
+        }
+      } else {
+        shouldRedirectToOnboarding = true;
       }
     } catch (error) {
-      console.error('❌ [Dashboard] 미션 체크 에러:', error);
-      // 에러 발생 시에도 진단 페이지로
-      redirect('/student/diagnosis');
+      console.error('❌ [Dashboard] 진단 체크 에러:', error);
+      shouldRedirectToOnboarding = true;
+    }
+
+    // try-catch 밖에서 리다이렉트 (에러 무한 루프 방지)
+    if (shouldRedirectToOnboarding) {
+      console.log('🔄 [Dashboard] /onboarding/role로 리다이렉트 실행');
+      redirect('/onboarding/role');
     }
 
     return <StudentDashboard user={userData} />;

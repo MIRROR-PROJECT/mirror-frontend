@@ -1,10 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { 
-  Search, Filter, Download, Plus, 
-  MoreHorizontal, ChevronDown, User, 
-  Clock, TrendingUp, AlertCircle, Phone, FileText 
+import {
+  Search, Filter, Download, Plus,
+  MoreHorizontal, ChevronDown, User,
+  Clock, TrendingUp, AlertCircle, Phone, FileText
 } from "lucide-react";
 
 const STUDENTS = [
@@ -13,8 +13,8 @@ const STUDENTS = [
     name: "박민수",
     className: "고2 수리논술 심화반 A",
     phone: "010-1234-5678",
-    studyTime: "42h 10m",
-    studyTrend: "down",
+    progressRate: 42,
+    progressTrend: "down",
     weakness: "삼각함수",
     status: "danger",
     lastLogin: "방금 전",
@@ -24,8 +24,8 @@ const STUDENTS = [
     name: "이영희",
     className: "고2 수리논술 심화반 A",
     phone: "010-9876-5432",
-    studyTime: "56h 30m",
-    studyTrend: "up",
+    progressRate: 87,
+    progressTrend: "up",
     weakness: "미분계수",
     status: "active",
     lastLogin: "1시간 전",
@@ -35,8 +35,8 @@ const STUDENTS = [
     name: "김철수",
     className: "고1 수학 개념완성반 B",
     phone: "010-5555-4444",
-    studyTime: "12h 00m",
-    studyTrend: "down",
+    progressRate: 23,
+    progressTrend: "down",
     weakness: "나머지정리",
     status: "warning",
     lastLogin: "3일 전",
@@ -46,8 +46,8 @@ const STUDENTS = [
     name: "최유리",
     className: "고2 수리논술 심화반 A",
     phone: "010-1111-2222",
-    studyTime: "48h 15m",
-    studyTrend: "up",
+    progressRate: 76,
+    progressTrend: "up",
     weakness: "수열의 극한",
     status: "active",
     lastLogin: "20분 전",
@@ -76,7 +76,7 @@ export default function StudentManagementPage() {
 
   return (
     <div className="p-6 md:p-10 max-w-7xl mx-auto space-y-6 animate-fade-in">
-      
+
       {/* 1. 헤더 영역 */}
       <div className="flex flex-col md:flex-row justify-between items-end gap-4 border-b border-gray-200 pb-6">
         <div>
@@ -88,7 +88,7 @@ export default function StudentManagementPage() {
             전체 수강생 <span className="font-bold text-gray-900">{STUDENTS.length}명</span> 중 <span className="font-bold text-blue-600">{filteredStudents.length}명</span>이 표시되고 있습니다.
           </p>
         </div>
-        
+
         <div className="flex gap-2">
           <button className="bg-white border border-gray-200 text-gray-600 px-4 py-2.5 rounded-xl font-bold text-sm flex items-center gap-2 hover:bg-gray-50 transition-colors">
             <Download className="w-4 h-4" />
@@ -104,7 +104,7 @@ export default function StudentManagementPage() {
       {/* 2. 검색 및 필터 툴바 */}
       <div className="flex flex-col md:flex-row gap-3">
         <div className="relative">
-          <select 
+          <select
             className="appearance-none bg-white border border-gray-200 pl-4 pr-10 py-3 rounded-xl text-sm font-bold text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-100 cursor-pointer shadow-sm"
             value={selectedClass}
             onChange={(e) => setSelectedClass(e.target.value)}
@@ -118,15 +118,15 @@ export default function StudentManagementPage() {
 
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-          <input 
-            type="text" 
-            placeholder="이름 또는 전화번호 검색..." 
+          <input
+            type="text"
+            placeholder="이름 또는 전화번호 검색..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-10 pr-4 py-3 bg-white border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-100 outline-none transition-all shadow-sm"
           />
         </div>
-        
+
         <button className="px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm font-bold text-gray-600 flex items-center gap-2 hover:bg-gray-50 shadow-sm">
           <Filter className="w-4 h-4" />
           상세 필터
@@ -140,7 +140,7 @@ export default function StudentManagementPage() {
         <div className="hidden md:grid grid-cols-12 gap-4 px-4 py-2 text-xs font-bold text-gray-400 uppercase tracking-wider">
           <div className="col-span-3">학생 정보</div>
           <div className="col-span-3">소속 클래스</div>
-          <div className="col-span-2">주간 학습 시간</div>
+          <div className="col-span-2">학습 진도율</div>
           <div className="col-span-2">최대 취약점</div>
           <div className="col-span-2 text-right">관리</div>
         </div>
@@ -150,11 +150,11 @@ export default function StudentManagementPage() {
           const isOnline = student.lastLogin.includes('전') && !student.lastLogin.includes('일');
 
           return (
-            <div 
-              key={student.id} 
+            <div
+              key={student.id}
               className="group bg-white p-4 rounded-2xl border border-gray-200 shadow-sm hover:border-blue-300 hover:shadow-md transition-all flex flex-col md:grid md:grid-cols-12 gap-4 items-start md:items-center"
             >
-              
+
               {/* 1. 학생 정보 (이름, 상태) */}
               <div className="col-span-3 w-full flex items-center gap-4">
                 <div className="relative">
@@ -188,17 +188,24 @@ export default function StudentManagementPage() {
                 </span>
               </div>
 
-              {/* 3. 학습 통계 */}
-              <div className="col-span-2 w-full flex items-center gap-3 md:block">
-                <div className="flex items-center gap-2">
-                  <Clock className="w-4 h-4 text-gray-400" />
-                  <span className="font-bold text-gray-800">{student.studyTime}</span>
+              {/* 3. 학습 진도율 */}
+              <div className="col-span-2 w-full">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="font-bold text-gray-800 text-lg">{student.progressRate}%</span>
+                  <span className={`text-[10px] font-bold flex items-center gap-1 
+                    ${student.progressTrend === 'up' ? 'text-blue-600' : 'text-red-500'}
+                  `}>
+                    {student.progressTrend === 'up' ? '▲' : '▼'}
+                  </span>
                 </div>
-                {/* 모바일에서는 옆으로, 데스크탑에선 아래로 배치 */}
-                <div className={`text-[10px] font-bold md:mt-1 flex items-center gap-1 
-                  ${student.studyTrend === 'up' ? 'text-blue-600' : 'text-red-500'}
-                `}>
-                  {student.studyTrend === 'up' ? '▲ 상승세' : '▼ 하락세'}
+                {/* Progress Bar */}
+                <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
+                  <div
+                    className={`h-full rounded-full transition-all duration-500 ${student.progressRate >= 70 ? 'bg-blue-500' :
+                        student.progressRate >= 40 ? 'bg-yellow-500' : 'bg-red-500'
+                      }`}
+                    style={{ width: `${student.progressRate}%` }}
+                  />
                 </div>
               </div>
 

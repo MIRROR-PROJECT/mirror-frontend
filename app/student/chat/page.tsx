@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { useStudy } from "../../context/StudyContext"; // 경로 맞춰주세요 (../context/StudyContext 등)
+import { supabase } from "@/app/lib/supabase";
 import {
   Send,
   Bot,
@@ -12,9 +13,46 @@ import {
   AlertCircle
 } from "lucide-react";
 
-// 메시지 타입 정의
+// --- API 타입 정의 ---
+// Request Body
+interface ChatRequest {
+  message: string;
+  problem_log_id: string | null;
+}
+
+// Student Sentiment
+interface StudentSentiment {
+  understanding_level: string;
+  emotional_state: string;
+  engagement_level: string;
+  confusion_points: string[];
+  question_type: string;
+  learning_signal: string;
+  needs_intervention: boolean;
+  confidence_score: number;
+}
+
+// Response Data
+interface ChatResponseData {
+  user_message_id: string;
+  assistant_message_id: string;
+  user_message: string;
+  assistant_message: string;
+  student_sentiment: StudentSentiment;
+  created_at: string;
+}
+
+// Response Body
+interface ChatResponse {
+  success: boolean;
+  code: number;
+  message: string;
+  data: ChatResponseData | null;
+}
+
+// --- UI 메시지 타입 정의 ---
 type Message = {
-  id: number;
+  id: string;
   role: "user" | "ai";
   text: string;
   timestamp: string;
@@ -29,10 +67,10 @@ export default function ChatPage() {
   // 스크롤 제어를 위한 Ref
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // [Mock Data] 초기 대화
+  // 초기 대화
   const [messages, setMessages] = useState<Message[]>([
     {
-      id: 1,
+      id: "welcome-msg",
       role: "ai",
       text: `안녕하세요, ${userInfo.name || '학생'}님! Mirror AI 튜터입니다. 🤖\n\n오늘 공부하시면서 막히는 부분이 있으셨나요? 문제 사진을 올려주시거나 개념을 물어봐 주세요!`,
       timestamp: "오전 10:00",
@@ -57,14 +95,17 @@ export default function ChatPage() {
   }, [messages, isAiTyping]);
 
   // 메시지 전송 핸들러
-  const handleSend = () => {
+  const handleSend = async () => {
     if (!input.trim()) return;
 
-    // 1. 유저 메시지 추가
+    const userMessageText = input;
+
+    // 1. 유저 메시지 추가 (임시 ID 사용)
+    const tempUserMsgId = `temp-user-${Date.now()}`;
     const newUserMsg: Message = {
-      id: Date.now(),
+      id: tempUserMsgId,
       role: "user",
-      text: input,
+      text: userMessageText,
       timestamp: new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }),
     };
 
@@ -72,17 +113,74 @@ export default function ChatPage() {
     setInput("");
     setIsAiTyping(true);
 
-    // 2. AI 응답 시뮬레이션 (1.5초 딜레이)
-    setTimeout(() => {
-      const newAiMsg: Message = {
-        id: Date.now() + 1,
+    try {
+      // 2. 인증 토큰 가져오기
+      const { data: { session } } = await supabase.auth.getSession();
+
+      if (!session?.access_token) {
+        throw new Error("로그인이 필요합니다.");
+      }
+
+      // 3. API 호출
+      console.log("📡 [Chat API] 요청 전송:", { message: userMessageText });
+
+      const response = await fetch("https://mirror-backend-5j11.onrender.com/chat", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${session.access_token}`
+        },
+        body: JSON.stringify({
+          message: userMessageText,
+          problem_log_id: null  // 현재는 특정 문제 컨텍스트 없음
+        } as ChatRequest)
+      });
+
+      console.log(`📥 [Chat API] 응답 상태: ${response.status}`);
+
+      const json: ChatResponse = await response.json();
+      console.log("📦 [Chat API] 응답 데이터:", json);
+
+      // 4. 에러 처리
+      if (!response.ok || !json.success) {
+        throw new Error(json.message || "채팅 요청에 실패했습니다.");
+      }
+
+      // 5. 성공 응답 처리
+      if (json.data) {
+        const aiMsg: Message = {
+          id: json.data.assistant_message_id,
+          role: "ai",
+          text: json.data.assistant_message,
+          timestamp: new Date(json.data.created_at).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }),
+        };
+
+        setMessages((prev) => [...prev, aiMsg]);
+
+        // 학생 감정 분석 데이터 로깅 (필요시 UI에 표시 가능)
+        console.log("🧠 [Student Sentiment]:", json.data.student_sentiment);
+
+        // 교사 개입 필요 시 경고 (선택사항)
+        if (json.data.student_sentiment.needs_intervention) {
+          console.warn("⚠️ [Alert] 교사 개입이 필요한 상태입니다.");
+        }
+      }
+
+    } catch (error) {
+      console.error("❌ [Chat API] 에러 발생:", error);
+
+      // 에러 메시지 표시
+      const errorMsg: Message = {
+        id: `error-${Date.now()}`,
         role: "ai",
-        text: "질문 확인했습니다! \n(아직 데모 버전이라 실제 답변은 연동되지 않았지만, 곧 똑똑한 답변을 드릴 수 있도록 준비 중이에요! 🚀)",
+        text: `죄송합니다. 오류가 발생했습니다.\n${error instanceof Error ? error.message : "네트워크 오류가 발생했습니다."}`,
         timestamp: new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }),
       };
-      setMessages((prev) => [...prev, newAiMsg]);
+
+      setMessages((prev) => [...prev, errorMsg]);
+    } finally {
       setIsAiTyping(false);
-    }, 1500);
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -140,8 +238,8 @@ export default function ChatPage() {
                 {/* 말풍선 */}
                 <div
                   className={`px-5 py-3 rounded-2xl text-[15px] leading-relaxed whitespace-pre-wrap shadow-sm ${isAi
-                      ? "bg-white text-gray-800 border border-gray-100 rounded-tl-none"
-                      : "bg-blue-600 text-white rounded-tr-none"
+                    ? "bg-white text-gray-800 border border-gray-100 rounded-tl-none"
+                    : "bg-blue-600 text-white rounded-tr-none"
                     }`}
                 >
                   {msg.text}
@@ -213,8 +311,8 @@ export default function ChatPage() {
               onClick={handleSend}
               disabled={!input.trim() || isAiTyping}
               className={`p-2 rounded-xl transition-all ${input.trim()
-                  ? "bg-blue-600 text-white shadow-md hover:bg-blue-700 hover:scale-105"
-                  : "bg-gray-200 text-gray-400 cursor-not-allowed"
+                ? "bg-blue-600 text-white shadow-md hover:bg-blue-700 hover:scale-105"
+                : "bg-gray-200 text-gray-400 cursor-not-allowed"
                 }`}
             >
               <Send className="w-5 h-5" />

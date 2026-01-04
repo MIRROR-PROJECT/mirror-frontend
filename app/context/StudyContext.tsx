@@ -1,24 +1,25 @@
 "use client";
 
-import { createContext, useContext, useState, ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { supabase } from "@/app/lib/supabase";
 
 // --- 데이터 타입 정의 ---
-type Task = { 
-  id: number; 
-  title: string; 
-  time: number; 
-  done: boolean; 
+type Task = {
+  id: number;
+  title: string;
+  time: number;
+  done: boolean;
   bookId?: number;
 };
 
-type Book = { 
-  id: number; 
-  title: string; 
-  subject: string; 
-  progress: number; 
-  lastStudied: string; 
-  coverColor: string; 
-  aiAnalysis: string; 
+type Book = {
+  id: number;
+  title: string;
+  subject: string;
+  progress: number;
+  lastStudied: string;
+  coverColor: string;
+  aiAnalysis: string;
 };
 
 // 시간표 타입
@@ -35,12 +36,12 @@ export type UserInfo = {
 interface StudyContextType {
   // 유저 상태 (학습 연속일, 역할)
   user: { streak: number; role: "student" | "teacher" | "parent" };
-  
+
   // 데이터
   tasks: Task[];
   books: Book[];
   schedule: ScheduleMap;
-  
+
   // [NEW] 유저 기본 정보 (이름, 학년 등)
   userInfo: UserInfo;
 
@@ -53,8 +54,11 @@ interface StudyContextType {
 const StudyContext = createContext<StudyContextType | undefined>(undefined);
 
 export function StudyProvider({ children }: { children: ReactNode }) {
-  // 1. 유저 상태 (Streak, Role)
-  const [user] = useState({ streak: 14, role: "student" as const });
+  // 1. 유저 상태 (Streak, Role) - role은 동적으로 가져옴
+  const [user, setUser] = useState<{ streak: number; role: "student" | "teacher" | "parent" }>({
+    streak: 14,
+    role: "student"
+  });
 
   // 2. [NEW] 유저 기본 정보 (초기값 빈 값)
   const [userInfo, setUserInfo] = useState<UserInfo>({
@@ -63,6 +67,44 @@ export function StudyProvider({ children }: { children: ReactNode }) {
     semester: "",
     subjects: [],
   });
+
+  // Supabase에서 실제 유저 role 가져오기
+  useEffect(() => {
+    const fetchUserRole = async () => {
+      try {
+        const { data: { user: authUser } } = await supabase.auth.getUser();
+
+        if (!authUser) {
+          console.warn("⚠️ [StudyContext] No authenticated user");
+          return;
+        }
+
+        // users 테이블에서 role 조회
+        const { data: userData, error } = await supabase
+          .from('users')
+          .select('role')
+          .eq('id', authUser.id)
+          .single();
+
+        if (error) {
+          console.error("❌ [StudyContext] Failed to fetch user role from DB:", error);
+          return;
+        }
+
+        if (userData?.role) {
+          const userRole = userData.role as "student" | "teacher" | "parent";
+          console.log("✅ [StudyContext] User role loaded from DB:", userRole);
+          setUser(prev => ({ ...prev, role: userRole }));
+        } else {
+          console.warn("⚠️ [StudyContext] No role found in database");
+        }
+      } catch (error) {
+        console.error("❌ [StudyContext] Failed to fetch user role:", error);
+      }
+    };
+
+    fetchUserRole();
+  }, []);
 
   // 3. 책 데이터 (더미)
   const [books, setBooks] = useState<Book[]>([
@@ -125,14 +167,14 @@ export function StudyProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <StudyContext.Provider value={{ 
-      user, 
+    <StudyContext.Provider value={{
+      user,
       userInfo, // 추가됨
-      tasks, 
-      books, 
-      schedule, 
-      toggleTask, 
-      updateSchedule, 
+      tasks,
+      books,
+      schedule,
+      toggleTask,
+      updateSchedule,
       updateUserInfo // 추가됨
     }}>
       {children}

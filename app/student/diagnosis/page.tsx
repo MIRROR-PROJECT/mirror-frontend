@@ -544,20 +544,30 @@ export default function DiagnosisPage() {
       });
 
       // 2️⃣ [수정됨] 시간표(Routine) 저장 (명세서 반영)
+      console.log("🕐 [시간표] 선택된 슬롯 원본 데이터:", Array.from(selectedSlots));
+      console.log("🕐 [시간표] 총 선택된 슬롯 개수:", selectedSlots.size);
+
       const routineData: any[] = [];
       const slotsArray: string[] = Array.from<string>(selectedSlots).sort();
+
+      console.log("🕐 [시간표] 정렬된 슬롯 배열:", slotsArray);
 
       const dayMap: Record<number, number[]> = {};
       slotsArray.forEach(slot => {
         const [d, h] = slot.split("-").map(Number);
         if (!dayMap[d]) dayMap[d] = [];
         dayMap[d].push(h);
+        console.log(`🕐 [시간표] 슬롯 파싱: ${slot} -> 요일=${d}, 시간=${h}`);
       });
+
+      console.log("🕐 [시간표] 요일별 시간 맵:", dayMap);
 
       // 요일별 연속 시간 병합 로직
       Object.entries(dayMap).forEach(([dayIdxStr, hours]) => {
         const dayIdx = parseInt(dayIdxStr);
         const dayCode = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"][dayIdx];
+
+        console.log(`🕐 [시간표] 처리 중: ${dayCode} (index=${dayIdx}), 시간들:`, hours);
 
         hours.sort((a, b) => a - b);
 
@@ -569,26 +579,32 @@ export default function DiagnosisPage() {
             end = hours[i]; // 연속됨
           } else {
             // 끊김 -> 저장
-            routineData.push({
+            const block = {
               day_of_week: dayCode,
               start_time: `${String(start).padStart(2, '0')}:00`,
               end_time: `${String(end + 1).padStart(2, '0')}:00`, // 끝 시간은 +1
               total_minutes: (end - start + 1) * 60
-            });
+            };
+            console.log(`🕐 [시간표] 블록 추가 (중간):`, block);
+            routineData.push(block);
             start = hours[i];
             end = hours[i];
           }
         }
         // 마지막 블록 저장
-        routineData.push({
+        const lastBlock = {
           day_of_week: dayCode,
           start_time: `${String(start).padStart(2, '0')}:00`,
           end_time: `${String(end + 1).padStart(2, '0')}:00`,
           total_minutes: (end - start + 1) * 60
-        });
+        };
+        console.log(`🕐 [시간표] 블록 추가 (마지막):`, lastBlock);
+        routineData.push(lastBlock);
       });
 
-      console.log("🚀 [시간표 전송 데이터]:", routineData);
+      console.log("🚀 [시간표] 최종 전송 데이터:");
+      console.log(JSON.stringify(routineData, null, 2));
+      console.log("🚀 [시간표] 전송 블록 개수:", routineData.length);
 
       // API 전송 (user_id 사용)
       const routineRes = await fetch("https://mirror-backend-5j11.onrender.com/routines", {
@@ -599,11 +615,15 @@ export default function DiagnosisPage() {
         }),
       });
 
+      console.log("🚀 [시간표] API 응답 상태:", routineRes.status);
+
       if (!routineRes.ok) {
         const err = await routineRes.json();
-        console.warn("⚠️ 시간표 저장 실패:", err);
+        console.error("❌ [시간표] 저장 실패:", err);
+        console.error("❌ [시간표] 에러 상세:", JSON.stringify(err, null, 2));
       } else {
-        console.log("✅ 시간표 저장 성공");
+        const successData = await routineRes.json();
+        console.log("✅ [시간표] 저장 성공, 응답:", successData);
       }
 
       // 3️⃣ 성향 진단 저장
