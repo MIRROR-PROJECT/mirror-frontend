@@ -1,10 +1,10 @@
 'use client'
 
-import { useEffect } from "react";
+import { Suspense, useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { CheckCircle2, Loader2, XCircle } from "lucide-react";
 
-export default function SuccessPage() {
+function SuccessContent() {
     const searchParams = useSearchParams();
     const router = useRouter();
 
@@ -50,5 +50,13 @@ export default function SuccessPage() {
             <h2 className="text-xl font-bold text-gray-800">결제 승인 중입니다...</h2>
             <p className="text-gray-500">잠시만 기다려주세요.</p>
         </div>
+    );
+}
+
+export default function SuccessPage() {
+    return (
+        <Suspense fallback={<div>Loading...</div>}>
+            <SuccessContent />
+        </Suspense>
     );
 }
