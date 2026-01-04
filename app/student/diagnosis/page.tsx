@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect, useMemo } from "react";
+import { useState, useRef, useEffect, useMemo, Suspense } from "react";
 import { useStudy } from "../../context/StudyContext";
 import {
   Loader2, Camera, Check,
@@ -182,7 +182,7 @@ const QUIZ_QUESTIONS = [
   { id: 4, question: "계획대로 공부가 안 될 때 나는?", options: [{ value: "A", label: "유연하게 넘기고 다른 과목부터 한다", desc: "융통성 있음, 계획 변경이 빠름" }, { value: "B", label: "못 지킨 부분 때문에 스트레스 받는다", desc: "완벽주의, 하나 밀리면 와르르 무너짐" }, { value: "C", label: "에라 모르겠다 하고 놀아버린다", desc: "포기가 빠름, 기분파" }] }
 ];
 
-export default function DiagnosisPage() {
+export function DiagnosisContent() {
   const { updateSchedule, updateUserInfo } = useStudy();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -1195,5 +1195,13 @@ export default function DiagnosisPage() {
         />
       )}
     </div>
+  );
+}
+
+export default function DiagnosisPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-blue-600" /></div>}>
+      <DiagnosisContent />
+    </Suspense>
   );
 }
