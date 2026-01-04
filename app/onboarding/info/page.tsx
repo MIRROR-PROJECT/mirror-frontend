@@ -29,6 +29,10 @@ function InfoContent() {
       if (session?.user) {
         // 컬럼명은 DB 스키마에 따라 다를 수 있으나, 일반적인 snake_case 가정
         const updateData: any = { phone_number: formData.phoneNumber };
+
+        // [Fix] Role 정보도 함께 저장 (대문자로 표준화)
+        if (role) updateData.role = role.toUpperCase();
+
         if (role === 'teacher') updateData.organization = formData.organization;
         if (role === 'parent') updateData.child_name = formData.childName;
 

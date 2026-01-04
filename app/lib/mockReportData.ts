@@ -39,6 +39,13 @@ export const generateMockReports = (count: number): DailyReport[] => {
         const completed_tasks = subjects.reduce((acc, sub) => acc + sub.completed_missions, 0);
         const total_tasks = subjects.reduce((acc, sub) => acc + sub.total_missions, 0);
 
+        // [NEW] 가장 몰입한 과목 찾기 (미션 완료 + 채팅 수 기준)
+        const mostImmersive = subjects.reduce((prev, current) => {
+            const prevScore = prev.completed_missions + (prev.chat_count || 0);
+            const currScore = current.completed_missions + (current.chat_count || 0);
+            return prevScore > currScore ? prev : current;
+        });
+
         // [NEW] 향상된 AI 피드백 생성 로직
         const { title, content } = generateAiFeedback(
             "김철수",
@@ -60,9 +67,10 @@ export const generateMockReports = (count: number): DailyReport[] => {
             passion_temp,
             question_count,
             keywords: KEYWORDS.sort(() => 0.5 - Math.random()).slice(0, 3),
-            ai_summary_title: title, // [NEW] 제목 연결
-            ai_summary: content,     // [NEW] 내용 연결
+            ai_summary_title: title,
+            ai_summary: content,
             subjects,
+            most_immersive_subject: mostImmersive.name, // [NEW] 필드 추가
             focus_score: getRandomInt(40, 100)
         };
     });

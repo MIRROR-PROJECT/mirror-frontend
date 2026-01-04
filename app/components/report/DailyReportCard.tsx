@@ -66,8 +66,8 @@ export default function DailyReportCard({
                                     {sub.name} {sub.completed_missions}/{sub.total_missions}
                                 </span>
                             ))}
-                            <span className="px-2 py-0.5 bg-blue-50 text-blue-600 text-xs rounded-md font-medium flex items-center gap-1">
-                                <Clock className="w-3 h-3" /> {studyTimeText}
+                            <span className="px-2 py-0.5 bg-orange-50 text-orange-600 text-xs rounded-md font-medium flex items-center gap-1">
+                                <span className="text-[10px]">🔥</span> {report.most_immersive_subject} 몰입
                             </span>
                         </div>
                     </div>

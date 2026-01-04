@@ -43,10 +43,10 @@ export default function ReportDetailModal({ report, onClose }: Props) {
 
                     {/* 1. 핵심 지표 그리드 */}
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                        <div className="p-3 bg-gray-50 rounded-2xl border flex flex-col items-center justify-center">
-                            <Clock className="w-5 h-5 text-gray-400 mb-1" />
-                            <span className="text-xs text-gray-500">시간</span>
-                            <span className="text-lg font-bold">{studyTimeText}</span>
+                        <div className="p-3 bg-red-50 rounded-2xl border border-red-100 flex flex-col items-center justify-center">
+                            <span className="text-xl mb-1">🔥</span>
+                            <span className="text-xs text-red-500 font-bold">몰입 과목</span>
+                            <span className="text-lg font-bold text-red-900">{report.most_immersive_subject}</span>
                         </div>
                         <div className="p-3 bg-gray-50 rounded-2xl border flex flex-col items-center justify-center">
                             <CheckCircle2 className="w-5 h-5 text-green-500 mb-1" />

@@ -24,6 +24,8 @@ export interface DailyReport {
 
     subjects: SubjectDetail[];
 
+    most_immersive_subject?: string; // [NEW] 가장 몰입한 과목 (Study Time 대체)
+
     ai_summary_title: string; // [NEW] AI 코멘트 제목
     ai_summary: string;
 
