@@ -604,8 +604,8 @@ export default function StudentDashboard({ user }: { user: UserProps }) {
             completed_tasks: 6,
             total_tasks: 9,
             achievement_rate: 67,
-            chat_message_count: 15,
-            passion_temperature: 72,
+            question_count: 15,
+            passion_temp: 72,
             keywords: ["물리", "가속도", "그래프", "왜?", "다시 설명"],
             subjects: [
               {
@@ -630,15 +630,8 @@ export default function StudentDashboard({ user }: { user: UserProps }) {
               }
             ],
             ai_summary: "오늘은 물리에 정말 열심히 집중하셨네요! 가속도 개념에 대해 많이 질문하셨는데, 그래프 해석이 점점 정확해지고 있어요. 수학은 혼자서도 완벽하게 소화하셨고요. 다만 영어는 오늘 전혀 손대지 않으셨는데, 내일은 꼭 챙겨보면 좋겠어요.",
-            ai_highlights: [
-              "물리 학습 중 질문 패턴이 '이해 확인형'에서 '심화 질문형'으로 발전",
-              "수학 독립적 문제 해결 능력 향상 (튜터 도움 없이 3개 미션 완수)",
-              "영어 학습 공백 발생 - 균형잡힌 학습을 위해 내일 우선순위 조정 권장"
-            ],
             focus_score: 85,
-            streak_days: 5,
-            best_subject: "수학",
-            needs_improvement_subject: "영어"
+            ai_summary_title: "✨ 균형 잡힌 학습 습관"
           }}
           onClose={() => setShowMockReport(false)}
         />
