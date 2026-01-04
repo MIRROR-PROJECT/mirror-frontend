@@ -61,7 +61,7 @@ function InfoContent() {
             <input
               type="tel"
               placeholder="010-1234-5678"
-              className="w-full px-4 py-3 bg-gray-50 rounded-lg border focus:ring-2 focus:ring-blue-500 outline-none"
+              className="w-full px-4 py-3 bg-gray-50 rounded-lg border focus:ring-2 focus:ring-blue-500 outline-none text-gray-900 font-medium placeholder-gray-400"
               onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
             />
           </div>
@@ -73,7 +73,7 @@ function InfoContent() {
               <input
                 type="text"
                 placeholder="예: 미러 학원"
-                className="w-full px-4 py-3 bg-gray-50 rounded-lg border focus:ring-2 focus:ring-blue-500 outline-none"
+                className="w-full px-4 py-3 bg-gray-50 rounded-lg border focus:ring-2 focus:ring-blue-500 outline-none text-gray-900 font-medium placeholder-gray-400"
                 onChange={(e) => setFormData({ ...formData, organization: e.target.value })}
               />
             </div>
@@ -86,7 +86,7 @@ function InfoContent() {
               <input
                 type="text"
                 placeholder="자녀 이름을 입력하세요"
-                className="w-full px-4 py-3 bg-gray-50 rounded-lg border focus:ring-2 focus:ring-blue-500 outline-none"
+                className="w-full px-4 py-3 bg-gray-50 rounded-lg border focus:ring-2 focus:ring-blue-500 outline-none text-gray-900 font-medium placeholder-gray-400"
                 onChange={(e) => setFormData({ ...formData, childName: e.target.value })}
               />
               <p className="text-xs text-gray-500 mt-1">* 추후 학생 계정과 연동할 수 있습니다.</p>

@@ -79,10 +79,31 @@ export async function GET(request: Request) {
       // 에러가 나도 일단 진행 (온보딩으로 이동)
     }
 
-    // 4. 백엔드 DB에서 role 조회 (나중에 구현 예정)
-    // 현재는 Supabase를 사용하지 않고 바로 온보딩으로 이동
-    console.log("🚀 결론: 신규 유저 -> /onboarding/role 이동");
-    return NextResponse.redirect(`${origin}/onboarding/role`);
+    // 4. Supabase users 테이블에서 role 확인
+    console.log("🔍 [Role Check] Supabase users 테이블에서 role 확인 중...");
+
+    const { data: userData, error: roleError } = await supabase
+      .from('users')
+      .select('role')
+      .eq('id', user.id)
+      .single();
+
+    if (roleError) {
+      console.warn("⚠️ [Role Check] Role 조회 실패 (신규 유저일 수 있음):", roleError.message);
+    }
+
+    const userRole = userData?.role;
+    console.log("📋 [Role Check] 조회된 Role:", userRole || "없음");
+
+    if (userRole) {
+      // Role이 있으면 -> 기존 유저 -> 대시보드로
+      console.log("✅ [Redirect] 기존 유저 (Role 있음) -> /dashboard로 이동");
+      return NextResponse.redirect(`${origin}/dashboard`);
+    } else {
+      // Role이 없으면 -> 신규 유저 -> 온보딩으로
+      console.log("🚀 [Redirect] 신규 유저 (Role 없음) -> /onboarding/role로 이동");
+      return NextResponse.redirect(`${origin}/onboarding/role`);
+    }
   }
 
   // 코드가 없는 경우

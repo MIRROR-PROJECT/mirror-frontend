@@ -44,104 +44,15 @@ export default function RoleSelectionPage() {
   }, [router]);
 
   const selectRole = async (role: string) => {
-    console.group(`🔄 [Role Selection] ${role}`);
-    console.log(`역할 선택됨: ${role}`);
+    console.log(`🔄 [Role Selection] ${role} 선택됨 - 진단 페이지로 이동`);
 
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-
-      if (!session?.access_token) {
-        console.error("❌ 인증 토큰이 없습니다.");
-        alert("로그인 세션이 만료되었습니다. 다시 로그인해주세요.");
-        router.push("/login");
-        return;
-      }
-
-      // API 호출 (명세서: POST /onboarding/role)
-      console.log("📡 [API] 서버로 POST 요청 전송...");
-      console.log("📡 [API] URL:", "https://mirror-backend-5j11.onrender.com/onboarding/role");
-      console.log("📡 [API] Headers:", {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${session.access_token.substring(0, 20)}...`
-      });
-      console.log("📡 [API] Body:", JSON.stringify({ role }));
-
-      const res = await fetch("https://mirror-backend-5j11.onrender.com/onboarding/role", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${session.access_token}`
-        },
-        body: JSON.stringify({ role })
-      });
-
-      console.log(`📥 [API] 응답 상태 코드: ${res.status}`);
-      console.log(`📥 [API] 응답 상태 텍스트: ${res.statusText}`);
-      console.log(`📥 [API] 응답 헤더:`, Object.fromEntries(res.headers.entries()));
-
-      // 응답 텍스트 먼저 가져오기 (JSON 파싱 실패 대비)
-      const responseText = await res.text();
-      console.log("📦 [Raw] 서버 응답 원본:", responseText);
-
-      // JSON 파싱 시도
-      let json: RoleResponse | any;
-      try {
-        json = JSON.parse(responseText);
-        console.log("📦 [Parsed] 서버 응답 데이터:", json);
-      } catch (parseError) {
-        console.error("❌ [Parse Error] JSON 파싱 실패:", parseError);
-        console.error("❌ [Parse Error] 응답이 JSON이 아닙니다. 원본:", responseText);
-        alert(`서버 응답 오류: JSON 형식이 아닙니다.\n상태: ${res.status}\n응답: ${responseText.substring(0, 200)}`);
-        return;
-      }
-
-      // 500 에러 상세 로깅
-      if (res.status === 500) {
-        console.error("❌❌❌ [500 Internal Server Error] ❌❌❌");
-        console.error("서버 내부 오류 발생!");
-        console.error("응답 데이터:", json);
-        console.error("에러 메시지:", json.message || json.detail || "메시지 없음");
-        alert(`서버 오류 (500)\n메시지: ${json.message || json.detail || "알 수 없는 오류"}\n\n콘솔을 확인해주세요.`);
-        return;
-      }
-
-      // FastAPI 422 Validation Error 처리
-      if (res.status === 422 && json.detail) {
-        console.error("❌ [422] Validation Error:", json.detail);
-        const errorMsg = Array.isArray(json.detail)
-          ? json.detail.map((e: any) => `${e.loc?.join('.')}: ${e.msg}`).join(', ')
-          : "요청 데이터 형식이 올바르지 않습니다.";
-        alert(`입력값 오류: ${errorMsg}`);
-        return;
-      }
-
-      // 에러 처리
-      if (!json.success) {
-        console.error(`❌ [${json.code}] ${json.message}`);
-        alert(json.message || "역할 등록에 실패했습니다.");
-        return;
-      }
-
-      // 성공 처리 (201 Created)
-      if (json.success && json.data) {
-        console.log(`✅ [Success] ${json.message}`);
-        console.log(`📋 등록된 정보:`, json.data);
-
-        // 역할에 따라 다음 페이지로 이동
-        if (role === 'student') {
-          // 학생 -> 바로 진단 검사로 이동
-          router.push("/student/diagnosis");
-        } else {
-          // 선생님/학부모 -> 추가 정보 입력 페이지로 이동
-          router.push(`/onboarding/info?role=${role}`);
-        }
-      }
-
-    } catch (error) {
-      console.error("❌ [Error] 네트워크 오류 또는 예외 발생:", error);
-      alert("네트워크 오류가 발생했습니다. 잠시 후 다시 시도해주세요.");
-    } finally {
-      console.groupEnd();
+    // Role을 저장하지 않고 URL 파라미터로만 전달
+    if (role === 'student') {
+      // 학생 -> 진단 페이지로 (role을 URL 파라미터로 전달)
+      router.push(`/student/diagnosis?role=${role}`);
+    } else {
+      // 선생님/학부모 -> 추가 정보 입력 페이지로
+      router.push(`/onboarding/info?role=${role}`);
     }
   };
 

@@ -297,7 +297,7 @@ export default function DiagnosisResult({
                                     </div>
                                     <div className="mt-auto">
                                         <Link href="/dashboard" className="w-full bg-white text-blue-600 py-4 rounded-xl font-bold text-center block hover:bg-blue-50 transition-colors">
-                                            {targetPlan.subject} 학습 시작하기
+                                            학습 시작하기
                                         </Link>
                                     </div>
                                 </div>

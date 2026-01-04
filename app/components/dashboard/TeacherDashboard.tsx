@@ -256,7 +256,17 @@ export default function TeacherDashboard({ user }: { user: any }) {
             <div className="w-px h-8 bg-gray-200"></div>
             <div className="flex flex-col items-end">
               <span className="text-xs text-gray-500 font-bold mb-0.5 flex items-center gap-1">
-                평균 진도율 <Brain className="w-3 h-3 text-blue-500" />
+                평균 진도율
+                <div className="relative group">
+                  <Brain className="w-3 h-3 text-blue-500 cursor-help" />
+                  <div className="absolute bottom-full right-0 mb-2 hidden group-hover:block w-64 bg-gray-900 text-white text-xs p-3 rounded-lg shadow-xl z-50">
+                    <p className="font-medium leading-relaxed">
+                      전체 수강생의 평균 학습 진도율입니다.
+                      각 학생의 커리큘럼 완료 비율을 기준으로 계산됩니다.
+                    </p>
+                    <div className="absolute top-full right-4 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
+                  </div>
+                </div>
               </span>
               <span className={`text-xl font-black ${currentClass.avgProgress >= 70 ? 'text-blue-600' : 'text-orange-500'}`}>
                 {currentClass.avgProgress}%

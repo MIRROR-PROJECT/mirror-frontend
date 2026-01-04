@@ -10,7 +10,7 @@ import {
   School, User, FileText, BrainCircuit, AlertCircle, Hash, Info
 } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "../../lib/supabase";
 import Tesseract from 'tesseract.js';
 import DiagnosisResult from "./DiagnosisResult";
@@ -89,7 +89,7 @@ const COGNITIVE_TYPES = {
   C: "BURST_STUDY"
 };
 
-const HOURS = Array.from({ length: 17 }, (_, i) => i + 8);
+const HOURS = Array.from({ length: 16 }, (_, i) => i + 8); // 8시~23시 (24시 제거)
 const WEEK_DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
 const MAIN_SUBJECTS = ["국어", "수학", "영어"];
@@ -100,9 +100,9 @@ const DETAIL_SUBJECTS = [
 ];
 
 const SUBJECT_KEYWORDS: Record<string, string[]> = {
-  "국어": ["다음", "글", "문단", "화자", "윗글", "적절한", "가)", "나)", "필자", "문학", "비문학"],
+  "국어": ["다음", "글", "문단", "화자", "윗글", "적절한", "가)", "나)", "필자"],
   "수학": ["함수", "값", "구하시오", "방정식", "실수", "그림", "x", "y", "=", "+", "-", "미분", "적분"],
-  "영어": ["The", "What", "is", "passage", "following", "Reading", "According", "grammar", "paragraph"]
+  "영어": ["The", "is", "paragraph"]
 };
 
 // 백엔드 전송용 과목명 매핑 (한글 -> Enum)
@@ -183,13 +183,16 @@ const QUIZ_QUESTIONS = [
 export default function DiagnosisPage() {
   const { updateSchedule, updateUserInfo } = useStudy();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const selectedRole = searchParams.get('role') || 'student'; // URL에서 role 가져오기
 
-  const [step, setStep] = useState<number>(1);
+  const [step, setStep] = useState<number>(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // 사용자 정보
   const [info, setInfo] = useState({
     name: "",
+    phone: "",
     school: "high",
     grade: "",
     semester: "1",
@@ -521,6 +524,7 @@ export default function DiagnosisPage() {
         body: JSON.stringify({
           user_id: userId,
           student_name: info.name,
+          phone_number: info.phone,
           school_grade: parseInt(info.grade),
           semester: parseInt(info.semester),
           subjects: mappedSubjects // [Fix] Enum 매핑된 과목 전송
@@ -579,11 +583,17 @@ export default function DiagnosisPage() {
             end = hours[i]; // 연속됨
           } else {
             // 끊김 -> 저장
+            const startTimeStr = `${String(start).padStart(2, '0')}:00`;
+            // 24시 이상은 23:59로 제한 (백엔드 validation: 00:00-23:59)
+            const endTimeHour = end + 1;
+            const endTimeStr = endTimeHour >= 24 ? '23:59' : `${String(endTimeHour).padStart(2, '0')}:00`;
+            const totalMinutes = endTimeHour >= 24 ? ((23 - start) * 60 + 59) : ((endTimeHour - start) * 60);
+
             const block = {
               day_of_week: dayCode,
-              start_time: `${String(start).padStart(2, '0')}:00`,
-              end_time: `${String(end + 1).padStart(2, '0')}:00`, // 끝 시간은 +1
-              total_minutes: (end - start + 1) * 60
+              start_time: startTimeStr,
+              end_time: endTimeStr,
+              total_minutes: totalMinutes
             };
             console.log(`🕐 [시간표] 블록 추가 (중간):`, block);
             routineData.push(block);
@@ -592,11 +602,16 @@ export default function DiagnosisPage() {
           }
         }
         // 마지막 블록 저장
+        const startTimeStr = `${String(start).padStart(2, '0')}:00`;
+        const endTimeHour = end + 1;
+        const endTimeStr = endTimeHour >= 24 ? '23:59' : `${String(endTimeHour).padStart(2, '0')}:00`;
+        const totalMinutes = endTimeHour >= 24 ? ((23 - start) * 60 + 59) : ((endTimeHour - start) * 60);
+
         const lastBlock = {
           day_of_week: dayCode,
-          start_time: `${String(start).padStart(2, '0')}:00`,
-          end_time: `${String(end + 1).padStart(2, '0')}:00`,
-          total_minutes: (end - start + 1) * 60
+          start_time: startTimeStr,
+          end_time: endTimeStr,
+          total_minutes: totalMinutes
         };
         console.log(`🕐 [시간표] 블록 추가 (마지막):`, lastBlock);
         routineData.push(lastBlock);
@@ -679,7 +694,39 @@ export default function DiagnosisPage() {
       await new Promise(resolve => setTimeout(resolve, 500));
       await fetchWeeklyAvailableTime(userId, accessToken);
 
-      console.log("✅ 모든 데이터 저장 완료");
+      // 6️⃣ [NEW] Role 저장 (진단 완료 후)
+      console.log(`📝 [Role 저장] ${selectedRole} 역할을 Supabase에 저장 중...`);
+
+      // Supabase에 role 저장
+      const { error: roleError } = await supabase
+        .from('users')
+        .update({ role: selectedRole.toUpperCase() })
+        .eq('id', userId);
+
+      if (roleError) {
+        console.error("❌ [Role 저장] Supabase 저장 실패:", roleError);
+      } else {
+        console.log("✅ [Role 저장] Supabase 저장 성공");
+      }
+
+      // 백엔드 API에도 role 저장
+      try {
+        const roleRes = await fetch("https://mirror-backend-5j11.onrender.com/onboarding/role", {
+          method: "POST",
+          headers: jsonHeaders,
+          body: JSON.stringify({ role: selectedRole })
+        });
+
+        if (roleRes.ok) {
+          console.log("✅ [Role 저장] 백엔드 API 저장 성공");
+        } else {
+          console.warn("⚠️ [Role 저장] 백엔드 API 저장 실패 (무시하고 진행)");
+        }
+      } catch (roleApiError) {
+        console.warn("⚠️ [Role 저장] 백엔드 API 호출 실패 (무시하고 진행):", roleApiError);
+      }
+
+      console.log("✅ 모든 데이터 저장 완료 (Role 포함)");
       return true;
 
     } catch (error) {
@@ -692,6 +739,7 @@ export default function DiagnosisPage() {
   };
 
   const handleNext = async () => {
+    if (step === 0) { setStep(1); return; }
     if (step === 1) { setStep(2); return; }
     if (step === 2) { if (!hasMainSubject) { setStep(4); } else { setStep(3); } return; }
     if (step === 3) { setStep(4); return; }
@@ -705,22 +753,26 @@ export default function DiagnosisPage() {
   };
 
   const handleBack = async () => {
-    if (step === 1) {
+    if (step === 0) {
       const ok = window.confirm("역할 선택 화면으로 돌아가시겠습니까?");
       if (ok) {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session?.user) {
-          await supabase.from('users').update({ role: null }).eq('id', session.user.id);
-          router.replace('/onboarding/role');
-        }
+        router.replace('/onboarding/role');
       }
+      return;
+    }
+    if (step === 1) {
+      setStep(0);
       return;
     }
     if (step === 4 && !hasMainSubject) { setStep(2); } else { setStep(step - 1); }
   };
 
   const canGoNext = () => {
-    if (step === 1) return info.name.trim().length > 0 && info.grade && info.semester && info.subjects.length > 0;
+    if (step === 0) {
+      const phoneValid = /^\d{3}-\d{4}-\d{4}$/.test(info.phone);
+      return info.name.trim().length > 0 && phoneValid;
+    }
+    if (step === 1) return info.grade && info.semester && info.subjects.length > 0;
     if (step === 2) return Object.keys(answers).length === 4;
     if (step === 3) return Object.keys(subjectImages).length > 0;
     if (step === 4) return selectedSlots.size > 0;
@@ -734,6 +786,7 @@ export default function DiagnosisPage() {
       {step < 5 && (
         <div className="w-full max-w-md mb-8">
           <div className="flex justify-between text-xs font-bold text-gray-400 mb-2 uppercase tracking-wide">
+            <span className={step >= 0 ? "text-blue-600" : ""}>Personal</span>
             <span className={step >= 1 ? "text-blue-600" : ""}>Info</span>
             <span className={step >= 2 ? "text-blue-600" : ""}>Style</span>
             <span className={step >= 3 ? (hasMainSubject ? "text-blue-600" : "text-gray-300 line-through decoration-2") : ""}>Solving</span>
@@ -745,7 +798,51 @@ export default function DiagnosisPage() {
         </div>
       )}
 
-      {/* --- STEP 1: Basic Info (누락된 부분 복구됨) --- */}
+
+      {/* --- STEP 0: Personal Info (Name + Phone) --- */}
+      {step === 0 && (
+        <div className="bg-white max-w-md w-full p-8 rounded-3xl shadow-xl space-y-6 animate-fade-in-up">
+          <div className="text-center mb-6">
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">개인 정보 입력</h2>
+            <p className="text-sm text-gray-500">학습 진단을 시작하기 전에 기본 정보를 입력해주세요</p>
+          </div>
+
+          <div className="space-y-5">
+            {/* 이름 */}
+            <div>
+              <label className="block text-sm font-bold text-gray-700 mb-2 flex items-center gap-2">
+                <User className="w-4 h-4 text-blue-600" />
+                이름
+              </label>
+              <input
+                type="text"
+                value={info.name}
+                onChange={(e) => setInfo({ ...info, name: e.target.value })}
+                placeholder="홍길동"
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-gray-900 font-medium placeholder-gray-400"
+              />
+            </div>
+
+            {/* 전화번호 */}
+            <div>
+              <label className="block text-sm font-bold text-gray-700 mb-2 flex items-center gap-2">
+                <FileText className="w-4 h-4 text-blue-600" />
+                전화번호
+              </label>
+              <input
+                type="tel"
+                value={info.phone}
+                onChange={(e) => setInfo({ ...info, phone: e.target.value })}
+                placeholder="010-1234-5678"
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-gray-900 font-medium placeholder-gray-400"
+              />
+              <p className="text-xs text-gray-500 mt-1">학습 관련 알림을 받을 연락처입니다 (형식: 000-0000-0000)</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* --- STEP 1: Basic Info --- */}
       {step === 1 && (
         <div className="bg-white max-w-md w-full p-8 rounded-3xl shadow-xl space-y-6 animate-fade-in-up">
           <div className="text-center">

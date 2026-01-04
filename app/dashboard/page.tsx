@@ -43,6 +43,7 @@ export default async function DashboardPage(props: {
 
       if (accessToken) {
         // 백엔드에서 진단 완료 여부 확인
+        console.log('🔍 [Dashboard] 진단 완료 체크 시작...');
         const diagnosisCheckResponse = await fetch('https://mirror-backend-5j11.onrender.com/setup/basic-info', {
           headers: {
             'Authorization': `Bearer ${accessToken}`,
@@ -51,11 +52,17 @@ export default async function DashboardPage(props: {
           cache: 'no-store'
         });
 
+        console.log('📥 [Dashboard] 진단 체크 응답 상태:', diagnosisCheckResponse.status);
+
         let isDiagnosisCompleted = false;
         if (diagnosisCheckResponse.ok) {
           const diagnosisData = await diagnosisCheckResponse.json();
+          console.log('📦 [Dashboard] 진단 체크 응답 데이터:', diagnosisData);
           isDiagnosisCompleted = diagnosisData.success && diagnosisData.data !== null;
           console.log('🔍 [Dashboard] 백엔드 진단 완료 여부:', isDiagnosisCompleted);
+        } else {
+          const errorData = await diagnosisCheckResponse.text();
+          console.error('❌ [Dashboard] 진단 체크 API 실패:', diagnosisCheckResponse.status, errorData);
         }
 
         // 진단을 완료하지 않았으면 플래그 설정
