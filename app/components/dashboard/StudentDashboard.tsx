@@ -597,7 +597,6 @@ export default function StudentDashboard({ user }: { user: UserProps }) {
         <ReportDetailModal
           report={{
             id: "mock-001",
-            user_id: user.id,
             user_name: user.name,
             date: "2026-01-05",
             day_of_week: "일요일",
@@ -607,40 +606,27 @@ export default function StudentDashboard({ user }: { user: UserProps }) {
             achievement_rate: 67,
             chat_message_count: 15,
             passion_temperature: 72,
-            keywords: [
-              { word: "물리", count: 12, weight: 1.0 },
-              { word: "가속도", count: 8, weight: 0.7 },
-              { word: "그래프", count: 6, weight: 0.5 },
-              { word: "왜?", count: 5, weight: 0.4 },
-              { word: "다시 설명", count: 4, weight: 0.3 }
-            ],
+            keywords: ["물리", "가속도", "그래프", "왜?", "다시 설명"],
             subjects: [
               {
                 name: "물리",
                 completed_missions: 3,
-                total_missions: 4,
-                completion_rate: 75,
-                chat_count: 12,
-                study_minutes: 35,
-                badge_type: "question_burst"
-              },
-              {
-                name: "영어",
-                completed_missions: 0,
-                total_missions: 4,
-                completion_rate: 0,
-                chat_count: 0,
-                study_minutes: 0,
-                badge_type: "quiet"
+                total_missions: 5,
+                chat_count: 5,
+                badge: "🔥 질문 폭발"
               },
               {
                 name: "수학",
-                completed_missions: 3,
+                completed_missions: 2,
+                total_missions: 2,
+                chat_count: 1,
+                badge: "💯 완벽 이해"
+              },
+              {
+                name: "영어",
+                completed_missions: 1,
                 total_missions: 3,
-                completion_rate: 100,
-                chat_count: 0,
-                study_minutes: 54,
-                badge_type: "independent"
+                chat_count: 0
               }
             ],
             ai_summary: "오늘은 물리에 정말 열심히 집중하셨네요! 가속도 개념에 대해 많이 질문하셨는데, 그래프 해석이 점점 정확해지고 있어요. 수학은 혼자서도 완벽하게 소화하셨고요. 다만 영어는 오늘 전혀 손대지 않으셨는데, 내일은 꼭 챙겨보면 좋겠어요.",
