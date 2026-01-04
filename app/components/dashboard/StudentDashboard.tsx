@@ -35,11 +35,35 @@ interface ApiScheduleSlot {
 }
 
 interface SubjectMission {
-  subject: string;
-  progress: number;
-  completed: number;
-  total: number;
-  color: string;
+  category: string;  // API 명세서에 맞게 subject -> category
+  total_count: number;
+  completed_count: number;
+  achievement_rate: number;
+  color: string;  // UI용 색상 (프론트엔드에서 추가)
+}
+
+interface LearningStatsResponse {
+  success: boolean;
+  code: number;
+  message: string;
+  data: {
+    subject_stats: Array<{
+      category: string;
+      total_count: number;
+      completed_count: number;
+      achievement_rate: number;
+    }>;
+  } | null;
+}
+
+interface ToggleResponse {
+  success: boolean;
+  code: number;
+  message: string;
+  data: {
+    task_id: string;
+    is_completed: boolean;
+  } | null;
 }
 
 interface TimeSlot {
@@ -48,16 +72,19 @@ interface TimeSlot {
   duration: number;
   type: "mission" | "unavailable";
   label: string;
-  taskId?: number;
+  taskId?: string;  // UUID 타입으로 변경 (API 명세서 준수)
   isDone?: boolean;
 }
 
-const MISSION_STATUS: SubjectMission[] = [
-  { subject: "수학", progress: 75, completed: 3, total: 4, color: "bg-blue-500" },
-  { subject: "영어", progress: 40, completed: 2, total: 5, color: "bg-yellow-400" },
-  { subject: "국어", progress: 100, completed: 3, total: 3, color: "bg-green-500" },
-  { subject: "탐구", progress: 20, completed: 1, total: 5, color: "bg-purple-500" },
-];
+// 과목별 색상 매핑 (UI용)
+const SUBJECT_COLORS: Record<string, string> = {
+  "수학": "bg-blue-500",
+  "영어": "bg-yellow-400",
+  "국어": "bg-green-500",
+  "탐구": "bg-purple-500",
+  "과학": "bg-indigo-500",
+  "사회": "bg-pink-500",
+};
 
 export default function StudentDashboard({ user }: { user: UserProps }) {
   const { schedule, tasks } = useStudy();
@@ -65,6 +92,8 @@ export default function StudentDashboard({ user }: { user: UserProps }) {
   const [mounted, setMounted] = useState(false);
   const [timeline, setTimeline] = useState<TimeSlot[]>([]);
   const [missionDate, setMissionDate] = useState<string>("");
+  const [learningStats, setLearningStats] = useState<SubjectMission[]>([]);
+  const [statsMonth, setStatsMonth] = useState<string>("");
 
   const [dashboardSummary, setDashboardSummary] = useState<{
     student_name: string;
@@ -87,6 +116,7 @@ export default function StudentDashboard({ user }: { user: UserProps }) {
 
     fetchDashboardSummary();
     fetchTodayMission();
+    fetchLearningStats();
 
     return () => console.groupEnd();
   }, []);
@@ -151,6 +181,49 @@ export default function StudentDashboard({ user }: { user: UserProps }) {
     }
   };
 
+  const fetchLearningStats = async () => {
+    console.log("📊 [3. 학습 통계] API 호출 시작...");
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        console.error("❌ [3. 학습 통계] 토큰 없음");
+        return;
+      }
+
+      const res = await fetch("https://mirror-backend-5j11.onrender.com/my/learning-stats", {
+        headers: { "Authorization": `Bearer ${session.access_token}` }
+      });
+
+      console.log(`📊 [3. 학습 통계] 응답 상태: ${res.status}`);
+
+      if (res.ok) {
+        const json: LearningStatsResponse = await res.json();
+        console.log("📊 [3. 학습 통계] 수신 데이터:", json);
+
+        if (json.success && json.data?.subject_stats) {
+          // 색상 추가하여 상태 업데이트
+          const statsWithColors = json.data.subject_stats.map(stat => ({
+            ...stat,
+            color: SUBJECT_COLORS[stat.category] || "bg-gray-500"
+          }));
+          setLearningStats(statsWithColors);
+
+          // 메시지에서 월 정보 추출 (예: "2026년 1월 학습 통계 조회 성공")
+          const monthMatch = json.message.match(/(\d+년 \d+월)/);
+          if (monthMatch) {
+            setStatsMonth(monthMatch[1]);
+          }
+
+          console.log("✅ [3. 학습 통계] 상태 업데이트 완료");
+        }
+      } else {
+        console.error("❌ [3. 학습 통계] API 에러");
+      }
+    } catch (error) {
+      console.error("❌ [3. 학습 통계] 네트워크/로직 에러:", error);
+    }
+  };
+
   const processScheduleData = (schedule: ApiScheduleSlot[]) => {
     const tempTimeline: TimeSlot[] = [];
 
@@ -168,7 +241,7 @@ export default function StudentDashboard({ user }: { user: UserProps }) {
           duration: 1,
           type: isMission ? "mission" : "unavailable",
           label: isMission ? slot.task!.title : "공부 불가능",
-          taskId: isMission ? parseInt(slot.task!.task_id) : undefined,
+          taskId: isMission ? slot.task!.task_id : undefined,  // UUID 문자열 그대로 사용
           isDone: isMission ? slot.task!.is_completed : false,
         });
       }
@@ -201,40 +274,105 @@ export default function StudentDashboard({ user }: { user: UserProps }) {
     setTimeline(mergedTimeline);
   };
 
+  // --- [API 명세서 기반 태스크 토글 핸들러] ---
   const handleSlotClick = async (slot: TimeSlot) => {
     if (slot.type !== "mission" || !slot.taskId) return;
 
-    console.log(`👆 [Click] Task ${slot.taskId} 클릭됨. 변경할 상태: ${!slot.isDone}`);
+    console.group(`� [Dashboard Toggle] Task ${slot.taskId}`);
+    console.log(`📍 현재 상태: ${slot.isDone} -> 변경 예정: ${!slot.isDone}`);
 
-    const newStatus = !slot.isDone;
+    const optimisticStatus = !slot.isDone;
 
+    // 1. 낙관적 업데이트 (UI 먼저 변경)
+    console.log("⚡ [UI] 낙관적 업데이트 적용 중...");
     setTimeline(prev => prev.map(t =>
-      t.taskId === slot.taskId ? { ...t, isDone: newStatus } : t
+      t.taskId === slot.taskId ? { ...t, isDone: optimisticStatus } : t
     ));
 
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error("No session");
+      if (!session?.access_token) {
+        throw new Error("인증 토큰이 없습니다.");
+      }
 
+      // 2. API 호출 (명세서: PATCH /my/tasks/{task_id}/toggle)
+      console.log("📡 [API] 서버로 PATCH 요청 전송...");
       const res = await fetch(`https://mirror-backend-5j11.onrender.com/my/tasks/${slot.taskId}/toggle`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${session.access_token}`
-        },
-        body: JSON.stringify({ is_completed: newStatus })
+        }
+        // Body 제거 (명세서에 따라 Path Variable만 사용)
       });
 
-      if (!res.ok) throw new Error("Server update failed");
-      console.log("✅ [API] 상태 업데이트 성공 (Server Synced)");
+      console.log(`📥 [API] 응답 상태 코드: ${res.status}`);
+
+      // 3. 응답 파싱
+      const json: ToggleResponse | any = await res.json();
+      console.log("📦 [Res] 서버 응답 데이터:", json);
+
+      // 4. 에러 처리 (명세서 기반 + FastAPI 에러 형식 처리)
+      // FastAPI 422 Validation Error 처리
+      if (res.status === 422 && json.detail) {
+        console.error("❌ [422] Validation Error:", json.detail);
+        const errorMsg = Array.isArray(json.detail)
+          ? json.detail.map((e: any) => `${e.loc?.join('.')}: ${e.msg}`).join(', ')
+          : "요청 데이터 형식이 올바르지 않습니다.";
+        alert(`입력값 오류: ${errorMsg}`);
+
+        // 실패 시 롤백
+        setTimeline(prev => prev.map(t =>
+          t.taskId === slot.taskId ? { ...t, isDone: !optimisticStatus } : t
+        ));
+        console.groupEnd();
+        return;
+      }
+
+      if (!json.success) {
+        // 404: 태스크를 찾을 수 없음
+        if (json.code === 404) {
+          console.error("❌ [404] 해당 task_id의 태스크를 찾을 수 없습니다.");
+          alert("해당 태스크를 찾을 수 없습니다.");
+        } else {
+          console.error(`❌ [${json.code}] ${json.message}`);
+          alert(json.message || "상태 변경에 실패했습니다.");
+        }
+
+        // 실패 시 롤백
+        setTimeline(prev => prev.map(t =>
+          t.taskId === slot.taskId ? { ...t, isDone: !optimisticStatus } : t
+        ));
+        return;
+      }
+
+      // 5. 성공 응답 처리 (200 OK)
+      if (json.data) {
+        const serverStatus = json.data.is_completed;
+        console.log(`✅ [Success] ${json.message}`);
+
+        // 서버 상태와 낙관적 업데이트 동기화 확인
+        if (serverStatus !== optimisticStatus) {
+          console.warn(`⚠️ [Sync] 상태 불일치 발생! 서버값(${serverStatus})으로 동기화합니다.`);
+          setTimeline(prev => prev.map(t =>
+            t.taskId === slot.taskId ? { ...t, isDone: serverStatus } : t
+          ));
+        } else {
+          console.log("✅ [Sync] 서버와 상태 동기화 완료.");
+        }
+      }
 
     } catch (error) {
-      console.error("❌ [API] 업데이트 실패:", error);
-      // 롤백
+      console.error("❌ [Error] 네트워크 오류 또는 예외 발생:", error);
+
+      // 실패 시 롤백
       setTimeline(prev => prev.map(t =>
-        t.taskId === slot.taskId ? { ...t, isDone: !newStatus } : t
+        t.taskId === slot.taskId ? { ...t, isDone: !optimisticStatus } : t
       ));
-      alert("오류가 발생했습니다.");
+
+      alert("네트워크 오류가 발생했습니다. 잠시 후 다시 시도해주세요.");
+    } finally {
+      console.groupEnd();
     }
   };
 
@@ -399,22 +537,31 @@ export default function StudentDashboard({ user }: { user: UserProps }) {
                 <h3 className="font-bold text-gray-800 flex items-center gap-2">
                   <BarChart3 className="w-5 h-5 text-indigo-500" /> 과목별 미션 현황
                 </h3>
+                {statsMonth && (
+                  <span className="text-xs text-gray-400 font-medium">{statsMonth}</span>
+                )}
               </div>
               <div className="space-y-5">
-                {MISSION_STATUS.map((item) => (
-                  <div key={item.subject}>
-                    <div className="flex justify-between items-end mb-2">
-                      <div className="flex items-center gap-2">
-                        <span className="font-bold text-gray-700 text-sm">{item.subject}</span>
-                        <span className="text-xs text-gray-400 font-medium">({item.completed}/{item.total})</span>
+                {learningStats.length > 0 ? (
+                  learningStats.map((item) => (
+                    <div key={item.category}>
+                      <div className="flex justify-between items-end mb-2">
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-gray-700 text-sm">{item.category}</span>
+                          <span className="text-xs text-gray-400 font-medium">({item.completed_count}/{item.total_count})</span>
+                        </div>
+                        <span className={`text-sm font-bold ${item.achievement_rate === 100 ? 'text-green-500' : 'text-blue-600'}`}>{item.achievement_rate.toFixed(0)}%</span>
                       </div>
-                      <span className={`text-sm font-bold ${item.progress === 100 ? 'text-green-500' : 'text-blue-600'}`}>{item.progress}%</span>
+                      <div className="h-2.5 bg-gray-100 rounded-full overflow-hidden">
+                        <div className={`h-full ${item.color} rounded-full transition-all duration-1000 ease-out`} style={{ width: mounted ? `${item.achievement_rate}%` : '0%' }}></div>
+                      </div>
                     </div>
-                    <div className="h-2.5 bg-gray-100 rounded-full overflow-hidden">
-                      <div className={`h-full ${item.color} rounded-full transition-all duration-1000 ease-out`} style={{ width: mounted ? `${item.progress}%` : '0%' }}></div>
-                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-8 text-gray-400 text-sm">
+                    학습 통계를 불러오는 중...
                   </div>
-                ))}
+                )}
               </div>
             </div>
           </div>

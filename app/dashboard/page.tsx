@@ -1,12 +1,10 @@
 // app/dashboard/page.tsx
-import { createClient } from "../utils/supabase/server"; // 경로 주의 (@ 사용 추천)
+import { createClient } from "../utils/supabase/server";
 import { redirect } from "next/navigation";
-import Link from "next/link";
 
-// ⚠️ 중요: app/student/... 가 아니라 components/... 에서 불러옵니다!
 import StudentDashboard from "../components/dashboard/StudentDashboard";
 import TeacherDashboard from "../components/dashboard/TeacherDashboard";
-import ParentDashboard from "../components/dashboard/ParentDashboard"; // 학부모용이 있다면
+import ParentDashboard from "../components/dashboard/ParentDashboard";
 
 export default async function DashboardPage(props: {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>
@@ -34,8 +32,42 @@ export default async function DashboardPage(props: {
 
   // 3. 역할에 따라 컴포넌트 분기
   if (role === 'student') {
-    // 필요하다면 진단 여부 체크 로직 추가
-    // if (!userData.is_setup_done) redirect('/student/diagnosis');
+    // [NEW] 학생의 경우: 오늘의 미션이 있는지 체크
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData.session?.access_token;
+
+      if (accessToken) {
+        const missionResponse = await fetch('https://mirror-backend-5j11.onrender.com/my/missions/today', {
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+            'Content-Type': 'application/json'
+          },
+          cache: 'no-store' // 서버 컴포넌트에서 캐시 방지
+        });
+
+        if (missionResponse.ok) {
+          const missionData = await missionResponse.json();
+
+          // 미션이 없거나 schedule이 비어있으면 진단 페이지로
+          if (!missionData.success || !missionData.data?.schedule || missionData.data.schedule.length === 0) {
+            console.log('📋 [Dashboard] 오늘의 미션 없음 -> /student/diagnosis로 리다이렉트');
+            redirect('/student/diagnosis');
+          }
+
+          console.log('✅ [Dashboard] 오늘의 미션 있음 -> 대시보드 표시');
+        } else {
+          // API 에러 시에도 진단 페이지로
+          console.log('❌ [Dashboard] 미션 API 에러 -> /student/diagnosis로 리다이렉트');
+          redirect('/student/diagnosis');
+        }
+      }
+    } catch (error) {
+      console.error('❌ [Dashboard] 미션 체크 에러:', error);
+      // 에러 발생 시에도 진단 페이지로
+      redirect('/student/diagnosis');
+    }
+
     return <StudentDashboard user={userData} />;
   }
 
@@ -44,7 +76,6 @@ export default async function DashboardPage(props: {
   }
 
   if (role === 'parent') {
-    // 학부모 컴포넌트가 따로 없다면 일단 선생님꺼 보여주거나, ParentDashboard를 만드세요
     return <ParentDashboard user={userData} />;
   }
 

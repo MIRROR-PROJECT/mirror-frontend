@@ -1,7 +1,7 @@
 // app/page.tsx
 import { createClient } from "./utils/supabase/server";
 import { redirect } from "next/navigation";
-import LandingPage from "./components/LandingPage"; 
+import LandingPage from "./components/LandingPage";
 
 export default async function Home() {
   const supabase = await createClient();
@@ -20,7 +20,7 @@ export default async function Home() {
     // ✅ [수정됨] 오직 'role'이 있을 때만 대시보드로 납치합니다.
     // role이 없으면 if문을 빠져나가서 아래의 LandingPage를 렌더링합니다.
     if (userProfile?.role) {
-      redirect('/dashboard'); 
+      redirect('/dashboard');
     }
   }
 

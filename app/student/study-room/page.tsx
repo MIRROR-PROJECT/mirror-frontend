@@ -1,17 +1,18 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useStudy } from "../../context/StudyContext";
 import {
   CalendarDays, CheckCircle2,
   Clock, Calendar, Award, BookOpen,
-  X, Calendar as CalendarIcon, Loader2
+  TrendingUp, Loader2, Calendar as CalendarIcon,
+  X, MoreHorizontal
 } from "lucide-react";
 import { supabase } from "@/app/lib/supabase";
 
 // --- [API 명세서 기반 타입 정의] ---
 interface ApiTask {
-  task_id: string; // UUID
+  task_id: string;
   category: string;
   title: string;
   subtitle: string;
@@ -21,11 +22,10 @@ interface ApiTask {
 }
 
 interface ApiScheduleSlot {
-  time_slot: string; // "09:00"
+  time_slot: string;
   task: ApiTask | null;
 }
 
-// 응답 데이터 구조
 interface TodayMissionResponse {
   mission_date: string;
   mission_title: string;
@@ -34,13 +34,33 @@ interface TodayMissionResponse {
   schedule: ApiScheduleSlot[];
 }
 
-// [NEW] 학사 일정 데이터 (고정)
+interface ToggleResponse {
+  success: boolean;
+  code: number;
+  message: string;
+  data: {
+    task_id: string;
+    is_completed: boolean;
+  } | null;
+}
+
 interface AcademicEvent {
   id: number;
   title: string;
   date: string;
   type: "csat" | "mock";
 }
+
+// [NEW] 주간 달성률 데이터 (예시)
+const WEEKLY_STATS = [
+  { day: "월", rate: 40 },
+  { day: "화", rate: 75 },
+  { day: "수", rate: 55 },
+  { day: "목", rate: 90 },
+  { day: "금", rate: 100 },
+  { day: "토", rate: 30 },
+  { day: "일", rate: 0 },
+];
 
 const ACADEMIC_SCHEDULE: AcademicEvent[] = [
   { id: 1, title: "3월 전국연합학력평가", date: "2026-03-24", type: "mock" },
@@ -55,26 +75,25 @@ const ACADEMIC_SCHEDULE: AcademicEvent[] = [
 const WEEK_DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
 export default function StudyRoomPage() {
-  const { updateSchedule } = useStudy(); // schedule 관련은 유지하되 tasks는 로컬 state 사용
+  const { updateSchedule } = useStudy();
 
-  // --- [State] ---
   const [isScheduleOpen, setIsScheduleOpen] = useState(false);
   const [weekDates, setWeekDates] = useState<{ day: string, date: number, isToday: boolean }[]>([]);
   const [upcomingEvents, setUpcomingEvents] = useState<(AcademicEvent & { dDay: number })[]>([]);
 
-  // [API Data] 오늘의 할 일 목록
   const [todayTasks, setTodayTasks] = useState<ApiTask[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [todayProgress, setTodayProgress] = useState(0);
 
-  // --- [Effect] 초기 데이터 로드 ---
+  // 그래프 인터랙션 상태
+  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+
   useEffect(() => {
     calculateWeekDates();
     calculateDDay();
-    fetchTodayMission(); // API 호출
+    fetchTodayMission();
   }, []);
 
-  // 1. 주간 날짜 계산
   const calculateWeekDates = () => {
     const today = new Date();
     const currentDay = today.getDay();
@@ -96,7 +115,6 @@ export default function StudyRoomPage() {
     setWeekDates(tempWeek);
   };
 
-  // 2. D-Day 계산
   const calculateDDay = () => {
     const now = new Date();
     now.setHours(0, 0, 0, 0);
@@ -115,7 +133,6 @@ export default function StudyRoomPage() {
     setUpcomingEvents(filteredEvents);
   };
 
-  // 3. [API] 오늘의 미션 가져오기
   const fetchTodayMission = async () => {
     setIsLoading(true);
     try {
@@ -130,15 +147,12 @@ export default function StudyRoomPage() {
         const json = await res.json();
         if (json.success && json.data) {
           const data = json.data as TodayMissionResponse;
-
-          // API의 schedule에서 실제 '과제'만 추출 (status가 '잠김'이 아니고 task가 있는 것)
           const validTasks = data.schedule
             .map(slot => slot.task)
             .filter((task): task is ApiTask => task !== null && task.status !== "잠김");
 
           setTodayTasks(validTasks);
 
-          // 완료율 계산 (체크리스트 기반)
           const completedCount = validTasks.filter(t => t.is_completed).length;
           const totalCount = validTasks.length;
           setTodayProgress(totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0);
@@ -151,51 +165,141 @@ export default function StudyRoomPage() {
     }
   };
 
-  // 4. [API] 할 일 완료 토글
+  // --- [API 명세서 기반 태스크 토글 핸들러] ---
   const handleToggleTask = async (taskId: string) => {
-    // 1. 낙관적 업데이트 (UI 먼저 변경)
-    const targetTask = todayTasks.find(t => t.task_id === taskId);
-    if (!targetTask) return;
-    const newStatus = !targetTask.is_completed;
+    console.group(`🔄 [Toggle] Task ID: ${taskId}`);
 
+    const targetTask = todayTasks.find(t => t.task_id === taskId);
+    if (!targetTask) {
+      console.warn("❌ 로컬 상태에서 태스크를 찾을 수 없음");
+      console.groupEnd();
+      return;
+    }
+
+    const optimisticStatus = !targetTask.is_completed;
+    console.log(`📍 현재 상태: ${targetTask.is_completed} -> 변경 예정: ${optimisticStatus}`);
+
+    // 1. 낙관적 업데이트 (UI 먼저 변경)
+    console.log("⚡ [UI] 낙관적 업데이트 적용 중...");
     setTodayTasks(prev => prev.map(t =>
-      t.task_id === taskId ? { ...t, is_completed: newStatus, status: newStatus ? "완료" : "진행 가능" } : t
+      t.task_id === taskId ? { ...t, is_completed: optimisticStatus, status: optimisticStatus ? "완료" : "진행 가능" } : t
     ));
 
-    // 진척도 재계산 (UI용)
+    // 진척도 즉시 재계산
     setTodayProgress(prev => {
       const total = todayTasks.length;
       const currentCompleted = todayTasks.filter(t => t.is_completed).length;
-      // 현재 클릭 반영
-      const nextCompleted = newStatus ? currentCompleted + 1 : currentCompleted - 1;
+      const nextCompleted = optimisticStatus ? currentCompleted + 1 : currentCompleted - 1;
       return Math.round((nextCompleted / total) * 100);
     });
 
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
+      if (!session?.access_token) {
+        throw new Error("인증 토큰이 없습니다.");
+      }
 
-      // 2. API 호출
+      // 2. API 호출 (명세서: PATCH /my/tasks/{task_id}/toggle)
+      console.log("📡 [API] 서버로 PATCH 요청 전송...");
       const res = await fetch(`https://mirror-backend-5j11.onrender.com/my/tasks/${taskId}/toggle`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${session.access_token}`
-        },
-        body: JSON.stringify({ is_completed: newStatus })
+        }
       });
 
-      if (!res.ok) throw new Error("API Error");
+      console.log(`📥 [API] 응답 상태 코드: ${res.status}`);
+
+      // 3. 응답 파싱
+      const json: ToggleResponse = await res.json();
+      console.log("📦 [Res] 서버 응답 데이터:", json);
+
+      // 4. 에러 처리 (명세서 기반)
+      if (!json.success) {
+        // 404: 태스크를 찾을 수 없음
+        if (json.code === 404) {
+          console.error("❌ [404] 해당 task_id의 태스크를 찾을 수 없습니다.");
+          alert("해당 태스크를 찾을 수 없습니다.");
+        } else {
+          console.error(`❌ [${json.code}] ${json.message}`);
+          alert(json.message || "상태 변경에 실패했습니다.");
+        }
+
+        // 실패 시 롤백
+        setTodayTasks(prev => prev.map(t =>
+          t.task_id === taskId ? { ...t, is_completed: !optimisticStatus, status: !optimisticStatus ? "완료" : "진행 가능" } : t
+        ));
+        return;
+      }
+
+      // 5. 성공 응답 처리 (200 OK)
+      if (json.data) {
+        const serverStatus = json.data.is_completed;
+        console.log(`✅ [Success] ${json.message}`);
+
+        // 서버 상태와 낙관적 업데이트 동기화 확인
+        if (serverStatus !== optimisticStatus) {
+          console.warn(`⚠️ [Sync] 상태 불일치 발생! 서버값(${serverStatus})으로 동기화합니다.`);
+          setTodayTasks(prev => prev.map(t =>
+            t.task_id === taskId ? { ...t, is_completed: serverStatus, status: serverStatus ? "완료" : "진행 가능" } : t
+          ));
+
+          // 진척도 재계산
+          const total = todayTasks.length;
+          const updatedCompleted = todayTasks.filter(t =>
+            t.task_id === taskId ? serverStatus : t.is_completed
+          ).length;
+          setTodayProgress(Math.round((updatedCompleted / total) * 100));
+        } else {
+          console.log("✅ [Sync] 서버와 상태 동기화 완료.");
+        }
+      }
 
     } catch (error) {
-      console.error("Toggle failed:", error);
+      console.error("❌ [Error] 네트워크 오류 또는 예외 발생:", error);
+
       // 실패 시 롤백
       setTodayTasks(prev => prev.map(t =>
-        t.task_id === taskId ? { ...t, is_completed: !newStatus } : t
+        t.task_id === taskId ? { ...t, is_completed: !optimisticStatus, status: !optimisticStatus ? "완료" : "진행 가능" } : t
       ));
-      alert("상태 변경에 실패했습니다.");
+
+      alert("네트워크 오류가 발생했습니다. 잠시 후 다시 시도해주세요.");
+    } finally {
+      console.groupEnd();
     }
   };
+
+  // --- [Graph Helper] ---
+  const getSmoothPath = (points: { x: number, y: number }[]) => {
+    if (points.length === 0) return "";
+
+    let d = `M ${points[0].x},${points[0].y}`;
+
+    for (let i = 0; i < points.length - 1; i++) {
+      const p0 = points[i];
+      const p1 = points[i + 1];
+
+      const cp1x = p0.x + (p1.x - p0.x) * 0.5;
+      const cp1y = p0.y;
+      const cp2x = p0.x + (p1.x - p0.x) * 0.5;
+      const cp2y = p1.y;
+
+      d += ` C ${cp1x},${cp1y} ${cp2x},${cp2y} ${p1.x},${p1.y}`;
+    }
+    return d;
+  };
+
+  const graphWidth = 100;
+  const graphHeight = 60;
+  const paddingX = 10;
+  const points = WEEKLY_STATS.map((d, i) => ({
+    x: paddingX + i * ((graphWidth - paddingX * 2) / (WEEKLY_STATS.length - 1)),
+    y: graphHeight - (d.rate / 100) * graphHeight
+  }));
+
+  const pathD = getSmoothPath(points);
+  const areaD = `${pathD} L ${points[points.length - 1].x},${graphHeight} L ${points[0].x},${graphHeight} Z`;
 
   return (
     <div className="min-h-screen bg-gray-50 flex relative">
@@ -260,28 +364,74 @@ export default function StudyRoomPage() {
             </div>
           </div>
 
-          {/* [우측] 오늘의 달성률 그래프 (API 데이터 연동) */}
-          <div className="bg-white p-6 rounded-3xl border border-gray-200 shadow-sm flex flex-col h-full">
-            <div className="flex justify-between items-center mb-2">
-              <h3 className="font-bold text-gray-800 flex items-center gap-2">
-                <CheckCircle2 className="w-5 h-5 text-green-500" /> 오늘 달성률
-              </h3>
-              <span className="text-2xl font-black text-gray-900">
-                {todayProgress}%
-              </span>
+          {/* [우측] 주간 학습 리포트 */}
+          <div className="bg-white p-6 rounded-3xl border border-gray-200 shadow-sm flex flex-col h-full relative overflow-hidden">
+            <div className="flex justify-between items-start mb-6 z-10">
+              <div>
+                <h3 className="font-bold text-gray-800 flex items-center gap-2">
+                  <TrendingUp className="w-5 h-5 text-indigo-500" /> 주간 학습 리포트
+                </h3>
+                <p className="text-xs text-gray-400 mt-1">지난주보다 <span className="text-indigo-600 font-bold">12% 더</span> 달성했어요! 🔥</p>
+              </div>
+              <button className="text-gray-300 hover:text-gray-500"><MoreHorizontal className="w-5 h-5" /></button>
             </div>
-            <p className="text-xs text-gray-400 mb-6">오늘 할 일 <span className="text-blue-600 font-bold">{todayTasks.length}개</span> 중 <span className="text-blue-600 font-bold">{todayTasks.filter(t => t.is_completed).length}개</span> 완료했어요!</p>
 
-            <div className="flex-1 flex items-center justify-center">
-              {/* 원형 그래프 시각화 (간단 버전) */}
-              <div className="relative w-32 h-32">
-                <svg className="w-full h-full transform -rotate-90">
-                  <circle cx="64" cy="64" r="56" stroke="currentColor" strokeWidth="12" fill="transparent" className="text-gray-100" />
-                  <circle cx="64" cy="64" r="56" stroke="currentColor" strokeWidth="12" fill="transparent" strokeDasharray={351.86} strokeDashoffset={351.86 - (351.86 * todayProgress) / 100} className="text-blue-500 transition-all duration-1000 ease-out" strokeLinecap="round" />
-                </svg>
-                <div className="absolute inset-0 flex items-center justify-center text-xl font-bold text-gray-700">
-                  {todayProgress}%
-                </div>
+            {/* 그래프 영역 */}
+            <div className="flex-1 w-full relative min-h-[180px] flex flex-col justify-end">
+              <svg className="w-full h-full overflow-visible" viewBox={`0 0 ${graphWidth} ${graphHeight + 20}`} preserveAspectRatio="none">
+                <defs>
+                  <linearGradient id="chartGradient" x1="0" x2="0" y1="0" y2="1">
+                    <stop offset="0%" stopColor="#6366f1" stopOpacity="0.3" />
+                    <stop offset="100%" stopColor="#6366f1" stopOpacity="0" />
+                  </linearGradient>
+                  <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+                    <feDropShadow dx="0" dy="2" stdDeviation="2" floodColor="#6366f1" floodOpacity="0.3" />
+                  </filter>
+                </defs>
+
+                {[0, 25, 50, 75, 100].map((line, i) => (
+                  <line key={i} x1="0" y1={graphHeight - (line / 100 * graphHeight)} x2="100" y2={graphHeight - (line / 100 * graphHeight)} stroke="#f3f4f6" strokeWidth="0.5" strokeDasharray="2" />
+                ))}
+
+                <path d={areaD} fill="url(#chartGradient)" />
+                <path d={pathD} fill="none" stroke="#6366f1" strokeWidth="1.5" strokeLinecap="round" filter="url(#shadow)" className="drop-shadow-sm" />
+
+                {points.map((p, i) => {
+                  const isHovered = hoveredIndex === i;
+                  const isToday = WEEKLY_STATS[i].day === '금';
+
+                  return (
+                    <g
+                      key={i}
+                      onMouseEnter={() => setHoveredIndex(i)}
+                      onMouseLeave={() => setHoveredIndex(null)}
+                      className="cursor-pointer"
+                    >
+                      <circle cx={p.x} cy={p.y} r={isHovered || isToday ? 3 : 2} fill="white" stroke="#6366f1" strokeWidth={isHovered || isToday ? 2 : 1.5} className="transition-all duration-300 ease-out" />
+                      {isToday && (
+                        <circle cx={p.x} cy={p.y} r="6" fill="none" stroke="#6366f1" strokeOpacity="0.3" strokeWidth="1">
+                          <animate attributeName="r" from="3" to="8" dur="1.5s" repeatCount="indefinite" />
+                          <animate attributeName="opacity" from="0.6" to="0" dur="1.5s" repeatCount="indefinite" />
+                        </circle>
+                      )}
+                      {(hoveredIndex === i || isToday) && (
+                        <g transform={`translate(${p.x}, ${p.y - 12})`}>
+                          <rect x="-14" y="-18" width="28" height="16" rx="4" fill="#1e1b4b" fillOpacity="0.9" />
+                          <polygon points="0,0 -3,-3 3,-3" fill="#1e1b4b" fillOpacity="0.9" transform="translate(0, -2)" />
+                          <text x="0" y="-8" textAnchor="middle" fill="white" fontSize="8" fontWeight="bold" dominantBaseline="middle">{WEEKLY_STATS[i].rate}%</text>
+                        </g>
+                      )}
+                    </g>
+                  );
+                })}
+              </svg>
+
+              <div className="flex justify-between px-[10%] mt-2">
+                {WEEKLY_STATS.map((d, i) => (
+                  <span key={i} className={`text-[10px] w-6 text-center transition-colors ${d.day === '금' ? 'font-bold text-indigo-600 bg-indigo-50 rounded-md py-0.5' : 'text-gray-400'}`}>
+                    {d.day}
+                  </span>
+                ))}
               </div>
             </div>
           </div>
@@ -301,7 +451,6 @@ export default function StudyRoomPage() {
                 </div>
 
                 <div className="flex-1 space-y-1.5 overflow-y-auto custom-scrollbar pr-1 max-h-40">
-                  {/* ✨ 오늘 날짜: API 데이터 (todayTasks) 렌더링 */}
                   {plan.isToday ? (
                     isLoading ? (
                       <div className="h-full flex items-center justify-center">
@@ -332,7 +481,6 @@ export default function StudyRoomPage() {
                       )
                     )
                   ) : (
-                    /* 오늘이 아닌 날짜: 빈 상태 표시 (API는 오늘만 제공하므로) */
                     <div className="h-full flex flex-col items-center justify-center text-gray-300 gap-1">
                       <CalendarIcon className="w-4 h-4 opacity-50" />
                       <span className="text-[10px]">일정 없음</span>
@@ -348,7 +496,6 @@ export default function StudyRoomPage() {
       {/* 🕒 [모달] 시간표 설정 (기존 유지) */}
       {isScheduleOpen && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
-          {/* (시간표 설정 모달 내용은 기존 코드와 동일하여 생략하거나 그대로 사용하시면 됩니다) */}
           <div className="bg-white rounded-3xl w-full max-w-xl shadow-2xl p-6">
             <h3 className="font-bold text-lg mb-4">시간표 설정</h3>
             <p className="text-gray-500 mb-6">시간표 설정 기능은 별도 컴포넌트로 관리됩니다.</p>

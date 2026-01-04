@@ -1,49 +1,140 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { GraduationCap, School, Users } from "lucide-react";
+import { GraduationCap, School, Users, Loader2 } from "lucide-react";
 import { supabase } from "../../lib/supabase";
+import { useEffect, useState } from "react";
+
+// API 응답 타입 정의
+interface RoleResponse {
+  success: boolean;
+  code: number;
+  message: string;
+  data: {
+    user_id: string;
+    role: string;
+    role_id: string;
+  } | null;
+}
 
 export default function RoleSelectionPage() {
   const router = useRouter();
+  const [checking, setChecking] = useState(true);
+
+  // 페이지 로드 시 이미 role이 있는지 확인
+  useEffect(() => {
+    const checkExistingRole = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+
+        if (!session?.user) {
+          router.replace('/login');
+          return;
+        }
+
+        const { data: userData } = await supabase
+          .from('users')
+          .select('role')
+          .eq('id', session.user.id)
+          .single();
+
+        if (userData?.role) {
+          console.log(`이미 role이 있음: ${userData.role} -> /dashboard로 이동`);
+          router.replace('/dashboard');
+          return;
+        }
+      } catch (error) {
+        console.error("Role 체크 에러:", error);
+      } finally {
+        setChecking(false);
+      }
+    };
+
+    checkExistingRole();
+  }, [router]);
 
   const selectRole = async (role: string) => {
+    console.group(`🔄 [Role Selection] ${role}`);
     console.log(`역할 선택됨: ${role}`);
 
-    // 1. 유저 요청으로 역할 저장 스킵 (테스트 목적)
-    console.log("Role saving skipped (Demo Mode)");
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
 
-    /*
-    const { data: { session } } = await supabase.auth.getSession();
-    if (session?.user) {
-      const { error } = await supabase
-        .from('users')
-        .upsert({
-          id: session.user.id,
-          role: role
-        }, { onConflict: 'id' })
-        .select();
-
-      if (error) {
-        console.error("Role update failed:", error);
-        alert(`역할 저장 실패: ${error.message}`);
+      if (!session?.access_token) {
+        console.error("❌ 인증 토큰이 없습니다.");
+        alert("로그인 세션이 만료되었습니다. 다시 로그인해주세요.");
+        router.push("/login");
         return;
       }
-    } else {
-      alert("로그인 세션이 만료되었습니다. 다시 로그인해주세요.");
-      router.push("/login");
-      return;
-    }
-    */
 
-    if (role === 'student') {
-      // 학생 -> 바로 진단 검사로 이동
-      router.push("/student/diagnosis");
-    } else {
-      // 선생님/학부모 -> 추가 정보 입력 페이지로 이동
-      router.push(`/onboarding/info?role=${role}`);
+      // API 호출 (명세서: POST /onboarding/role)
+      console.log("📡 [API] 서버로 POST 요청 전송...");
+      const res = await fetch("https://mirror-backend-5j11.onrender.com/onboarding/role", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${session.access_token}`
+        },
+        body: JSON.stringify({ role })
+      });
+
+      console.log(`📥 [API] 응답 상태 코드: ${res.status}`);
+
+      // 응답 파싱
+      const json: RoleResponse | any = await res.json();
+      console.log("📦 [Res] 서버 응답 데이터:", json);
+
+      // FastAPI 422 Validation Error 처리
+      if (res.status === 422 && json.detail) {
+        console.error("❌ [422] Validation Error:", json.detail);
+        const errorMsg = Array.isArray(json.detail)
+          ? json.detail.map((e: any) => `${e.loc?.join('.')}: ${e.msg}`).join(', ')
+          : "요청 데이터 형식이 올바르지 않습니다.";
+        alert(`입력값 오류: ${errorMsg}`);
+        return;
+      }
+
+      // 에러 처리
+      if (!json.success) {
+        console.error(`❌ [${json.code}] ${json.message}`);
+        alert(json.message || "역할 등록에 실패했습니다.");
+        return;
+      }
+
+      // 성공 처리 (201 Created)
+      if (json.success && json.data) {
+        console.log(`✅ [Success] ${json.message}`);
+        console.log(`📋 등록된 정보:`, json.data);
+
+        // 역할에 따라 다음 페이지로 이동
+        if (role === 'student') {
+          // 학생 -> 바로 진단 검사로 이동
+          router.push("/student/diagnosis");
+        } else {
+          // 선생님/학부모 -> 추가 정보 입력 페이지로 이동
+          router.push(`/onboarding/info?role=${role}`);
+        }
+      }
+
+    } catch (error) {
+      console.error("❌ [Error] 네트워크 오류 또는 예외 발생:", error);
+      alert("네트워크 오류가 발생했습니다. 잠시 후 다시 시도해주세요.");
+    } finally {
+      console.groupEnd();
     }
   };
+
+  // 체크 중일 때는 로딩 표시
+  if (checking) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="w-10 h-10 text-blue-600 animate-spin" />
+          <p className="text-gray-500 font-medium">확인 중...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 px-4">
