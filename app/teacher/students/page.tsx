@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import {
   Search, Filter, Download, Plus,
   MoreHorizontal, ChevronDown, User,
@@ -55,6 +56,7 @@ const STUDENTS = [
 ];
 
 export default function StudentManagementPage() {
+  const router = useRouter();
   const [selectedClass, setSelectedClass] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -78,15 +80,21 @@ export default function StudentManagementPage() {
   useEffect(() => {
     const dashboardTutorialCompleted = localStorage.getItem('teacher_tutorial_completed');
     const studentsTutorialCompleted = localStorage.getItem('teacher_students_tutorial_completed');
+    const hasRedirected = sessionStorage.getItem('students_has_redirected');
+
+    // 이미 리다이렉트했으면 무시
+    if (hasRedirected) return;
 
     if (!dashboardTutorialCompleted) {
       // 대시보드 튜토리얼을 먼저 완료해야 함
-      window.location.href = '/dashboard?role=teacher';
+      sessionStorage.setItem('students_has_redirected', 'true');
+      router.push('/dashboard?role=teacher');
     } else if (!studentsTutorialCompleted) {
       // 대시보드는 끝났지만 수강생 관리는 안 끝남
-      window.location.href = '/teacher/students/tutorial';
+      sessionStorage.setItem('students_has_redirected', 'true');
+      router.push('/teacher/students/tutorial');
     }
-  }, []);
+  }, [router]);
 
   return (
     <div className="p-6 md:p-10 max-w-7xl mx-auto space-y-6 animate-fade-in">

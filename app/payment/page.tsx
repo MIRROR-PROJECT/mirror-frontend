@@ -106,13 +106,26 @@ export default function PaymentPage() {
                             onClick={handlePay}
                             disabled={!scriptLoaded}
                             className={`w-full py-4 rounded-xl font-bold text-lg transition-colors flex items-center justify-center gap-2 shadow-lg ${scriptLoaded
-                                    ? 'bg-indigo-600 hover:bg-indigo-700 text-white hover:shadow-xl transform hover:-translate-y-0.5 cursor-pointer'
-                                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                                ? 'bg-indigo-600 hover:bg-indigo-700 text-white hover:shadow-xl transform hover:-translate-y-0.5 cursor-pointer'
+                                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                                 }`}
                         >
                             <Lock className="w-5 h-5" />
                             {scriptLoaded ? '결제하고 시작하기' : '로딩 중...'}
                         </button>
+
+                        {/* 개발 환경 전용 데모 버튼 */}
+                        {process.env.NODE_ENV === 'development' && (
+                            <button
+                                onClick={() => {
+                                    localStorage.setItem('teacher_from_benefits', 'true');
+                                    router.push('/dashboard?role=teacher');
+                                }}
+                                className="w-full py-3 rounded-xl font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors flex items-center justify-center gap-2 border-2 border-dashed border-gray-300 mt-3"
+                            >
+                                🚀 데모로 진행 (개발용 - 배포 시 자동 숨김)
+                            </button>
+                        )}
                     </div>
                 </div>
             </div>

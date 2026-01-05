@@ -8,6 +8,8 @@ import {
   Plus, X, Search, UserPlus
 } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { addStudentToClass, getMyClasses, ClassInfo } from "@/app/lib/api/teacher";
 
 // --- 타입 정의 ---
 interface StudentCare {
@@ -50,49 +52,9 @@ const DUMMY_STUDENTS: Student[] = [
 ];
 
 export default function TeacherDashboard({ user }: { user: any }) {
-  const [classes, setClasses] = useState<ClassData[]>([
-    {
-      id: 1,
-      name: "고2 수리논술 심화반 A",
-      studentCount: 3,
-      avgProgress: 78,
-      briefing: {
-        mood: "🔥 자습 열기 고조",
-        moodDesc: "어제 밤 10시 이후 접속자가 30명 이상이었습니다.",
-        weakness: "삼각함수 합성",
-        weaknessRate: 65,
-        careAction: "수업 도입부 '합성 공식' 10분 복습"
-      },
-      careList: [
-        { id: 101, name: "박민수", issue: "성적 급락 (▼20점)", urgent: true },
-        { id: 102, name: "최유리", issue: "진로 상담 요청", urgent: false }
-      ],
-      students: [
-        { id: 1, name: "김민수", email: "minsu@example.com", grade: "고2" },
-        { id: 2, name: "이지은", email: "jieun@example.com", grade: "고2" },
-        { id: 5, name: "정하늘", email: "haneul@example.com", grade: "고2" },
-      ]
-    },
-    {
-      id: 2,
-      name: "고1 수학 개념완성반 B",
-      studentCount: 1,
-      avgProgress: 45,
-      briefing: {
-        mood: "📉 학습량 부족",
-        moodDesc: "전체적으로 완강률이 떨어지고 있습니다. 독려가 필요합니다.",
-        weakness: "나머지정리",
-        weaknessRate: 52,
-        careAction: "오답 노트 숙제 검사 꼼꼼히 진행"
-      },
-      careList: [
-        { id: 201, name: "김철수", issue: "3일 연속 미접속", urgent: true }
-      ],
-      students: [
-        { id: 3, name: "박서준", email: "seojun@example.com", grade: "고1" },
-      ]
-    }
-  ]);
+  const router = useRouter();
+  const [classes, setClasses] = useState<ClassData[]>([]);
+  const [isLoadingClasses, setIsLoadingClasses] = useState(true);
 
   const [selectedClassId, setSelectedClassId] = useState(1);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -106,9 +68,12 @@ export default function TeacherDashboard({ user }: { user: any }) {
   const [newClassName, setNewClassName] = useState("");
   const [newClassGrade, setNewClassGrade] = useState("고2");
 
-  // 학생 검색
-  const [studentSearchQuery, setStudentSearchQuery] = useState("");
-  const [searchResults, setSearchResults] = useState<Student[]>([]);
+  // 학생 추가 폼
+  const [newStudentName, setNewStudentName] = useState("");
+  const [newStudentPhone, setNewStudentPhone] = useState("");
+  const [newStudentEmail, setNewStudentEmail] = useState("");
+  const [newStudentGrade, setNewStudentGrade] = useState<number>(11);
+  const [isAddingStudent, setIsAddingStudent] = useState(false);
 
   const currentClass = classes.find(c => c.id === selectedClassId) || classes[0];
 
@@ -116,15 +81,21 @@ export default function TeacherDashboard({ user }: { user: any }) {
   useEffect(() => {
     const fromBenefits = localStorage.getItem('teacher_from_benefits');
     const tutorialCompleted = localStorage.getItem('teacher_tutorial_completed');
+    const hasRedirected = sessionStorage.getItem('teacher_has_redirected');
+
+    // 이미 리다이렉트했으면 무시
+    if (hasRedirected) return;
 
     if (!fromBenefits) {
       // 아직 benefits 페이지를 보지 않았으면 거기로 보냄
-      window.location.href = '/teacher/benefits';
+      sessionStorage.setItem('teacher_has_redirected', 'true');
+      router.push('/teacher/benefits');
     } else if (!tutorialCompleted) {
       // benefits는 봤지만 튜토리얼은 안 했으면 튜토리얼로
-      window.location.href = '/teacher/tutorial';
+      sessionStorage.setItem('teacher_has_redirected', 'true');
+      router.push('/teacher/tutorial');
     }
-  }, []);
+  }, [router]);
 
   useEffect(() => {
     const now = new Date();
@@ -132,18 +103,63 @@ export default function TeacherDashboard({ user }: { user: any }) {
     setCurrentDate(formatted);
   }, []);
 
-  // 학생 검색 로직
+  // 실제 API에서 반 목록 가져오기
   useEffect(() => {
-    if (studentSearchQuery.trim()) {
-      const results = DUMMY_STUDENTS.filter(student =>
-        student.name.includes(studentSearchQuery) &&
-        !currentClass.students.some(s => s.id === student.id)
-      );
-      setSearchResults(results);
-    } else {
-      setSearchResults([]);
-    }
-  }, [studentSearchQuery, currentClass.students]);
+    const fetchClasses = async () => {
+      try {
+        setIsLoadingClasses(true);
+        const result = await getMyClasses();
+
+        if (result.success && result.data) {
+          // API 응답을 UI 포맷으로 변환
+          const formattedClasses: ClassData[] = result.data.classes.map((cls, index) => ({
+            id: index + 1,
+            name: cls.class_name,
+            studentCount: cls.student_count,
+            avgProgress: 0, // TODO: 실제 진도율 API 연동 필요
+            briefing: {
+              mood: "📊 데이터 수집 중",
+              moodDesc: "학생들의 학습 데이터를 분석하고 있습니다.",
+              weakness: "-",
+              weaknessRate: 0,
+              careAction: "학생 데이터가 쌓이면 AI 분석이 시작됩니다."
+            },
+            careList: [],
+            students: [] // TODO: 학생 목록은 별도 API로 조회
+          }));
+
+          setClasses(formattedClasses);
+
+          // 첫 번째 반 선택
+          if (formattedClasses.length > 0) {
+            setSelectedClassId(1);
+          }
+        }
+      } catch (error) {
+        console.error('반 목록 조회 실패:', error);
+        // 에러 시에도 기본 데이터 사용
+        setClasses([{
+          id: 1,
+          name: "내 반",
+          studentCount: 0,
+          avgProgress: 0,
+          briefing: {
+            mood: "🎯 새로운 시작",
+            moodDesc: "반을 만들고 학생을 추가해보세요.",
+            weakness: "-",
+            weaknessRate: 0,
+            careAction: "학생을 추가하여 시작하세요."
+          },
+          careList: [],
+          students: []
+        }]);
+      } finally {
+        setIsLoadingClasses(false);
+      }
+    };
+
+    fetchClasses();
+  }, []);
 
   // 반 생성 핸들러
   const handleCreateClass = () => {
@@ -176,23 +192,98 @@ export default function TeacherDashboard({ user }: { user: any }) {
     alert(`"${newClassName}" 반이 생성되었습니다!`);
   };
 
-  // 학생 추가 핸들러
-  const handleAddStudent = (student: Student) => {
-    const updatedClasses = classes.map(cls => {
-      if (cls.id === selectedClassId) {
-        return {
-          ...cls,
-          students: [...cls.students, student],
-          studentCount: cls.studentCount + 1
-        };
-      }
-      return cls;
-    });
+  // 학생 추가 핸들러 (실제 API 호출)
+  const handleAddStudent = async () => {
+    if (!newStudentName.trim() || !newStudentPhone.trim()) {
+      alert("학생 이름과 전화번호를 입력해주세요.");
+      return;
+    }
 
-    setClasses(updatedClasses);
-    setStudentSearchQuery("");
-    alert(`${student.name} 학생이 ${currentClass.name}에 추가되었습니다!`);
+    // 전화번호 형식 체크 (010-XXXX-XXXX)
+    const phoneRegex = /^010-\d{4}-\d{4}$/;
+    if (!phoneRegex.test(newStudentPhone)) {
+      alert("전화번호는 010-XXXX-XXXX 형식으로 입력해주세요.");
+      return;
+    }
+
+    try {
+      setIsAddingStudent(true);
+
+      const result = await addStudentToClass({
+        student_name: newStudentName,
+        phone_number: newStudentPhone,
+        class_name: currentClass.name,
+        email: newStudentEmail || undefined,
+        school_grade: newStudentGrade
+      });
+
+      if (result.success) {
+        // 로컬 상태 업데이트
+        const newStudent: Student = {
+          id: Date.now(),
+          name: result.data!.student_name,
+          email: result.data!.email,
+          grade: `고${newStudentGrade - 9}`
+        };
+
+        const updatedClasses = classes.map(cls => {
+          if (cls.id === selectedClassId) {
+            return {
+              ...cls,
+              students: [...cls.students, newStudent],
+              studentCount: cls.studentCount + 1
+            };
+          }
+          return cls;
+        });
+
+        setClasses(updatedClasses);
+
+        // 폼 초기화
+        setNewStudentName("");
+        setNewStudentPhone("");
+        setNewStudentEmail("");
+        setNewStudentGrade(11);
+        setShowAddStudentModal(false);
+
+        alert(`${result.data!.student_name} 학생이 ${currentClass.name}에 추가되었습니다!`);
+      }
+    } catch (error: any) {
+      alert(`학생 추가 실패: ${error.message}`);
+    } finally {
+      setIsAddingStudent(false);
+    }
   };
+
+  // 로딩 중이거나 반이 없으면 로딩 화면 표시
+  if (isLoadingClasses) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="inline-block w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4"></div>
+          <p className="text-gray-600 font-medium">반 목록을 불러오는 중...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // 반이 없으면 생성 유도
+  if (classes.length === 0) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
+        <div className="text-center max-w-md">
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">아직 반이 없습니다</h2>
+          <p className="text-gray-600 mb-6">첫 번째 반을 만들고 학생들을 추가해보세요!</p>
+          <button
+            onClick={() => setShowCreateClassModal(true)}
+            className="bg-blue-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-blue-700 transition-colors"
+          >
+            + 새 반 만들기
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 md:p-10 max-w-7xl mx-auto space-y-8 animate-fade-in bg-gray-50/50 min-h-screen">
@@ -535,50 +626,87 @@ export default function TeacherDashboard({ user }: { user: any }) {
               <h3 className="text-xl font-bold text-gray-900">학생 추가</h3>
               <button onClick={() => {
                 setShowAddStudentModal(false);
-                setStudentSearchQuery("");
+                setNewStudentName("");
+                setNewStudentPhone("");
+                setNewStudentEmail("");
+                setNewStudentGrade(11);
               }} className="text-gray-400 hover:text-gray-600">
                 <X className="w-6 h-6" />
               </button>
             </div>
 
-            <div className="mb-4">
-              <label className="block text-sm font-bold text-gray-700 mb-2">학생 이름 검색</label>
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-2">학생 이름 *</label>
                 <input
                   type="text"
-                  value={studentSearchQuery}
-                  onChange={(e) => setStudentSearchQuery(e.target.value)}
-                  placeholder="학생 이름을 입력하세요"
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                  value={newStudentName}
+                  onChange={(e) => setNewStudentName(e.target.value)}
+                  placeholder="홍길동"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
                 />
+              </div>
+
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-2">전화번호 * (010-XXXX-XXXX)</label>
+                <input
+                  type="text"
+                  value={newStudentPhone}
+                  onChange={(e) => setNewStudentPhone(e.target.value)}
+                  placeholder="010-1234-5678"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                />
+                <p className="text-xs text-gray-500 mt-1">※ 기존 학생이면 전화번호로 자동 인식됩니다</p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-2">이메일 (선택)</label>
+                <input
+                  type="email"
+                  value={newStudentEmail}
+                  onChange={(e) => setNewStudentEmail(e.target.value)}
+                  placeholder="student@example.com"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-2">학년</label>
+                <select
+                  value={newStudentGrade}
+                  onChange={(e) => setNewStudentGrade(Number(e.target.value))}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                >
+                  <option value={10}>고1</option>
+                  <option value={11}>고2</option>
+                  <option value={12}>고3</option>
+                </select>
               </div>
             </div>
 
-            <div className="max-h-64 overflow-y-auto space-y-2">
-              {searchResults.length > 0 ? (
-                searchResults.map((student) => (
-                  <div
-                    key={student.id}
-                    className="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
-                  >
-                    <div>
-                      <p className="font-bold text-gray-900">{student.name}</p>
-                      <p className="text-xs text-gray-500">{student.email} · {student.grade}</p>
-                    </div>
-                    <button
-                      onClick={() => handleAddStudent(student)}
-                      className="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-sm font-bold hover:bg-blue-700 transition-colors"
-                    >
-                      추가
-                    </button>
-                  </div>
-                ))
-              ) : studentSearchQuery.trim() ? (
-                <p className="text-center text-gray-500 py-8">검색 결과가 없습니다.</p>
-              ) : (
-                <p className="text-center text-gray-400 py-8">학생 이름을 검색하세요</p>
-              )}
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={() => {
+                  setShowAddStudentModal(false);
+                  setNewStudentName("");
+                  setNewStudentPhone("");
+                  setNewStudentEmail("");
+                  setNewStudentGrade(11);
+                }}
+                className="flex-1 px-4 py-3 border border-gray-300 rounded-lg font-bold text-gray-700 hover:bg-gray-50 transition-colors"
+              >
+                취소
+              </button>
+              <button
+                onClick={handleAddStudent}
+                disabled={isAddingStudent}
+                className={`flex-1 px-4 py-3 rounded-lg font-bold transition-colors ${isAddingStudent
+                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                  : 'bg-blue-600 text-white hover:bg-blue-700'
+                  }`}
+              >
+                {isAddingStudent ? '추가 중...' : '추가하기'}
+              </button>
             </div>
 
             {currentClass.students.length > 0 && (
