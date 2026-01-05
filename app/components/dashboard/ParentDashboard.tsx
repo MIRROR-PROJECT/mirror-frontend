@@ -32,7 +32,7 @@ const TODAY_TIMELINE: TimelineItem[] = [
   {
     id: 1,
     title: "AI 튜터와 질의응답 중",
-    desc: "'삼각함수의 합성' 관련 심화 문제를 질문하고 있습니다.",
+    desc: "'삼각함수의 합성' 관련 심화 문제 3개를 질문하고 있습니다. 특히 sin과 cos의 합성 공식 유도 과정에 대해 깊이 있는 대화를 나누고 있어요.",
     time: "19:45 ~ 현재",
     status: "current",
     color: "bg-green-500"
@@ -40,17 +40,34 @@ const TODAY_TIMELINE: TimelineItem[] = [
   {
     id: 2,
     title: "수학 과제 제출 완료",
-    desc: "[필수] 지수로그 기출 20제 풀이 및 채점",
+    desc: "[필수] 지수로그 기출 20제 풀이 및 채점 - 정답률 85% (17/20개 정답)",
     time: "18:30",
     status: "completed",
     color: "bg-blue-600"
   },
   {
     id: 3,
+    title: "영어 단어 암기 완료",
+    desc: "오늘의 필수 어휘 50개 학습 및 테스트 통과 (48/50 정답)",
+    time: "18:00",
+    status: "completed",
+    color: "bg-purple-500"
+  },
+  {
+    id: 4,
     title: "학원 등원 및 출석 체크",
+    desc: "정시 등원, 오늘 컨디션: 좋음",
     time: "17:50",
     status: "completed",
     color: "bg-gray-400"
+  },
+  {
+    id: 5,
+    title: "물리 개념 강의 수강",
+    desc: "등가속도 운동 - 자유낙하와 연직상방 (45분 집중 학습)",
+    time: "16:30",
+    status: "completed",
+    color: "bg-indigo-500"
   }
 ];
 
@@ -61,8 +78,8 @@ export default function ParentDashboard({ user }: { user: any }) {
     role: "student",
     grade: "고2",
     className: "수리논술 심화반 A",
-    attendanceRate: 98,
-    studyTime: { hours: 14, minutes: 30 },
+    attendanceRate: 96,
+    studyTime: { hours: 18, minutes: 45 },
     focusLevel: "High"
   };
 
@@ -89,7 +106,7 @@ export default function ParentDashboard({ user }: { user: any }) {
             안녕하세요, {studentInfo.name} 부모님! 👋
           </h1>
           <p className="text-gray-700 mt-1 font-medium">
-            오늘 {studentInfo.name} 학생은 계획된 학습량의 <span className="text-blue-600 font-black text-lg">92%</span>를 달성했습니다.
+            오늘 {studentInfo.name} 학생은 계획된 학습량의 <span className="text-blue-600 font-black text-lg">94%</span>를 달성했습니다. 이번 주 평균보다 12% 높은 수치예요! 🎉
           </p>
         </div>
 
@@ -249,7 +266,7 @@ export default function ParentDashboard({ user }: { user: any }) {
                   <div className="bg-blue-50 p-2 rounded-lg shadow-sm">
                     <TrendingUp className="w-5 h-5 text-blue-600" />
                   </div>
-                  <span className="text-sm font-bold text-black">함수의 극한</span>
+                  <span className="text-sm font-bold text-black">함수의 극한 및 연속성</span>
                 </div>
               </div>
 
@@ -262,14 +279,14 @@ export default function ParentDashboard({ user }: { user: any }) {
                   <div className="bg-red-50 p-2 rounded-lg shadow-sm">
                     <AlertCircle className="w-5 h-5 text-red-600" />
                   </div>
-                  <span className="text-sm font-bold text-black">삼각함수 활용</span>
+                  <span className="text-sm font-bold text-black">삼각함수 합성 및 활용</span>
                 </div>
               </div>
             </div>
 
             <div className="mt-5 pt-5 border-t border-gray-100">
               <p className="text-xs text-gray-700 leading-relaxed font-medium">
-                <span className="font-bold text-purple-600">AI 분석:</span> 민수는 계산 속도는 빠르지만, 도형이 나오는 삼각함수 문제에서 오답률이 높습니다. 이번 주말 보충 과제로 해당 파트를 집중 케어할 예정입니다.
+                <span className="font-bold text-purple-600">AI 분석:</span> 민수 학생은 계산 속도가 빠르고 기본 개념 이해도가 높습니다. 다만 도형이 포함된 삼각함수 문제에서 오답률이 23%로 높게 나타나고 있어요. 특히 삼각형의 넓이를 구하는 과정에서 합성 공식 적용에 어려움을 겪고 있습니다. 이번 주말 보충 과제로 시각화 자료와 함께 해당 파트를 집중 케어할 예정입니다.
               </p>
             </div>
           </div>
@@ -286,10 +303,10 @@ export default function ParentDashboard({ user }: { user: any }) {
 
             <div className="bg-white/60 backdrop-blur-sm p-4 rounded-2xl border border-white/50 shadow-sm">
               <p className="text-sm text-gray-800 leading-relaxed font-medium">
-                "어머니, 민수가 요즘 수학에 자신감이 많이 붙었습니다. 특히 서술형 풀이 과정이 아주 깔끔해졌어요. 집에서도 칭찬 많이 부탁드립니다!"
+                "어머니, 민수가 요즘 수학에 자신감이 많이 붙었습니다! 특히 서술형 풀이 과정이 논리적이고 깔끔해졌어요. 지난주 모의고사에서 수학 2등급을 받았는데, 이 추세라면 다음 달엔 1등급도 충분히 가능할 것 같습니다. 다만 삼각함수 파트는 조금 더 연습이 필요해서, 이번 주말에 특별 보충 자료를 준비했습니다. 집에서도 칭찬 많이 부탁드립니다!"
               </p>
             </div>
-            <p className="text-xs text-gray-400 mt-3 text-right font-medium">2025.12.28 작성됨</p>
+            <p className="text-xs text-gray-400 mt-3 text-right font-medium">2026.01.03 작성됨 · 박진우 선생님</p>
           </div>
 
         </div>

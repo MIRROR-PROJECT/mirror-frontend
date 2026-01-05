@@ -3,8 +3,8 @@ import { DailyReport, SubjectDetail, ReportStats } from "@/app/components/report
 // 다국어 데이터
 const DATA = {
     ko: {
-        subjects: ["물리", "수학", "영어"],
-        keywords: ["가속도", "미분", "관계대명사", "빈칸추론", "왜?", "다시설명", "그래프"],
+        subjects: ["수학", "영어", "물리", "화학", "국어"],
+        keywords: ["삼각함수", "미분", "적분", "가속도", "운동량", "화학반응식", "몰농도", "관계대명사", "빈칸추론", "주제찾기", "왜?", "다시설명", "그래프", "공식유도", "개념정리"],
         days: ["일", "월", "화", "수", "목", "금", "토"],
         badges: {
             veryActive: "💬 질문 폭발",
@@ -16,34 +16,34 @@ const DATA = {
         feedback: {
             passionate: {
                 title: "🔥 열정적인 탐구 정신!",
-                good: (q: number, subject: string) => `오늘 총 ${q}번의 질문을 던지며 적극적으로 학습했습니다. 특히 '${subject}' 과목을 깊이 파고든 점이 아주 훌륭해요.`,
-                improve: "💡 **내일의 집중 포인트**\\n질문한 내용을 바탕으로 '나만의 정리 노트'를 만들어보세요. 스스로 정리할 때 진짜 내 것이 된답니다!"
+                good: (q: number, subject: string) => `오늘 총 ${q}번의 질문을 던지며 적극적으로 학습했습니다. 특히 '${subject}' 과목을 깊이 파고든 점이 아주 훌륭해요. 궁금한 점을 즉시 해결하려는 자세가 실력 향상의 핵심입니다.`,
+                improve: "💡 **내일의 집중 포인트**\\n질문한 내용을 바탕으로 '나만의 정리 노트'를 만들어보세요. 스스로 정리할 때 진짜 내 것이 된답니다! 특히 오늘 질문했던 개념들을 다시 한 번 복습하면서 연결고리를 찾아보세요."
             },
             selfDirected: {
                 title: "🚀 자기주도 학습 능력 탁월!",
-                good: (rate: number) => `AI 튜터에게 의존하지 않고 스스로 문제를 해결하며 ${rate}%의 높은 성취도를 기록했어요. 혼자서도 잘 해내는 힘이 돋보입니다.`,
-                improve: "💡 **내일의 집중 포인트**\\n지금처럼 하되, 혹시 막히는 부분이 생기면 주저 말고 질문해주세요. 더 효율적인 풀이법을 찾을 수도 있으니까요!"
+                good: (rate: number) => `AI 튜터에게 의존하지 않고 스스로 문제를 해결하며 ${rate}%의 높은 성취도를 기록했어요. 혼자서도 잘 해내는 힘이 돋보입니다. 이런 자기주도성은 장기적으로 큰 자산이 될 거예요.`,
+                improve: "💡 **내일의 집중 포인트**\\n지금처럼 하되, 혹시 막히는 부분이 생기면 주저 말고 질문해주세요. 더 효율적인 풀이법을 찾을 수도 있으니까요! 때로는 다른 관점에서의 설명이 큰 도움이 됩니다."
             },
             persistent: {
                 title: "💪 끈기와 성실함의 승리!",
-                good: (time: string) => `무려 ${time}이나 집중력을 유지했어요. 꾸준히 책상 앞을 지키는 힘은 그 어떤 재능보다 강력한 무기입니다.`,
-                improve: "💡 **내일의 집중 포인트**\\n오래 공부한 만큼 휴식도 중요해요! 내일은 50분 공부하고 10분 쉬는 패턴을 꼭 지켜보세요."
+                good: (time: string) => `무려 ${time}이나 집중력을 유지했어요. 꾸준히 책상 앞을 지키는 힘은 그 어떤 재능보다 강력한 무기입니다. 이런 성실함이 누적되면 반드시 큰 성과로 이어집니다.`,
+                improve: "💡 **내일의 집중 포인트**\\n오래 공부한 만큼 휴식도 중요해요! 내일은 50분 공부하고 10분 쉬는 패턴을 꼭 지켜보세요. 적절한 휴식이 오히려 학습 효율을 높여줍니다."
             },
             growing: {
                 title: "🌱 포기하지 않는 태도",
-                good: "목표 달성이 조금 어려웠지만, 그래도 끝까지 학습을 이어나가려 노력한 점을 칭찬해요. 시작이 반입니다!",
-                improve: "💡 **내일의 집중 포인트**\\n학습량을 조금 줄여서 '작은 성공'을 먼저 경험해보는 건 어떨까요? 쉬운 난이도부터 차근차근 정복해봅시다."
+                good: "목표 달성이 조금 어려웠지만, 그래도 끝까지 학습을 이어나가려 노력한 점을 칭찬해요. 시작이 반입니다! 완벽하지 않아도 꾸준히 하는 것이 가장 중요합니다.",
+                improve: "💡 **내일의 집중 포인트**\\n학습량을 조금 줄여서 '작은 성공'을 먼저 경험해보는 건 어떨까요? 쉬운 난이도부터 차근차근 정복해봅시다. 성공 경험이 쌓이면 자신감도 함께 올라갑니다."
             },
             balanced: {
                 title: "✨ 균형 잡힌 학습 습관",
-                good: (time: string) => `${time} 동안 성실하게 과제를 수행했습니다. 기복 없이 꾸준히 해나가는 모습이 가장 모범적이에요.`,
-                improve: "💡 **내일의 집중 포인트**\\n내일은 평소에 어려워했던 과목에 30분만 더 투자해보세요. 꾸준함에 '한 스푼의 도전'을 더하면 실력이 급성장할 거예요!"
+                good: (time: string) => `${time} 동안 성실하게 과제를 수행했습니다. 기복 없이 꾸준히 해나가는 모습이 가장 모범적이에요. 이런 안정적인 학습 패턴이 장기적으로 가장 효과적입니다.`,
+                improve: "💡 **내일의 집중 포인트**\\n내일은 평소에 어려워했던 과목에 30분만 더 투자해보세요. 꾸준함에 '한 스푼의 도전'을 더하면 실력이 급성장할 거예요! 약점을 보완하는 것도 중요합니다."
             }
         }
     },
     en: {
-        subjects: ["Physics", "Math", "English"],
-        keywords: ["acceleration", "derivative", "relative pronouns", "inference", "why?", "re-explain", "graph"],
+        subjects: ["Math", "English", "Physics", "Chemistry", "Korean"],
+        keywords: ["trigonometry", "derivative", "integral", "acceleration", "momentum", "chemical equation", "molarity", "relative pronouns", "inference", "main idea", "why?", "re-explain", "graph", "formula derivation", "concept summary"],
         days: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
         badges: {
             veryActive: "💬 Question Storm",
@@ -55,28 +55,28 @@ const DATA = {
         feedback: {
             passionate: {
                 title: "🔥 Passionate Explorer!",
-                good: (q: number, subject: string) => `You asked ${q} questions today, showing active engagement. Your deep dive into '${subject}' was excellent.`,
-                improve: "💡 **Tomorrow's Focus**\\nCreate your own summary notes based on the questions you asked. True learning happens when you organize it yourself!"
+                good: (q: number, subject: string) => `You asked ${q} questions today, showing active engagement. Your deep dive into '${subject}' was excellent. This curiosity-driven approach is key to mastering concepts.`,
+                improve: "💡 **Tomorrow's Focus**\\nCreate your own summary notes based on the questions you asked. True learning happens when you organize it yourself! Review today's questions and find connections between concepts."
             },
             selfDirected: {
                 title: "🚀 Outstanding Self-Directed Learning!",
-                good: (rate: number) => `You solved problems independently without relying on AI tutor and achieved ${rate}% completion rate. Your self-sufficiency is impressive.`,
-                improve: "💡 **Tomorrow's Focus**\\nKeep it up, but don't hesitate to ask when stuck. You might discover more efficient methods!"
+                good: (rate: number) => `You solved problems independently without relying on AI tutor and achieved ${rate}% completion rate. Your self-sufficiency is impressive and will serve you well long-term.`,
+                improve: "💡 **Tomorrow's Focus**\\nKeep it up, but don't hesitate to ask when stuck. You might discover more efficient methods! Sometimes a different perspective can make all the difference."
             },
             persistent: {
                 title: "💪 Victory of Persistence!",
-                good: (time: string) => `You maintained focus for ${time}! Staying power is more powerful than any talent.`,
-                improve: "💡 **Tomorrow's Focus**\\nRest is important too! Try the 50-10 pattern: study 50 minutes, rest 10 minutes."
+                good: (time: string) => `You maintained focus for ${time}! Staying power is more powerful than any talent. This consistency will compound into significant results.`,
+                improve: "💡 **Tomorrow's Focus**\\nRest is important too! Try the 50-10 pattern: study 50 minutes, rest 10 minutes. Proper breaks actually improve learning efficiency."
             },
             growing: {
                 title: "🌱 Never Give Up Attitude",
-                good: "Achievement was challenging, but your effort to keep going deserves praise. Starting is half the battle!",
-                improve: "💡 **Tomorrow's Focus**\\nHow about reducing the load to experience 'small wins' first? Let's conquer easier levels step by step."
+                good: "Achievement was challenging, but your effort to keep going deserves praise. Starting is half the battle! Consistency matters more than perfection.",
+                improve: "💡 **Tomorrow's Focus**\\nHow about reducing the load to experience 'small wins' first? Let's conquer easier levels step by step. Success breeds confidence."
             },
             balanced: {
                 title: "✨ Balanced Study Habits",
-                good: (time: string) => `You worked steadily for ${time}. Consistent daily effort is the most exemplary approach.`,
-                improve: "💡 **Tomorrow's Focus**\\nInvest 30 more minutes in a subject you find challenging. Adding 'a touch of challenge' to consistency brings rapid growth!"
+                good: (time: string) => `You worked steadily for ${time}. Consistent daily effort is the most exemplary approach. This stable pattern is most effective long-term.`,
+                improve: "💡 **Tomorrow's Focus**\\nInvest 30 more minutes in a subject you find challenging. Adding 'a touch of challenge' to consistency brings rapid growth! Addressing weaknesses is equally important."
             }
         }
     }

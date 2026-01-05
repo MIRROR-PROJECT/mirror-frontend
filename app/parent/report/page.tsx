@@ -18,6 +18,7 @@ interface Child {
 const MOCK_CHILDREN: Child[] = [
     { id: "child-1", name: "김민준" },
     { id: "child-2", name: "김서연" },
+    { id: "child-3", name: "김도윤" },
 ];
 
 export default function ParentReportPage() {

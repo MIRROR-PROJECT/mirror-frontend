@@ -3,14 +3,16 @@
 import { Suspense } from 'react';
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-
 import { supabase } from "../../lib/supabase";
+import LanguageToggle from "@/app/components/LanguageToggle";
+import { useLanguage } from "@/app/context/LanguageContext";
 
 // 1. 알맹이 컴포넌트 (이름을 ExtraInfoPage -> InfoContent로 변경)
 // export default를 뺐습니다.
 function InfoContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { t } = useLanguage();
   const role = searchParams.get("role") || "teacher";
 
   const [formData, setFormData] = useState({
@@ -172,16 +174,21 @@ function InfoContent() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4 relative">
+      {/* 언어 토글 버튼 - 우측 상단 */}
+      <div className="absolute top-6 right-6">
+        <LanguageToggle />
+      </div>
+
       <div className="w-full max-w-md bg-white p-8 rounded-2xl shadow-sm">
         <h2 className="text-2xl font-bold text-black mb-6">
-          {role === 'teacher' ? '선생님 정보 입력' : '학부모 정보 입력'}
+          {role === 'teacher' ? t('onboarding.info.teacherTitle') : t('onboarding.info.parentTitle')}
         </h2>
 
         <form onSubmit={handleSubmit} className="space-y-5">
           {/* 공통: 전화번호 */}
           <div>
-            <label className="block text-sm font-bold text-gray-700 mb-1">휴대폰 번호</label>
+            <label className="block text-sm font-bold text-gray-700 mb-1">{t('onboarding.info.phoneLabel')}</label>
             <input
               type="tel"
               placeholder="010-1234-5678"
@@ -193,10 +200,10 @@ function InfoContent() {
           {/* 선생님일 때만 표시 */}
           {role === 'teacher' && (
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-1">학원명</label>
+              <label className="block text-sm font-bold text-gray-700 mb-1">{t('onboarding.info.academyLabel')}</label>
               <input
                 type="text"
-                placeholder="예: 미러 학원"
+                placeholder={t('onboarding.info.academyPlaceholder')}
                 className="w-full px-4 py-3 bg-gray-50 rounded-lg border focus:ring-2 focus:ring-blue-500 outline-none text-gray-900 font-medium placeholder-gray-400"
                 onChange={(e) => setFormData({ ...formData, organization: e.target.value })}
               />
@@ -207,30 +214,30 @@ function InfoContent() {
           {role === 'parent' && (
             <>
               <div>
-                <label className="block text-sm font-bold text-gray-700 mb-1">자녀 이름</label>
+                <label className="block text-sm font-bold text-gray-700 mb-1">{t('onboarding.info.childNameLabel')}</label>
                 <input
                   type="text"
-                  placeholder="자녀 이름을 입력하세요"
+                  placeholder={t('onboarding.info.childNamePlaceholder')}
                   className="w-full px-4 py-3 bg-gray-50 rounded-lg border focus:ring-2 focus:ring-blue-500 outline-none text-gray-900 font-medium placeholder-gray-400"
                   onChange={(e) => setFormData({ ...formData, childName: e.target.value })}
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-bold text-gray-700 mb-1">자녀 전화번호</label>
+                <label className="block text-sm font-bold text-gray-700 mb-1">{t('onboarding.info.childPhoneLabel')}</label>
                 <input
                   type="tel"
                   placeholder="010-0000-0000"
                   className="w-full px-4 py-3 bg-gray-50 rounded-lg border focus:ring-2 focus:ring-blue-500 outline-none text-gray-900 font-medium placeholder-gray-400"
                   onChange={(e) => setFormData({ ...formData, childPhoneNumber: e.target.value })}
                 />
-                <p className="text-xs text-gray-500 mt-1">* 자녀 전화번호로 학생 계정과 연동됩니다.</p>
+                <p className="text-xs text-gray-500 mt-1">{t('onboarding.info.childPhoneHint')}</p>
               </div>
             </>
           )}
 
           <button type="submit" className="w-full bg-blue-600 text-white py-4 rounded-xl font-bold hover:bg-blue-700 transition-colors mt-4">
-            가입 완료 및 시작하기
+            {t('onboarding.info.submitButton')}
           </button>
         </form>
       </div>

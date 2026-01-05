@@ -5,7 +5,7 @@ import { usePathname, useSearchParams } from "next/navigation";
 import { useStudy } from "@/app/context/StudyContext";
 import { useLanguage } from "@/app/context/LanguageContext";
 import { ROLE_MENUS } from "@/app/constants/navigation";
-import { Home, BookOpen, BarChart2, MessageCircle, User, LogOut, X } from "lucide-react";
+import { Home, BookOpen, BarChart2, MessageCircle, User, LogOut, X, RefreshCw } from "lucide-react";
 import { useState } from "react";
 import { supabase } from "@/app/lib/supabase";
 import { useRouter } from "next/navigation";
@@ -52,7 +52,39 @@ export default function MobileBottomNav() {
 
     const handleLogout = async () => {
         await supabase.auth.signOut();
-        router.push("/");
+        localStorage.clear();
+        router.push('/login');
+    };
+
+    // 역할 변경 처리
+    const handleRoleChange = async () => {
+        try {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session?.user) return;
+
+            // 1. users 테이블에서 role 삭제 (NULL로 설정)
+            const { error: updateError } = await supabase
+                .from('users')
+                .update({ role: null })
+                .eq('id', session.user.id);
+
+            if (updateError) {
+                console.error('Role 삭제 실패:', updateError);
+                alert('역할 변경에 실패했습니다.');
+                return;
+            }
+
+            // 2. 로컬 스토리지 초기화
+            localStorage.clear();
+            sessionStorage.clear();
+
+            // 3. 역할 선택 페이지로 이동
+            setShowProfileMenu(false);
+            router.push('/onboarding/role');
+        } catch (error) {
+            console.error('역할 변경 중 오류:', error);
+            alert('역할 변경 중 오류가 발생했습니다.');
+        }
     };
 
     return (
@@ -68,8 +100,8 @@ export default function MobileBottomNav() {
                                 key={item.path}
                                 href={item.path}
                                 className={`flex flex-col items-center justify-center flex-1 h-full transition-colors ${isActive
-                                        ? "text-blue-600"
-                                        : "text-gray-500 hover:text-gray-700"
+                                    ? "text-blue-600"
+                                    : "text-gray-500 hover:text-gray-700"
                                     }`}
                             >
                                 <Icon className={`w-5 h-5 mb-1 ${isActive ? "stroke-[2.5]" : ""}`} />
@@ -108,6 +140,18 @@ export default function MobileBottomNav() {
                                 <span className="text-sm font-medium text-gray-700">Language</span>
                                 <LanguageToggle />
                             </div>
+
+                            {/* Role Change Button */}
+                            <button
+                                onClick={() => {
+                                    setShowProfileMenu(false);
+                                    handleRoleChange();
+                                }}
+                                className="w-full flex items-center gap-3 p-4 bg-purple-50 hover:bg-purple-100 rounded-xl transition-colors"
+                            >
+                                <RefreshCw className="w-5 h-5 text-purple-600" />
+                                <span className="text-sm font-bold text-purple-600">역할 변경하기</span>
+                            </button>
 
                             {/* Logout Button */}
                             <button

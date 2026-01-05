@@ -7,7 +7,7 @@ import { useLanguage } from "@/app/context/LanguageContext";
 import { ROLE_MENUS } from "@/app/constants/navigation";
 import { Suspense, useState, useEffect } from "react";
 import { supabase } from "../lib/supabase";
-import { LogOut, X } from "lucide-react";
+import { LogOut, X, RefreshCw } from "lucide-react";
 import { useRouter } from "next/navigation";
 import LanguageToggle from "./LanguageToggle";
 
@@ -56,6 +56,37 @@ function SidebarContent() {
     await supabase.auth.signOut();
     localStorage.clear(); // 모든 튜토리얼 상태 초기화
     router.push('/login');
+  };
+
+  // 역할 변경 처리
+  const handleRoleChange = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) return;
+
+      // 1. users 테이블에서 role 삭제 (NULL로 설정)
+      const { error: updateError } = await supabase
+        .from('users')
+        .update({ role: null })
+        .eq('id', session.user.id);
+
+      if (updateError) {
+        console.error('Role 삭제 실패:', updateError);
+        alert('역할 변경에 실패했습니다.');
+        return;
+      }
+
+      // 2. 로컬 스토리지 초기화
+      localStorage.clear();
+      sessionStorage.clear();
+
+      // 3. 역할 선택 페이지로 이동
+      setShowLogoutModal(false);
+      router.push('/onboarding/role');
+    } catch (error) {
+      console.error('역할 변경 중 오류:', error);
+      alert('역할 변경 중 오류가 발생했습니다.');
+    }
   };
 
   // 현재 유저 역할에 맞는 메뉴 리스트 가져오기 (없으면 학생꺼 기본)
@@ -125,20 +156,32 @@ function SidebarContent() {
             <p className="text-gray-600 mb-6">
               {t('nav.logoutConfirm')}
             </p>
-            <div className="flex gap-3">
+            <div className="space-y-3">
+              {/* 역할 변경 버튼 */}
               <button
-                onClick={() => setShowLogoutModal(false)}
-                className="flex-1 px-4 py-3 border border-gray-300 rounded-lg font-bold text-gray-700 hover:bg-gray-50 transition-colors"
+                onClick={handleRoleChange}
+                className="w-full px-4 py-3 bg-purple-600 text-white rounded-lg font-bold hover:bg-purple-700 transition-colors flex items-center justify-center gap-2"
               >
-                {t('common.cancel')}
+                <RefreshCw className="w-4 h-4" />
+                역할 변경하기
               </button>
-              <button
-                onClick={handleLogout}
-                className="flex-1 px-4 py-3 bg-red-600 text-white rounded-lg font-bold hover:bg-red-700 transition-colors flex items-center justify-center gap-2"
-              >
-                <LogOut className="w-4 h-4" />
-                {t('common.logout')}
-              </button>
+
+              {/* 로그아웃/취소 버튼 */}
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowLogoutModal(false)}
+                  className="flex-1 px-4 py-3 border border-gray-300 rounded-lg font-bold text-gray-700 hover:bg-gray-50 transition-colors"
+                >
+                  {t('common.cancel')}
+                </button>
+                <button
+                  onClick={handleLogout}
+                  className="flex-1 px-4 py-3 bg-red-600 text-white rounded-lg font-bold hover:bg-red-700 transition-colors flex items-center justify-center gap-2"
+                >
+                  <LogOut className="w-4 h-4" />
+                  {t('common.logout')}
+                </button>
+              </div>
             </div>
           </div>
         </div>

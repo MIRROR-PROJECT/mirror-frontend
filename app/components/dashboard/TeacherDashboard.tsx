@@ -110,23 +110,38 @@ export default function TeacherDashboard({ user, isTutorial = false }: { user: a
       setClasses([{
         id: 1,
         name: "고2 수리논술 심화반 A",
-        studentCount: 3,
-        avgProgress: 78,
+        studentCount: 15,
+        avgProgress: 68,
         briefing: {
           mood: "🔥 자습 열기 고조",
-          moodDesc: "어제 밤 10시 이후 접속자가 30명 이상이었습니다.",
-          weakness: "삼각함수 합성",
-          weaknessRate: 65,
-          careAction: "수업 도입부 '합성 공식' 10분 복습"
+          moodDesc: "어제 밤 10시 이후 접속자가 12명으로, 평소 대비 40% 증가했습니다. 특히 주말임에도 불구하고 평균 학습시간이 2.3시간을 기록했습니다.",
+          weakness: "삼각함수 합성 (덧셈정리 활용)",
+          weaknessRate: 73,
+          careAction: "수업 도입부 15분간 '삼각함수 덧셈정리 → 합성 공식 유도 과정' 시각화 자료로 복습. 이후 기본 합성 문제 3개 풀이 후 심화 문제로 연결"
         },
         careList: [
-          { id: 101, name: "박민수", issue: "성적 급락 (▼20점)", urgent: true },
-          { id: 102, name: "최유리", issue: "진로 상담 요청", urgent: false }
+          { id: 101, name: "박민수", issue: "성적 급락 (▼23점) + 3일 연속 미접속", urgent: true },
+          { id: 102, name: "최유리", issue: "진로 상담 요청 (의대 vs 공대)", urgent: false },
+          { id: 103, name: "김태현", issue: "미적분 진도율 28% 정체 (2주째)", urgent: true },
+          { id: 104, name: "이서연", issue: "학습시간 급증 (하루 4.5시간) - 번아웃 주의", urgent: false },
+          { id: 105, name: "정우진", issue: "오답노트 미작성 5일째", urgent: false }
         ],
         students: [
           { id: 1, name: "김민수", email: "minsu@example.com", grade: "고2" },
           { id: 2, name: "이지은", email: "jieun@example.com", grade: "고2" },
+          { id: 3, name: "박서준", email: "seojun@example.com", grade: "고2" },
+          { id: 4, name: "최유리", email: "yuri@example.com", grade: "고2" },
           { id: 5, name: "정하늘", email: "haneul@example.com", grade: "고2" },
+          { id: 6, name: "김태현", email: "taehyun@example.com", grade: "고2" },
+          { id: 7, name: "이서연", email: "seoyeon@example.com", grade: "고2" },
+          { id: 8, name: "박지훈", email: "jihoon@example.com", grade: "고2" },
+          { id: 9, name: "정우진", email: "woojin@example.com", grade: "고2" },
+          { id: 10, name: "강민지", email: "minji@example.com", grade: "고2" },
+          { id: 11, name: "윤서아", email: "seoa@example.com", grade: "고2" },
+          { id: 12, name: "한지우", email: "jiwoo@example.com", grade: "고2" },
+          { id: 13, name: "송예은", email: "yeeun@example.com", grade: "고2" },
+          { id: 14, name: "임도윤", email: "doyoon@example.com", grade: "고2" },
+          { id: 15, name: "조서현", email: "seohyun@example.com", grade: "고2" },
         ]
       }]);
       setIsLoadingClasses(false);
