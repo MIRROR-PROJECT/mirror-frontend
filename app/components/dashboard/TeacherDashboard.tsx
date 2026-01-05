@@ -5,11 +5,13 @@ import {
   Sparkles, Printer, Calendar, CheckCircle2,
   BarChart, Clock, MessageSquare, ChevronDown,
   Brain, Check, FileText, ArrowRight, User, AlertCircle,
-  Plus, X, Search, UserPlus
+  Plus, X, Search, UserPlus,
+  ChevronRight
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { addStudentToClass, getMyClasses, ClassInfo } from "@/app/lib/api/teacher";
+import { useLanguage } from "@/app/context/LanguageContext";
 
 // --- 타입 정의 ---
 interface StudentCare {
@@ -51,10 +53,11 @@ const DUMMY_STUDENTS: Student[] = [
   { id: 5, name: "정하늘", email: "haneul@example.com", grade: "고2" },
 ];
 
-export default function TeacherDashboard({ user, isTutorial = false }: { user: any; isTutorial?: boolean }) {
+export default function TeacherDashboard({ user }: { user: any }) {
   const router = useRouter();
+  const { t, language } = useLanguage(); // i18n hook
   const [classes, setClasses] = useState<ClassData[]>([]);
-  const [isLoadingClasses, setIsLoadingClasses] = useState(!isTutorial);
+  const [isLoadingClasses, setIsLoadingClasses] = useState(true);
 
   const [selectedClassId, setSelectedClassId] = useState(1);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -80,7 +83,6 @@ export default function TeacherDashboard({ user, isTutorial = false }: { user: a
   // 첫 방문 시 benefits 페이지로 리다이렉트 (결제 이전)
   useEffect(() => {
     const fromBenefits = localStorage.getItem('teacher_from_benefits');
-    const tutorialCompleted = localStorage.getItem('teacher_tutorial_completed');
     const hasRedirected = sessionStorage.getItem('teacher_has_redirected');
 
     // 이미 리다이렉트했으면 무시
@@ -90,64 +92,23 @@ export default function TeacherDashboard({ user, isTutorial = false }: { user: a
       // 아직 benefits 페이지를 보지 않았으면 거기로 보냄
       sessionStorage.setItem('teacher_has_redirected', 'true');
       router.push('/teacher/benefits');
-    } else if (!tutorialCompleted) {
-      // benefits는 봤지만 튜토리얼은 안 했으면 튜토리얼로
-      sessionStorage.setItem('teacher_has_redirected', 'true');
-      router.push('/teacher/tutorial');
     }
   }, [router]);
 
   useEffect(() => {
     const now = new Date();
-    const formatted = `${now.getFullYear()}년 ${now.getMonth() + 1}월 ${now.getDate()}일 (${['일', '월', '화', '수', '목', '금', '토'][now.getDay()]})`;
+    // 언어에 따른 날짜 포맷팅
+    const options: Intl.DateTimeFormatOptions = {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      weekday: 'long'
+    };
+    const formatted = new Intl.DateTimeFormat(language === 'ko' ? 'ko-KR' : 'en-US', options).format(now);
     setCurrentDate(formatted);
-  }, []);
+  }, [language]);
 
-  // 실제 API에서 반 목록 가져오기 (튜토리얼 모드가 아닐 때만)
   useEffect(() => {
-    // 튜토리얼 모드면 mock 데이터 사용
-    if (isTutorial) {
-      setClasses([{
-        id: 1,
-        name: "고2 수리논술 심화반 A",
-        studentCount: 15,
-        avgProgress: 68,
-        briefing: {
-          mood: "🔥 자습 열기 고조",
-          moodDesc: "어제 밤 10시 이후 접속자가 12명으로, 평소 대비 40% 증가했습니다. 특히 주말임에도 불구하고 평균 학습시간이 2.3시간을 기록했습니다.",
-          weakness: "삼각함수 합성 (덧셈정리 활용)",
-          weaknessRate: 73,
-          careAction: "수업 도입부 15분간 '삼각함수 덧셈정리 → 합성 공식 유도 과정' 시각화 자료로 복습. 이후 기본 합성 문제 3개 풀이 후 심화 문제로 연결"
-        },
-        careList: [
-          { id: 101, name: "박민수", issue: "성적 급락 (▼23점) + 3일 연속 미접속", urgent: true },
-          { id: 102, name: "최유리", issue: "진로 상담 요청 (의대 vs 공대)", urgent: false },
-          { id: 103, name: "김태현", issue: "미적분 진도율 28% 정체 (2주째)", urgent: true },
-          { id: 104, name: "이서연", issue: "학습시간 급증 (하루 4.5시간) - 번아웃 주의", urgent: false },
-          { id: 105, name: "정우진", issue: "오답노트 미작성 5일째", urgent: false }
-        ],
-        students: [
-          { id: 1, name: "김민수", email: "minsu@example.com", grade: "고2" },
-          { id: 2, name: "이지은", email: "jieun@example.com", grade: "고2" },
-          { id: 3, name: "박서준", email: "seojun@example.com", grade: "고2" },
-          { id: 4, name: "최유리", email: "yuri@example.com", grade: "고2" },
-          { id: 5, name: "정하늘", email: "haneul@example.com", grade: "고2" },
-          { id: 6, name: "김태현", email: "taehyun@example.com", grade: "고2" },
-          { id: 7, name: "이서연", email: "seoyeon@example.com", grade: "고2" },
-          { id: 8, name: "박지훈", email: "jihoon@example.com", grade: "고2" },
-          { id: 9, name: "정우진", email: "woojin@example.com", grade: "고2" },
-          { id: 10, name: "강민지", email: "minji@example.com", grade: "고2" },
-          { id: 11, name: "윤서아", email: "seoa@example.com", grade: "고2" },
-          { id: 12, name: "한지우", email: "jiwoo@example.com", grade: "고2" },
-          { id: 13, name: "송예은", email: "yeeun@example.com", grade: "고2" },
-          { id: 14, name: "임도윤", email: "doyoon@example.com", grade: "고2" },
-          { id: 15, name: "조서현", email: "seohyun@example.com", grade: "고2" },
-        ]
-      }]);
-      setIsLoadingClasses(false);
-      return;
-    }
-
     const fetchClasses = async () => {
       try {
         setIsLoadingClasses(true);
@@ -180,29 +141,66 @@ export default function TeacherDashboard({ user, isTutorial = false }: { user: a
         }
       } catch (error) {
         console.error('반 목록 조회 실패:', error);
-        // 에러 시에도 기본 데이터 사용
-        setClasses([{
-          id: 1,
-          name: "내 반",
-          studentCount: 0,
-          avgProgress: 0,
-          briefing: {
-            mood: "🎯 새로운 시작",
-            moodDesc: "반을 만들고 학생을 추가해보세요.",
-            weakness: "-",
-            weaknessRate: 0,
-            careAction: "학생을 추가하여 시작하세요."
-          },
-          careList: [],
-          students: []
-        }]);
+
+        // 에러 시 데모 데이터 사용 (언어별 분기)
+        if (language === 'ko') {
+          setClasses([{
+            id: 1,
+            name: "고2 수학 심화반",
+            studentCount: 12,
+            avgProgress: 65,
+            briefing: {
+              mood: "🔥 자습 열기 고조",
+              moodDesc: "어제 밤 10시 이후 접속자가 9명으로, 평소 대비 30% 증가했습니다. 평균 학습시간 2.1시간을 기록했습니다.",
+              weakness: "이차함수 최댓값/최솟값",
+              weaknessRate: 68,
+              careAction: "수업 도입부 10분간 '이차함수 그래프와 최댓값 관계' 시각화 자료로 복습 후 기본 문제 풀이"
+            },
+            careList: [
+              { id: 1, name: "김민수", issue: "성적 급락 (▼18점) + 2일 연속 미접속", urgent: true },
+              { id: 2, name: "이지은", issue: "진로 상담 요청 (이과 vs 문과)", urgent: false },
+              { id: 3, name: "박서준", issue: "수학 진도율 32% 정체 (1주째)", urgent: true }
+            ],
+            students: [
+              { id: 1, name: "김민수", email: "minsu@example.com", grade: "고2" },
+              { id: 2, name: "이지은", email: "jieun@example.com", grade: "고2" },
+              { id: 3, name: "박서준", email: "seojun@example.com", grade: "고2" },
+              // ... students truncated for brevity
+            ]
+          }]);
+        } else {
+          // English Demo Data
+          setClasses([{
+            id: 1,
+            name: "Advanced Math Grade 11",
+            studentCount: 12,
+            avgProgress: 65,
+            briefing: {
+              mood: "🔥 High Engagement",
+              moodDesc: "9 students active after 10PM yesterday, a 30% increase. Avg study time: 2.1 hours.",
+              weakness: "Quadratic Function Max/Min",
+              weaknessRate: 68,
+              careAction: "Review 'Quadratic Graphs & Max/Min' with visuals for 10 mins, then solve basic problems."
+            },
+            careList: [
+              { id: 1, name: "Minsu Kim", issue: "Score Drop (▼18) + Inactive 2 days", urgent: true },
+              { id: 2, name: "Jieun Lee", issue: "Career Consulting Request", urgent: false },
+              { id: 3, name: "Seojun Park", issue: "Math Progress Stagnant 32% (1 week)", urgent: true }
+            ],
+            students: [
+              { id: 1, name: "Minsu Kim", email: "minsu@example.com", grade: "G11" },
+              { id: 2, name: "Jieun Lee", email: "jieun@example.com", grade: "G11" },
+              { id: 3, name: "Seojun Park", email: "seojun@example.com", grade: "G11" },
+            ]
+          }]);
+        }
       } finally {
         setIsLoadingClasses(false);
       }
     };
 
     fetchClasses();
-  }, []);
+  }, [language]); // language가 바뀔 때마다 다시 실행 (데모 데이터 갱신)
 
   // 반 생성 핸들러
   const handleCreateClass = () => {
@@ -266,7 +264,7 @@ export default function TeacherDashboard({ user, isTutorial = false }: { user: a
           id: Date.now(),
           name: result.data!.student_name,
           email: result.data!.email,
-          grade: `고${newStudentGrade - 9}`
+          grade: `G${newStudentGrade - 2}` // 간단 변환: 10->G1, 11->G2, 12->G3 (데모용)
         };
 
         const updatedClasses = classes.map(cls => {
@@ -289,10 +287,10 @@ export default function TeacherDashboard({ user, isTutorial = false }: { user: a
         setNewStudentGrade(11);
         setShowAddStudentModal(false);
 
-        alert(`${result.data!.student_name} 학생이 ${currentClass.name}에 추가되었습니다!`);
+        alert(`${result.data!.student_name} added to ${currentClass.name}!`);
       }
     } catch (error: any) {
-      alert(`학생 추가 실패: ${error.message}`);
+      alert(`Failed to add student: ${error.message}`);
     } finally {
       setIsAddingStudent(false);
     }
@@ -329,445 +327,418 @@ export default function TeacherDashboard({ user, isTutorial = false }: { user: a
   }
 
   return (
-    <div className="p-6 md:p-10 max-w-7xl mx-auto space-y-8 animate-fade-in bg-gray-50/50 min-h-screen">
+    <div className="min-h-screen bg-gray-50">
+      <div className="p-6 md:p-10 max-w-7xl mx-auto space-y-8 animate-fade-in">
 
-      {/* 1. 상단 헤더 & 반 선택기 */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
-        <div>
-          <span className="text-sm font-bold text-blue-600 mb-2 flex items-center gap-1 bg-blue-50 px-3 py-1 rounded-full w-fit">
-            <Calendar className="w-4 h-4" /> {currentDate || "날짜 로딩 중..."}
-          </span>
+        {/* 1. 상단 헤더 & 반 선택기 */}
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
+          <div>
+            <span className="text-sm font-bold text-blue-600 mb-2 flex items-center gap-1 bg-blue-50 px-3 py-1 rounded-full w-fit">
+              <Calendar className="w-4 h-4" /> {currentDate || "날짜 로딩 중..."}
+            </span>
 
-          <div className="relative">
-            <button
-              onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-              className="flex items-center gap-3 text-3xl font-black text-gray-900 hover:text-blue-700 transition-colors"
-            >
-              {currentClass.name}
-              <ChevronDown className={`w-7 h-7 text-gray-400 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
-            </button>
+            <div className="relative">
+              <button
+                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                className="flex items-center gap-3 text-3xl font-black text-gray-900 hover:text-blue-700 transition-colors"
+              >
+                {currentClass.name}
+                <ChevronDown className={`w-7 h-7 text-gray-400 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
+              </button>
 
-            {/* 드롭다운 메뉴 */}
-            {isDropdownOpen && (
-              <>
-                <div
-                  className="fixed inset-0 z-40"
-                  onClick={() => setIsDropdownOpen(false)}
-                ></div>
-                <div className="absolute top-full left-0 mt-2 w-72 bg-white border border-gray-200 rounded-xl shadow-2xl z-50 overflow-hidden animate-scale-in origin-top-left">
-                  <div className="p-2">
-                    <p className="text-xs font-bold text-gray-400 px-3 py-2 uppercase tracking-wider">My Classes</p>
-                    {classes.map((cls) => (
-                      <button
-                        key={cls.id}
-                        onClick={() => {
-                          setSelectedClassId(cls.id);
-                          setIsDropdownOpen(false);
-                        }}
-                        className={`w-full text-left px-4 py-3 rounded-lg text-sm font-bold flex justify-between items-center transition-colors
+              {/* 드롭다운 메뉴 */}
+              {isDropdownOpen && (
+                <>
+                  <div
+                    className="fixed inset-0 z-40"
+                    onClick={() => setIsDropdownOpen(false)}
+                  ></div>
+                  <div className="absolute top-full left-0 mt-2 w-72 bg-white border border-gray-200 rounded-xl shadow-2xl z-50 overflow-hidden animate-scale-in origin-top-left">
+                    <div className="p-2">
+                      <p className="text-xs font-bold text-gray-400 px-3 py-2 uppercase tracking-wider">My Classes</p>
+                      {classes.map((cls) => (
+                        <button
+                          key={cls.id}
+                          onClick={() => {
+                            setSelectedClassId(cls.id);
+                            setIsDropdownOpen(false);
+                          }}
+                          className={`w-full text-left px-4 py-3 rounded-lg text-sm font-bold flex justify-between items-center transition-colors
                           ${selectedClassId === cls.id ? 'bg-blue-50 text-blue-700' : 'text-gray-600 hover:bg-gray-50'}
                         `}
-                      >
-                        {cls.name}
-                        {selectedClassId === cls.id && <CheckCircle2 className="w-4 h-4 text-blue-600" />}
-                      </button>
-                    ))}
-                    <div className="border-t border-gray-100 mt-2 pt-2">
-                      <button
-                        onClick={() => {
-                          setShowCreateClassModal(true);
-                          setIsDropdownOpen(false);
-                        }}
-                        className="w-full text-left px-4 py-3 rounded-lg text-sm font-bold text-blue-600 hover:bg-blue-50 transition-colors flex items-center gap-2"
-                      >
-                        <Plus className="w-4 h-4" />
-                        새 반 만들기
-                      </button>
+                        >
+                          {cls.name}
+                          {selectedClassId === cls.id && <CheckCircle2 className="w-4 h-4 text-blue-600" />}
+                        </button>
+                      ))}
+                      <div className="border-t border-gray-100 mt-2 pt-2">
+                        <button
+                          onClick={() => {
+                            setShowCreateClassModal(true);
+                            setIsDropdownOpen(false);
+                          }}
+                          className="w-full text-left px-4 py-3 rounded-lg text-sm font-bold text-blue-600 hover:bg-blue-50 transition-colors flex items-center gap-2"
+                        >
+                          <Plus className="w-4 h-4" />
+                          새 반 만들기
+                        </button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              </>
-            )}
-          </div>
-        </div>
-
-        {/* 우측 클래스 요약 정보 */}
-        <div className="flex flex-wrap gap-3">
-          <div className="bg-white border border-gray-200 px-5 py-3 rounded-2xl flex items-center gap-4 shadow-sm hover:shadow-md transition-shadow">
-            <div className="flex flex-col items-end">
-              <span className="text-xs text-gray-500 font-bold mb-0.5">총 수강생</span>
-              <span className="text-base font-black text-gray-900 flex items-center gap-1">
-                <User className="w-4 h-4 text-gray-400" />
-                {currentClass.studentCount}명
-              </span>
+                </>
+              )}
             </div>
-            <div className="w-px h-8 bg-gray-200"></div>
-            <div className="flex flex-col items-end">
-              <span className="text-xs text-gray-500 font-bold mb-0.5 flex items-center gap-1">
-                평균 진도율
-                <div className="relative group">
-                  <Brain className="w-3 h-3 text-blue-500 cursor-help" />
-                  <div className="absolute bottom-full right-0 mb-2 hidden group-hover:block w-64 bg-gray-900 text-white text-xs p-3 rounded-lg shadow-xl z-50">
-                    <p className="font-medium leading-relaxed">
-                      전체 수강생의 평균 학습 진도율입니다.
-                      각 학생의 커리큘럼 완료 비율을 기준으로 계산됩니다.
-                    </p>
-                    <div className="absolute top-full right-4 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
+          </div>
+
+          {/* 우측 클래스 요약 정보 */}
+          <div className="flex flex-wrap gap-3">
+            <div className="bg-white border border-gray-200 px-5 py-3 rounded-2xl flex items-center gap-4 shadow-sm hover:shadow-md transition-shadow">
+              <div className="flex flex-col items-end">
+                <span className="text-xs text-gray-500 font-bold mb-0.5">{t('teacher.dashboard.studentCount')}</span>
+                <span className="text-base font-black text-gray-900 flex items-center gap-1">
+                  <User className="w-4 h-4 text-gray-400" />
+                  {currentClass.studentCount}{t('teacher.dashboard.studentCount')}
+                </span>
+              </div>
+              <div className="w-px h-8 bg-gray-200"></div>
+              <div className="flex flex-col items-end">
+                <span className="text-xs text-gray-500 font-bold mb-0.5 flex items-center gap-1">
+                  {t('teacher.dashboard.dailyBriefing.avgCompletion')}
+                  <div className="relative group">
+                    <Brain className="w-3 h-3 text-blue-500 cursor-help" />
+                    <div className="absolute bottom-full right-0 mb-2 hidden group-hover:block w-64 bg-gray-900 text-white text-xs p-3 rounded-lg shadow-xl z-50">
+                      <p className="font-medium leading-relaxed">
+                        {language === 'ko' ? '전체 수강생의 평균 학습 진도율입니다.' : 'Average progress rate across all students.'}
+                      </p>
+                      <div className="absolute top-full right-4 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
+                    </div>
                   </div>
-                </div>
-              </span>
-              <span className={`text-xl font-black ${currentClass.avgProgress >= 70 ? 'text-blue-600' : 'text-orange-500'}`}>
-                {currentClass.avgProgress}%
-              </span>
+                </span>
+                <span className={`text-xl font-black ${currentClass.avgProgress >= 70 ? 'text-blue-600' : 'text-orange-500'}`}>
+                  {currentClass.avgProgress}%
+                </span>
+              </div>
             </div>
-          </div>
-          <button
-            onClick={() => setShowAddStudentModal(true)}
-            className="bg-blue-600 text-white px-5 py-3 rounded-2xl font-bold text-sm hover:bg-blue-700 transition-colors flex items-center gap-2 shadow-sm"
-          >
-            <UserPlus className="w-4 h-4" />
-            학생 추가
-          </button>
-        </div>
-      </div>
-
-      {/* 2. 데일리 학습 브리핑 (메인 섹션) */}
-      <section data-tutorial="daily-briefing" className="bg-white rounded-3xl border border-gray-200 shadow-xl shadow-gray-100 overflow-hidden">
-        {/* 헤더 */}
-        <div className="bg-gray-900 p-6 md:p-8 text-white flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-          <div>
-            <h2 className="text-2xl font-bold flex items-center gap-3">
-              <BarChart className="w-7 h-7 text-yellow-400" />
-              Daily Class Briefing
-            </h2>
-            <p className="text-gray-400 text-sm mt-2 font-medium">
-              <span className="text-white font-bold underline decoration-yellow-400/50 underline-offset-4">{currentClass.name}</span> 학생들의 어제 활동 분석 리포트입니다.
-            </p>
-          </div>
-          <Link href="/report">
-            <button className="px-5 py-2.5 bg-white/10 hover:bg-white/20 border border-white/20 rounded-xl text-sm font-bold transition-all flex items-center gap-2 backdrop-blur-sm">
-              <FileText className="w-4 h-4" />
-              상세 리포트 보기
+            <button
+              onClick={() => setShowAddStudentModal(true)}
+              className="bg-blue-600 text-white px-5 py-3 rounded-2xl font-bold text-sm hover:bg-blue-700 transition-colors flex items-center gap-2 shadow-sm"
+            >
+              <UserPlus className="w-4 h-4" />
+              {t('teacher.dashboard.modal.addButton')}
             </button>
-          </Link>
+          </div>
         </div>
 
-        {/* 콘텐츠 그리드 */}
-        <div className="p-6 md:p-8 grid grid-cols-1 lg:grid-cols-2 gap-8 md:gap-12">
+        {/* 2. 데일리 학습 브리핑 (간단 요약) */}
+        <section className="bg-white rounded-3xl border border-gray-200 overflow-hidden">
+          {/* 헤더 */}
+          <div className="bg-white p-6 md:p-8 border-b border-gray-200 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div>
+              <h2 className="text-2xl font-bold flex items-center gap-3 text-gray-900">
+                <BarChart className="w-7 h-7 text-blue-600" />
+                Daily Class Briefing
+              </h2>
+              <p className="text-gray-500 text-sm mt-2 font-medium">
+                <span className="text-gray-900 font-bold">{currentClass.name}</span> {t('teacher.dashboard.dailyBriefing.subtitle', { class: '' })}
+              </p>
+            </div>
+            <Link href="/teacher/report">
+              <button className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-bold transition-all flex items-center gap-2">
+                <FileText className="w-4 h-4" />
+                {t('teacher.dashboard.dailyBriefing.viewReport')}
+              </button>
+            </Link>
+          </div>
 
-          {/* A. 학습 요약 (왼쪽) */}
-          <div className="flex flex-col h-full lg:border-r lg:border-gray-100 lg:pr-12">
-            <h3 className="font-bold text-gray-800 flex items-center gap-2 mb-6 text-lg">
-              <Clock className="w-5 h-5 text-blue-600" /> 어제 학습 요약
-            </h3>
-
-            <div className="space-y-4 flex-1">
-              {/* Mood Card */}
-              <div data-tutorial="briefing-mood" className="flex gap-4 p-4 bg-gray-50 rounded-2xl border border-gray-100 hover:border-blue-200 transition-colors">
-                <div className="w-10 h-10 rounded-full bg-white border border-gray-200 flex items-center justify-center text-xl shadow-sm shrink-0">
-                  {currentClass.avgProgress >= 70 ? '🔥' : '💧'}
-                </div>
-                <div>
-                  <p className="text-base font-bold text-gray-900 mb-1">{currentClass.briefing.mood}</p>
-                  <p className="text-sm text-gray-600 leading-relaxed">
-                    {currentClass.briefing.moodDesc}
-                  </p>
-                </div>
+          {/* 간단 요약 카드 */}
+          <div className="p-6 md:p-8">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+              <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
+                <p className="text-xs text-gray-500 font-medium mb-1">{t('teacher.dashboard.dailyBriefing.activeStudents')}</p>
+                <p className="text-2xl font-bold text-gray-900">9<span className="text-sm text-gray-400">/12{t('teacher.dashboard.studentCount')}</span></p>
               </div>
+              <div className="bg-blue-50 p-4 rounded-xl border border-blue-100">
+                <p className="text-xs text-gray-500 font-medium mb-1">{t('teacher.dashboard.dailyBriefing.avgStudyTime')}</p>
+                <p className="text-2xl font-bold text-blue-600">2.3<span className="text-sm text-gray-400">h</span></p>
+              </div>
+              <div className="bg-green-50 p-4 rounded-xl border border-green-100">
+                <p className="text-xs text-gray-500 font-medium mb-1">{t('teacher.dashboard.dailyBriefing.avgCompletion')}</p>
+                <p className="text-2xl font-bold text-green-600">{currentClass.avgProgress}<span className="text-sm text-gray-400">%</span></p>
+              </div>
+              <div className="bg-red-50 p-4 rounded-xl border border-red-100">
+                <p className="text-xs text-gray-500 font-medium mb-1">{t('teacher.dashboard.dailyBriefing.needsCare')}</p>
+                <p className="text-2xl font-bold text-red-600">{currentClass.careList.length}<span className="text-sm text-gray-400">{t('teacher.dashboard.studentCount')}</span></p>
+              </div>
+            </div>
 
-              {/* Weakness Card */}
-              <div data-tutorial="briefing-weakness" className="flex gap-4 p-4 bg-red-50/50 rounded-2xl border border-red-100 hover:border-red-200 transition-colors">
-                <div className="w-10 h-10 rounded-full bg-white border border-red-100 flex items-center justify-center shadow-sm shrink-0">
-                  <AlertCircle className="w-5 h-5 text-red-500" />
+            {/* 핵심 인사이트 */}
+            <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-5 rounded-xl border border-blue-100">
+              <div className="flex items-start gap-3">
+                <div className="p-2 bg-blue-100 rounded-lg shrink-0">
+                  <AlertCircle className="w-5 h-5 text-blue-600" />
                 </div>
-                <div>
-                  <p className="text-base font-bold text-gray-900 mb-1">
-                    최대 취약점: <span className="text-red-600 underline decoration-red-200 underline-offset-2">{currentClass.briefing.weakness}</span>
-                  </p>
-                  <p className="text-sm text-gray-600 leading-relaxed">
-                    해당 유형 오답률이 <span className="text-red-600 font-black">{currentClass.briefing.weaknessRate}%</span>에 달합니다. 집중적인 개념 보충이 필요합니다.
+                <div className="flex-1">
+                  <p className="font-bold text-gray-900 mb-1">{t('teacher.dashboard.dailyBriefing.weakness')}: {currentClass.briefing.weakness}</p>
+                  <p className="text-sm text-gray-600">
+                    {t('teacher.dashboard.dailyBriefing.weaknessDesc', { rate: currentClass.briefing.weaknessRate })}
                   </p>
                 </div>
+                <Link href="/teacher/report">
+                  <button className="text-blue-600 hover:text-blue-700 font-bold text-sm flex items-center gap-1 shrink-0">
+                    자세히 <ChevronRight className="w-4 h-4" />
+                  </button>
+                </Link>
               </div>
             </div>
           </div>
+        </section>
 
-          {/* B. 오늘의 케어 가이드 (오른쪽) */}
-          <div className="flex flex-col h-full">
-            <h3 className="font-bold text-gray-800 flex items-center gap-2 mb-6 text-lg">
-              <CheckCircle2 className="w-5 h-5 text-green-600" /> 오늘의 추천 액션
-            </h3>
+        {/* 하단 2단 그리드 */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
-            <div data-tutorial="ai-recommendation" className="flex-1 bg-blue-50/50 border border-blue-100 rounded-2xl p-6 relative overflow-hidden group">
-              <div className="absolute top-0 right-0 p-6 opacity-5 group-hover:opacity-10 transition-opacity">
-                <Sparkles className="w-24 h-24 text-blue-600" />
-              </div>
+          {/* 3. AI 오답 클리닉 (문제지 생성) */}
+          <div className="lg:col-span-2 space-y-4">
+            <h2 className="font-bold text-lg text-gray-800 flex items-center gap-2">
+              <Printer className="w-5 h-5 text-purple-600" /> {t('teacher.dashboard.aiClinic.title')}
+            </h2>
 
-              <div className="relative z-10">
-                <span className="text-xs font-bold text-blue-600 bg-blue-100 px-2 py-1 rounded mb-3 inline-block">AI Recommendation</span>
-                <h4 className="text-xl font-bold text-gray-900 mb-2 leading-snug">
-                  "{currentClass.briefing.careAction}"
-                </h4>
-                <p className="text-sm text-gray-600 mb-6">
-                  AI가 분석한 데이터를 바탕으로 가장 효과적인 수업 도입부 활동을 제안합니다.
-                </p>
+            <div className="bg-gradient-to-br from-purple-600 to-indigo-700 rounded-3xl p-8 text-white relative overflow-hidden group transition-all duration-300">
+              {/* 배경 애니메이션 효과 */}
+              <div className="absolute -right-10 -top-10 w-80 h-80 bg-white opacity-5 rounded-full blur-3xl group-hover:scale-110 transition-transform duration-700"></div>
 
-                <button className="bg-white border border-blue-200 text-blue-700 px-4 py-2 rounded-xl text-sm font-bold shadow-sm hover:bg-blue-50 hover:border-blue-300 transition-all flex items-center gap-2">
-                  수업 자료에 추가하기 <ArrowRight className="w-4 h-4" />
+              <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-8">
+                <div>
+                  <div className="flex items-center gap-2 mb-4">
+                    <span className="bg-white/20 text-xs font-bold px-3 py-1 rounded-full backdrop-blur border border-white/10">
+                      {t('teacher.dashboard.aiClinic.exclusive', { class: currentClass.name })}
+                    </span>
+                    <span className="bg-purple-400/30 text-xs font-bold px-3 py-1 rounded-full backdrop-blur border border-purple-300/30 flex items-center gap-1">
+                      <Sparkles className="w-3 h-3" /> {t('teacher.dashboard.aiClinic.generated')}
+                    </span>
+                  </div>
+
+                  <h3 className="text-2xl md:text-3xl font-bold mb-3">{t('teacher.dashboard.aiClinic.desc', { weakness: '' }).split(':')[0]}</h3>
+                  <p className="text-purple-100 text-sm md:text-base max-w-lg leading-relaxed opacity-90">
+                    {t('teacher.dashboard.aiClinic.desc', { weakness: currentClass.briefing.weakness })}
+                  </p>
+                </div>
+
+                <button className="whitespace-nowrap bg-white text-purple-700 px-8 py-4 rounded-2xl font-bold text-base shadow-lg hover:bg-purple-50 hover:scale-105 transition-all flex items-center gap-2 group/btn">
+                  <Printer className="w-5 h-5" />
+                  {t('teacher.dashboard.aiClinic.button')}
+                  <ArrowRight className="w-4 h-4 opacity-0 group-hover/btn:opacity-100 -ml-2 group-hover/btn:ml-0 transition-all" />
                 </button>
               </div>
             </div>
           </div>
 
-        </div>
-      </section>
+          {/* 4. 학생 케어 체크리스트 */}
+          <div className="space-y-4">
+            <h2 className="font-bold text-lg text-gray-800 flex items-center gap-2">
+              <MessageSquare className="w-5 h-5 text-pink-500" /> {t('teacher.dashboard.careList.title')} ({currentClass.careList.length})
+            </h2>
 
-      {/* 하단 2단 그리드 */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-
-        {/* 3. AI 오답 클리닉 (문제지 생성) */}
-        <div className="lg:col-span-2 space-y-4">
-          <h2 className="font-bold text-lg text-gray-800 flex items-center gap-2">
-            <Printer className="w-5 h-5 text-purple-600" /> AI 오답 클리닉
-          </h2>
-
-          <div data-tutorial="ai-clinic" className="bg-gradient-to-br from-purple-600 to-indigo-700 rounded-3xl p-8 text-white shadow-xl relative overflow-hidden group hover:shadow-2xl transition-all duration-300">
-            {/* 배경 애니메이션 효과 */}
-            <div className="absolute -right-10 -top-10 w-80 h-80 bg-white opacity-5 rounded-full blur-3xl group-hover:scale-110 transition-transform duration-700"></div>
-
-            <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-8">
-              <div>
-                <div className="flex items-center gap-2 mb-4">
-                  <span className="bg-white/20 text-xs font-bold px-3 py-1 rounded-full backdrop-blur border border-white/10">
-                    {currentClass.name} 전용
-                  </span>
-                  <span className="bg-purple-400/30 text-xs font-bold px-3 py-1 rounded-full backdrop-blur border border-purple-300/30 flex items-center gap-1">
-                    <Sparkles className="w-3 h-3" /> AI Generated
-                  </span>
-                </div>
-
-                <h3 className="text-2xl md:text-3xl font-bold mb-3">맞춤형 보충 문제지 생성</h3>
-                <p className="text-purple-100 text-sm md:text-base max-w-lg leading-relaxed opacity-90">
-                  취약 유형인 <span className="font-bold text-white underline decoration-purple-300 underline-offset-4">{currentClass.briefing.weakness}</span> 관련 문항을
-                  자동으로 선별하여 PDF로 생성합니다.
-                </p>
-              </div>
-
-              <button className="whitespace-nowrap bg-white text-purple-700 px-8 py-4 rounded-2xl font-bold text-base shadow-lg hover:bg-purple-50 hover:scale-105 transition-all flex items-center gap-2 group/btn">
-                <Printer className="w-5 h-5" />
-                문제지 만들기
-                <ArrowRight className="w-4 h-4 opacity-0 group-hover/btn:opacity-100 -ml-2 group-hover/btn:ml-0 transition-all" />
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* 4. 학생 케어 체크리스트 */}
-        <div className="space-y-4">
-          <h2 className="font-bold text-lg text-gray-800 flex items-center gap-2">
-            <MessageSquare className="w-5 h-5 text-pink-500" /> 케어 필요 학생 ({currentClass.careList.length})
-          </h2>
-
-          <div data-tutorial="care-list" className="bg-white border border-gray-200 rounded-3xl p-5 shadow-sm h-full min-h-[200px]">
-            {currentClass.careList.length > 0 ? (
-              <div className="space-y-3">
-                {currentClass.careList.map((student) => (
-                  <div key={student.id} className="group">
-                    <div className={`p-4 border rounded-2xl flex gap-3 items-start transition-all duration-200
+            <div className="bg-white border border-gray-200 rounded-3xl p-5 shadow-sm h-full min-h-[200px]">
+              {currentClass.careList.length > 0 ? (
+                <div className="space-y-3">
+                  {currentClass.careList.map((student) => (
+                    <div key={student.id} className="group">
+                      <div className={`p-4 border rounded-2xl flex gap-3 items-start transition-all duration-200
                         ${student.urgent
-                        ? 'bg-red-50/50 border-red-100 hover:border-red-200 hover:shadow-md'
-                        : 'bg-gray-50 border-gray-100 hover:border-gray-200 hover:shadow-sm'}
+                          ? 'bg-red-50/50 border-red-100 hover:border-red-200 hover:shadow-md'
+                          : 'bg-gray-50 border-gray-100 hover:border-gray-200 hover:shadow-sm'}
                       `}>
-                      <div className={`w-2 h-2 mt-2 rounded-full shrink-0 animate-pulse ${student.urgent ? 'bg-red-500' : 'bg-gray-400'}`}></div>
-                      <div className="flex-1">
-                        <div className="flex justify-between items-start mb-1">
-                          <p className="text-sm font-bold text-gray-900">{student.name}</p>
-                          <button className="text-[10px] font-bold bg-white border border-gray-200 px-2 py-1 rounded-lg text-gray-400 hover:bg-green-50 hover:text-green-600 hover:border-green-200 transition-colors flex items-center gap-1">
-                            <Check className="w-3 h-3" /> 완료 처리
-                          </button>
+                        <div className={`w-2 h-2 mt-2 rounded-full shrink-0 animate-pulse ${student.urgent ? 'bg-red-500' : 'bg-gray-400'}`}></div>
+                        <div className="flex-1">
+                          <div className="flex justify-between items-start mb-1">
+                            <p className="text-sm font-bold text-gray-900">{student.name}</p>
+                            <button className="text-[10px] font-bold bg-white border border-gray-200 px-2 py-1 rounded-lg text-gray-400 hover:bg-green-50 hover:text-green-600 hover:border-green-200 transition-colors flex items-center gap-1">
+                              <Check className="w-3 h-3" /> {t('teacher.dashboard.careList.markComplete')}
+                            </button>
+                          </div>
+                          <p className="text-xs text-gray-600 font-medium">{student.issue}</p>
                         </div>
-                        <p className="text-xs text-gray-600 font-medium">{student.issue}</p>
                       </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="flex flex-col items-center justify-center h-full text-center py-10">
-                <div className="w-14 h-14 bg-green-50 rounded-full flex items-center justify-center mb-4">
-                  <Sparkles className="w-7 h-7 text-green-500" />
+                  ))}
                 </div>
-                <p className="text-gray-900 font-bold text-base">모든 케어 완료!</p>
-                <p className="text-gray-500 text-sm mt-1">오늘도 완벽하게 관리하셨네요 👏</p>
-              </div>
-            )}
-          </div>
-        </div>
-
-      </div>
-
-      {/* 반 생성 모달 */}
-      {showCreateClassModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl p-6 max-w-md w-full shadow-2xl animate-scale-in">
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="text-xl font-bold text-gray-900">새 반 만들기</h3>
-              <button onClick={() => setShowCreateClassModal(false)} className="text-gray-400 hover:text-gray-600">
-                <X className="w-6 h-6" />
-              </button>
-            </div>
-
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-bold text-gray-700 mb-2">반 이름</label>
-                <input
-                  type="text"
-                  value={newClassName}
-                  onChange={(e) => setNewClassName(e.target.value)}
-                  placeholder="예: 고2 수학 심화반"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-bold text-gray-700 mb-2">학년</label>
-                <select
-                  value={newClassGrade}
-                  onChange={(e) => setNewClassGrade(e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-                >
-                  <option value="고1">고1</option>
-                  <option value="고2">고2</option>
-                  <option value="고3">고3</option>
-                </select>
-              </div>
-            </div>
-
-            <div className="flex gap-3 mt-6">
-              <button
-                onClick={() => setShowCreateClassModal(false)}
-                className="flex-1 px-4 py-3 border border-gray-300 rounded-lg font-bold text-gray-700 hover:bg-gray-50 transition-colors"
-              >
-                취소
-              </button>
-              <button
-                onClick={handleCreateClass}
-                className="flex-1 px-4 py-3 bg-blue-600 text-white rounded-lg font-bold hover:bg-blue-700 transition-colors"
-              >
-                생성하기
-              </button>
+              ) : (
+                <div className="flex flex-col items-center justify-center h-full text-center py-10">
+                  <div className="w-14 h-14 bg-green-50 rounded-full flex items-center justify-center mb-4">
+                    <Sparkles className="w-7 h-7 text-green-500" />
+                  </div>
+                  <p className="text-gray-900 font-bold text-base">{t('teacher.dashboard.careList.empty')}</p>
+                  <p className="text-gray-500 text-sm mt-1">{t('teacher.dashboard.careList.emptyDesc')}</p>
+                </div>
+              )}
             </div>
           </div>
+
         </div>
-      )}
 
-      {/* 학생 추가 모달 */}
-      {showAddStudentModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl p-6 max-w-md w-full shadow-2xl animate-scale-in">
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="text-xl font-bold text-gray-900">학생 추가</h3>
-              <button onClick={() => {
-                setShowAddStudentModal(false);
-                setNewStudentName("");
-                setNewStudentPhone("");
-                setNewStudentEmail("");
-                setNewStudentGrade(11);
-              }} className="text-gray-400 hover:text-gray-600">
-                <X className="w-6 h-6" />
-              </button>
-            </div>
-
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-bold text-gray-700 mb-2">학생 이름 *</label>
-                <input
-                  type="text"
-                  value={newStudentName}
-                  onChange={(e) => setNewStudentName(e.target.value)}
-                  placeholder="홍길동"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-                />
+        {/* 반 생성 모달 */}
+        {showCreateClassModal && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-2xl p-6 max-w-md w-full shadow-2xl animate-scale-in">
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-xl font-bold text-gray-900">{t('teacher.dashboard.modal.createClassTitle')}</h3>
+                <button onClick={() => setShowCreateClassModal(false)} className="text-gray-400 hover:text-gray-600">
+                  <X className="w-6 h-6" />
+                </button>
               </div>
 
-              <div>
-                <label className="block text-sm font-bold text-gray-700 mb-2">전화번호 * (010-XXXX-XXXX)</label>
-                <input
-                  type="text"
-                  value={newStudentPhone}
-                  onChange={(e) => setNewStudentPhone(e.target.value)}
-                  placeholder="010-1234-5678"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-                />
-                <p className="text-xs text-gray-500 mt-1">※ 기존 학생이면 전화번호로 자동 인식됩니다</p>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-2">{t('teacher.dashboard.modal.className')}</label>
+                  <input
+                    type="text"
+                    value={newClassName}
+                    onChange={(e) => setNewClassName(e.target.value)}
+                    placeholder={t('teacher.dashboard.modal.classNamePlaceholder')}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-2">{t('teacher.dashboard.modal.grade')}</label>
+                  <select
+                    value={newClassGrade}
+                    onChange={(e) => setNewClassGrade(e.target.value)}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                  >
+                    <option value="고1">Grade 10</option>
+                    <option value="고2">Grade 11</option>
+                    <option value="고3">Grade 12</option>
+                  </select>
+                </div>
               </div>
 
-              <div>
-                <label className="block text-sm font-bold text-gray-700 mb-2">이메일 (선택)</label>
-                <input
-                  type="email"
-                  value={newStudentEmail}
-                  onChange={(e) => setNewStudentEmail(e.target.value)}
-                  placeholder="student@example.com"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-bold text-gray-700 mb-2">학년</label>
-                <select
-                  value={newStudentGrade}
-                  onChange={(e) => setNewStudentGrade(Number(e.target.value))}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+              <div className="flex gap-3 mt-6">
+                <button
+                  onClick={() => setShowCreateClassModal(false)}
+                  className="flex-1 px-4 py-3 border border-gray-300 rounded-lg font-bold text-gray-700 hover:bg-gray-50 transition-colors"
                 >
-                  <option value={10}>고1</option>
-                  <option value={11}>고2</option>
-                  <option value={12}>고3</option>
-                </select>
+                  {t('teacher.dashboard.modal.cancel')}
+                </button>
+                <button
+                  onClick={handleCreateClass}
+                  className="flex-1 px-4 py-3 bg-blue-600 text-white rounded-lg font-bold hover:bg-blue-700 transition-colors"
+                >
+                  {t('teacher.dashboard.modal.confirm')}
+                </button>
               </div>
             </div>
+          </div>
+        )}
 
-            <div className="flex gap-3 mt-6">
-              <button
-                onClick={() => {
+        {/* 학생 추가 모달 */}
+        {showAddStudentModal && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-2xl p-6 max-w-md w-full shadow-2xl animate-scale-in">
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-xl font-bold text-gray-900">{t('teacher.dashboard.modal.addStudentTitle')}</h3>
+                <button onClick={() => {
                   setShowAddStudentModal(false);
                   setNewStudentName("");
                   setNewStudentPhone("");
                   setNewStudentEmail("");
                   setNewStudentGrade(11);
-                }}
-                className="flex-1 px-4 py-3 border border-gray-300 rounded-lg font-bold text-gray-700 hover:bg-gray-50 transition-colors"
-              >
-                취소
-              </button>
-              <button
-                onClick={handleAddStudent}
-                disabled={isAddingStudent}
-                className={`flex-1 px-4 py-3 rounded-lg font-bold transition-colors ${isAddingStudent
-                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                  : 'bg-blue-600 text-white hover:bg-blue-700'
-                  }`}
-              >
-                {isAddingStudent ? '추가 중...' : '추가하기'}
-              </button>
-            </div>
+                }} className="text-gray-400 hover:text-gray-600">
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
 
-            {currentClass.students.length > 0 && (
-              <div className="mt-6 pt-6 border-t border-gray-200">
-                <p className="text-sm font-bold text-gray-700 mb-3">현재 등록된 학생 ({currentClass.students.length}명)</p>
-                <div className="space-y-2 max-h-32 overflow-y-auto">
-                  {currentClass.students.map((student) => (
-                    <div key={student.id} className="flex items-center gap-2 text-sm text-gray-600">
-                      <CheckCircle2 className="w-4 h-4 text-green-500" />
-                      <span>{student.name}</span>
-                    </div>
-                  ))}
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-2">{t('teacher.dashboard.modal.studentName')} *</label>
+                  <input
+                    type="text"
+                    value={newStudentName}
+                    onChange={(e) => setNewStudentName(e.target.value)}
+                    placeholder={language === 'ko' ? "홍길동" : "John Doe"}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-2">{t('teacher.dashboard.modal.studentPhone')} * (010-XXXX-XXXX)</label>
+                  <input
+                    type="text"
+                    value={newStudentPhone}
+                    onChange={(e) => setNewStudentPhone(e.target.value)}
+                    placeholder="010-1234-5678"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">※ {language === 'ko' ? '기존 학생이면 전화번호로 자동 인식됩니다' : 'Existing students will be recognized by phone number'}</p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-2">{t('teacher.dashboard.modal.studentEmail')} ({language === 'ko' ? '선택' : 'Optional'})</label>
+                  <input
+                    type="email"
+                    value={newStudentEmail}
+                    onChange={(e) => setNewStudentEmail(e.target.value)}
+                    placeholder="student@example.com"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-2">{t('teacher.dashboard.modal.grade')}</label>
+                  <select
+                    value={newStudentGrade}
+                    onChange={(e) => setNewStudentGrade(Number(e.target.value))}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                  >
+                    <option value={10}>Grade 10</option>
+                    <option value={11}>Grade 11</option>
+                    <option value={12}>Grade 12</option>
+                  </select>
                 </div>
               </div>
-            )}
+
+              <div className="flex gap-3 mt-6">
+                <button
+                  onClick={() => {
+                    setShowAddStudentModal(false);
+                    setNewStudentName("");
+                    setNewStudentPhone("");
+                    setNewStudentEmail("");
+                    setNewStudentGrade(11);
+                  }}
+                  className="flex-1 px-4 py-3 border border-gray-300 rounded-lg font-bold text-gray-700 hover:bg-gray-50 transition-colors"
+                >
+                  {t('teacher.dashboard.modal.cancel')}
+                </button>
+                <button
+                  onClick={handleAddStudent}
+                  disabled={isAddingStudent}
+                  className={`flex-1 px-4 py-3 rounded-lg font-bold transition-colors ${isAddingStudent
+                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                    : 'bg-blue-600 text-white hover:bg-blue-700'
+                    }`}
+                >
+                  {isAddingStudent ? t('teacher.dashboard.modal.adding') : t('teacher.dashboard.modal.addButton')}
+                </button>
+              </div>
+
+              {currentClass.students.length > 0 && (
+                <div className="mt-6 pt-6 border-t border-gray-200">
+                  <p className="text-sm font-bold text-gray-700 mb-3">{t('teacher.dashboard.modal.registered')} ({currentClass.students.length}{t('teacher.dashboard.studentCount')})</p>
+                  <div className="space-y-2">
+                    {currentClass.students.map((student) => (
+                      <div key={student.id} className="flex items-center gap-2 text-sm text-gray-600">
+                        <CheckCircle2 className="w-4 h-4 text-green-500" />
+                        <span>{student.name}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }

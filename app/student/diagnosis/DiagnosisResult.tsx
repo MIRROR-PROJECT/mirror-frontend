@@ -94,6 +94,7 @@ interface DiagnosisResultProps {
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useLanguage } from "@/app/context/LanguageContext";
 
 export default function DiagnosisResult({
     userName,
@@ -113,6 +114,7 @@ export default function DiagnosisResult({
     // 선택된 요일 인덱스 상태 (기본값: 오늘 또는 첫 번째)
     const [selectedDayIndex, setSelectedDayIndex] = useState<number>(0);
     const router = useRouter();
+    const { t } = useLanguage();
 
     // weeklyPlan이 로드되면 오늘 날짜를 찾아 선택
     useEffect(() => {
@@ -132,11 +134,20 @@ export default function DiagnosisResult({
 
     const selectedPlan = weeklyPlan[selectedDayIndex] || weeklyPlan[0];
 
+    // Helper to format title manually if t() doesn't support interpolation well
+    const getFormattedTitle = () => {
+        let title = t('diagnosis.result.title');
+        title = title.replace('{{name}}', userName);
+        title = title.replace('{{grade}}', grade);
+        title = title.replace('{{semester}}', semester);
+        return title;
+    };
+
     return (
         <div className="max-w-6xl w-full space-y-6 animate-scale-in pb-10">
             <div className="text-center space-y-2 mb-8">
                 <h2 className="text-3xl font-bold text-gray-900">
-                    {userName}님의 고{grade} {semester}학기 <span className="text-primary">Mirror</span> 솔루션
+                    {getFormattedTitle()}
                 </h2>
                 <div className="relative inline-flex items-center gap-2 bg-surface px-3 py-1 rounded-full">
                     <span className="text-sm font-bold text-[#4E342E]">{analysisText}</span>
@@ -166,16 +177,16 @@ export default function DiagnosisResult({
                                     <Map className="w-5 h-5 text-primary" />
                                 </div>
                                 <h3 className="font-bold text-gray-800 text-lg">
-                                    이번 주 맞춤 커리큘럼
+                                    {t('diagnosis.result.weeklyCurriculum')}
                                 </h3>
                             </div>
-                            <span className="text-xs font-bold text-gray-400 bg-gray-100 px-2 py-1 rounded">AI Generated</span>
+                            <span className="text-xs font-bold text-gray-400 bg-gray-100 px-2 py-1 rounded">{t('diagnosis.result.aiGenerated')}</span>
                         </div>
 
                         <div className="flex-1 overflow-hidden">
                             <div className="bg-gray-50 rounded-2xl p-4 h-full overflow-y-auto custom-scrollbar">
                                 {weeklyPlan.length === 0 ? (
-                                    <div className="text-center text-gray-400 py-10">설정된 공부 시간이 없습니다.</div>
+                                    <div className="text-center text-gray-400 py-10">{t('diagnosis.result.noTimeSet')}</div>
                                 ) : (
                                     <div className="space-y-3">
                                         <div className="space-y-3">
@@ -199,9 +210,9 @@ export default function DiagnosisResult({
                                                         <div className="flex-1">
                                                             <div className="flex items-center gap-2 mb-0.5">
                                                                 <span className={`text-xs font-bold px-1.5 rounded ${plan.type === 'Concept' ? 'bg-[#EBE5DE] text-[#4E342E]' : 'bg-green-100 text-green-700'}`}>
-                                                                    {plan.type === 'Concept' ? "진도" : "복습"}
+                                                                    {plan.type === 'Concept' ? t('diagnosis.result.concept') : t('diagnosis.result.review')}
                                                                 </span>
-                                                                {plan.isToday && <span className="text-[10px] font-bold text-[#D84315] animate-pulse">● Today</span>}
+                                                                {plan.isToday && <span className="text-[10px] font-bold text-[#D84315] animate-pulse">● {t('diagnosis.result.today')}</span>}
                                                             </div>
                                                             <p className={`text-sm font-semibold ${isSelected ? 'text-[#3E2723]' : 'text-gray-900'}`}>
                                                                 {/* Daily Focus가 있으면 그것을, 없으면 기존 topic 표시 */}
@@ -214,9 +225,9 @@ export default function DiagnosisResult({
                                                             )}
                                                         </div>
                                                         <div className="text-right min-w-15">
-                                                            <span className="text-xs font-bold text-gray-400 block">목표</span>
+                                                            <span className="text-xs font-bold text-gray-400 block">{t('diagnosis.result.targetMinutes')}</span>
                                                             <span className={`text-sm font-bold ${plan.isToday ? 'text-primary' : 'text-gray-600'}`}>
-                                                                {plan.time}분
+                                                                {plan.time}{t('diagnosis.result.minutes')}
                                                             </span>
                                                         </div>
                                                     </div>
@@ -238,7 +249,7 @@ export default function DiagnosisResult({
                             <div className="bg-white/20 p-2 rounded-lg"><ListTodo className="w-5 h-5 text-white" /></div>
                             <h3 className="font-bold text-lg">
                                 {/* 선택된 날짜의 미션 표시 (날짜 제거, 요일만 표시) */}
-                                {selectedPlan?.isToday ? "오늘의 미션 (Today)" : `데일리 미션 (${selectedPlan?.day || '로딩중'})`}
+                                {selectedPlan?.isToday ? t('diagnosis.result.todayMission') : `${t('diagnosis.result.dailyMission')} (${selectedPlan?.day || t('common.loading')})`}
                             </h3>
                         </div>
 
@@ -249,7 +260,7 @@ export default function DiagnosisResult({
                             if (!targetPlan) {
                                 return (
                                     <div className="text-center text-[#EFEBE9] py-8">
-                                        데이터를 불러오는 중입니다...
+                                        {t('common.loading')}
                                     </div>
                                 );
                             }
@@ -263,10 +274,10 @@ export default function DiagnosisResult({
                                 <div className="space-y-4 relative z-10">
                                     <div className="bg-white/10 rounded-2xl p-5 border border-white/10 backdrop-blur-sm">
                                         <div className="flex justify-between items-end mb-4 border-b border-white/20 pb-4">
-                                            <span className="text-[#EFEBE9] text-sm font-medium">{targetPlan.isToday ? "오늘의 가용 시간" : "학습 가용 시간"}</span>
+                                            <span className="text-[#EFEBE9] text-sm font-medium">{targetPlan.isToday ? t('diagnosis.result.todayAvailableTime') : t('diagnosis.result.availableTime')}</span>
                                             <div className="text-right">
-                                                <span className="text-3xl font-bold">{availableMinutes}분</span>
-                                                <span className="text-xs text-[#D7CCC8] block">권장 학습 시간</span>
+                                                <span className="text-3xl font-bold">{availableMinutes}{t('diagnosis.result.minutes')}</span>
+                                                <span className="text-xs text-[#D7CCC8] block">{t('diagnosis.result.recommendedTime')}</span>
                                             </div>
                                         </div>
                                         <ul className="space-y-4">
@@ -277,7 +288,7 @@ export default function DiagnosisResult({
                                                             <div className={`absolute -left-2.25 top-0 w-4 h-4 rounded-full border-4 ${task.is_completed ? 'bg-green-400 border-green-600' : 'bg-white border-primary'}`}></div>
                                                             <div>
                                                                 <span className="text-xs font-bold text-[#D7CCC8] block mb-1">
-                                                                    {task.time_slot} | {task.category} ({task.assigned_minutes}분)
+                                                                    {task.time_slot} | {task.category} ({task.assigned_minutes}{t('diagnosis.result.minutes')})
                                                                 </span>
                                                                 <p className="font-bold text-lg">{task.title}</p>
                                                                 <p className="text-xs text-[#EFEBE9] mt-1 opacity-80">{task.learning_objective}</p>
@@ -289,7 +300,7 @@ export default function DiagnosisResult({
                                                 // Fallback
                                                 return (
                                                     <li className="text-center text-[#D7CCC8] py-4">
-                                                        세부 계획이 없습니다.
+                                                        {t('diagnosis.result.noDetails')}
                                                     </li>
                                                 );
                                             })()}
@@ -300,7 +311,7 @@ export default function DiagnosisResult({
                                             onClick={() => router.push('/dashboard?role=student')}
                                             className="w-full bg-white text-primary py-4 rounded-xl font-bold text-center block hover:bg-surface transition-colors cursor-pointer"
                                         >
-                                            학습 시작하기
+                                            {t('diagnosis.result.startLearning')}
                                         </button>
                                     </div>
                                 </div>
@@ -317,7 +328,7 @@ export default function DiagnosisResult({
                             <div className="relative z-10">
                                 <h3 className="font-bold text-gray-800 text-lg flex items-center gap-2 mb-4">
                                     <FileText className="w-5 h-5 text-primary" />
-                                    AI 풀이 습관 분석
+                                    {t('diagnosis.result.solvingHabits')}
                                 </h3>
                                 <div className="space-y-4">
                                     {Object.entries(ocrAnalysis).map(([subject, result]) => (

@@ -17,6 +17,7 @@ export const ROLE_MENUS = {
   teacher: [
     { name: "워크스페이스", nameKey: "nav.workspace", path: "/dashboard", icon: LayoutDashboard },
     { name: "수강생 관리", nameKey: "nav.students", path: "/teacher/students", icon: Users },
+    { name: "일일 리포트", nameKey: "nav.dailyReport", path: "/teacher/report", icon: BarChart2 },
     { name: "수업 자료실", nameKey: "nav.materials", path: "/teacher/materials", icon: FolderOpen },
   ],
 

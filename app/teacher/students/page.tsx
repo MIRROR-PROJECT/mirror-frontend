@@ -7,6 +7,7 @@ import {
   MoreHorizontal, ChevronDown, User,
   Clock, TrendingUp, AlertCircle, Phone, FileText
 } from "lucide-react";
+import { useLanguage } from "@/app/context/LanguageContext";
 
 const STUDENTS = [
   {
@@ -57,6 +58,7 @@ const STUDENTS = [
 
 export default function StudentManagementPage() {
   const router = useRouter();
+  const { t } = useLanguage();
   const [selectedClass, setSelectedClass] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -97,28 +99,26 @@ export default function StudentManagementPage() {
   }, [router]);
 
   return (
-    <div className="p-6 md:p-10 max-w-7xl mx-auto space-y-6 animate-fade-in">
+    <div className="p-6 md:p-10 max-w-7xl mx-auto space-y-6 animate-fade-in bg-gray-50 min-h-screen">
 
       {/* 1. 헤더 영역 */}
       <div className="flex flex-col md:flex-row justify-between items-end gap-4 border-b border-gray-200 pb-6">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
             <User className="w-6 h-6 text-blue-600" />
-            수강생 통합 관리
+            {t('teacher.students.title')}
           </h1>
-          <p className="text-gray-500 mt-1">
-            전체 수강생 <span className="font-bold text-gray-900">{STUDENTS.length}명</span> 중 <span className="font-bold text-blue-600">{filteredStudents.length}명</span>이 표시되고 있습니다.
-          </p>
+          <p className="text-gray-500 mt-1" dangerouslySetInnerHTML={{ __html: t('teacher.students.subtitle', { total: STUDENTS.length, filtered: filteredStudents.length }) }} />
         </div>
 
         <div className="flex gap-2">
           <button className="bg-white border border-gray-200 text-gray-600 px-4 py-2.5 rounded-xl font-bold text-sm flex items-center gap-2 hover:bg-gray-50 transition-colors">
             <Download className="w-4 h-4" />
-            엑셀 다운로드
+            {t('teacher.students.downloadExcel')}
           </button>
-          <button className="bg-gray-900 text-white px-5 py-2.5 rounded-xl font-bold text-sm flex items-center gap-2 hover:bg-black transition-colors shadow-md">
+          <button className="bg-blue-600 text-white px-5 py-2.5 rounded-xl font-bold text-sm flex items-center gap-2 hover:bg-blue-700 transition-colors shadow-md">
             <Plus className="w-4 h-4" />
-            신규생 등록
+            {t('teacher.students.registerNew')}
           </button>
         </div>
       </div>
@@ -131,9 +131,9 @@ export default function StudentManagementPage() {
             value={selectedClass}
             onChange={(e) => setSelectedClass(e.target.value)}
           >
-            <option value="All">전체 클래스 보기</option>
-            <option value="심화반">고2 수리논술 심화반 A</option>
-            <option value="개념완성반">고1 수학 개념완성반 B</option>
+            <option value="All">{t('teacher.students.filter.allClasses')}</option>
+            <option value="심화반">{t('teacher.students.filter.classOptions.advanced')}</option>
+            <option value="개념완성반">{t('teacher.students.filter.classOptions.concept')}</option>
           </select>
           <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
         </div>
@@ -142,7 +142,7 @@ export default function StudentManagementPage() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           <input
             type="text"
-            placeholder="이름 또는 전화번호 검색..."
+            placeholder={t('teacher.students.filter.placeholder')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-10 pr-4 py-3 bg-white border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-100 outline-none transition-all shadow-sm"
@@ -151,7 +151,7 @@ export default function StudentManagementPage() {
 
         <button className="px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm font-bold text-gray-600 flex items-center gap-2 hover:bg-gray-50 shadow-sm">
           <Filter className="w-4 h-4" />
-          상세 필터
+          {t('teacher.students.filter.detailed')}
         </button>
       </div>
 
@@ -160,11 +160,11 @@ export default function StudentManagementPage() {
         {/* 리스트 헤더 (Desktop Only) */}
         {/* ✨ 수정: px-6 -> px-4 (리스트 아이템 패딩과 맞춤) */}
         <div className="hidden md:grid grid-cols-12 gap-4 px-4 py-2 text-xs font-bold text-gray-400 uppercase tracking-wider">
-          <div className="col-span-3">학생 정보</div>
-          <div className="col-span-3">소속 클래스</div>
-          <div className="col-span-2">학습 진도율</div>
-          <div className="col-span-2">최대 취약점</div>
-          <div className="col-span-2 text-right">관리</div>
+          <div className="col-span-3">{t('teacher.students.list.header.info')}</div>
+          <div className="col-span-3">{t('teacher.students.list.header.class')}</div>
+          <div className="col-span-2">{t('teacher.students.list.header.progress')}</div>
+          <div className="col-span-2">{t('teacher.students.list.header.weakness')}</div>
+          <div className="col-span-2 text-right">{t('teacher.students.list.header.manage')}</div>
         </div>
 
         {filteredStudents.map((student) => {
@@ -243,10 +243,10 @@ export default function StudentManagementPage() {
 
               {/* 5. 관리 액션 (모바일: 항상 보임 / 데스크탑: 호버 시 보임) */}
               <div className="col-span-2 w-full flex justify-start md:justify-end gap-2 md:opacity-0 group-hover:opacity-100 transition-opacity mt-2 md:mt-0 border-t md:border-t-0 border-gray-100 pt-3 md:pt-0">
-                <button className="p-2 rounded-lg text-gray-400 hover:text-green-600 hover:bg-green-50 transition-colors" title="전화 걸기">
+                <button className="p-2 rounded-lg text-gray-400 hover:text-green-600 hover:bg-green-50 transition-colors" title={t('teacher.students.list.call')}>
                   <Phone className="w-4 h-4" />
                 </button>
-                <button className="p-2 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors" title="상세 리포트">
+                <button className="p-2 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors" title={t('teacher.students.list.report')}>
                   <FileText className="w-4 h-4" />
                 </button>
                 <button className="p-2 rounded-lg text-gray-400 hover:text-gray-900 hover:bg-gray-100 transition-colors">
@@ -260,7 +260,7 @@ export default function StudentManagementPage() {
 
         {filteredStudents.length === 0 && (
           <div className="text-center py-20 bg-gray-50 rounded-3xl border border-dashed border-gray-300">
-            <p className="text-gray-400 font-bold">검색 결과가 없습니다.</p>
+            <p className="text-gray-400 font-bold">{t('teacher.students.filter.noResults')}</p>
           </div>
         )}
       </div>

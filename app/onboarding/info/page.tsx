@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "../../lib/supabase";
 import LanguageToggle from "@/app/components/LanguageToggle";
 import { useLanguage } from "@/app/context/LanguageContext";
+import { formatPhoneNumber } from "@/app/lib/utils/phoneFormatter";
 
 // 1. 알맹이 컴포넌트 (이름을 ExtraInfoPage -> InfoContent로 변경)
 // export default를 뺐습니다.
@@ -193,7 +194,8 @@ function InfoContent() {
               type="tel"
               placeholder="010-1234-5678"
               className="w-full px-4 py-3 bg-gray-50 rounded-lg border focus:ring-2 focus:ring-blue-500 outline-none text-gray-900 font-medium placeholder-gray-400"
-              onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
+              onChange={(e) => setFormData({ ...formData, phoneNumber: formatPhoneNumber(e.target.value) })}
+              maxLength={13}
             />
           </div>
 
@@ -229,7 +231,8 @@ function InfoContent() {
                   type="tel"
                   placeholder="010-0000-0000"
                   className="w-full px-4 py-3 bg-gray-50 rounded-lg border focus:ring-2 focus:ring-blue-500 outline-none text-gray-900 font-medium placeholder-gray-400"
-                  onChange={(e) => setFormData({ ...formData, childPhoneNumber: e.target.value })}
+                  onChange={(e) => setFormData({ ...formData, childPhoneNumber: formatPhoneNumber(e.target.value) })}
+                  maxLength={13}
                 />
                 <p className="text-xs text-gray-500 mt-1">{t('onboarding.info.childPhoneHint')}</p>
               </div>

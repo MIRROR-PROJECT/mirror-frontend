@@ -83,8 +83,8 @@ export default function TeacherBenefitsPage() {
                         <button
                             onClick={() => setCurrentPreview('dashboard')}
                             className={`flex-1 px-8 py-6 font-bold text-lg transition-all ${currentPreview === 'dashboard'
-                                    ? 'bg-indigo-600 text-white'
-                                    : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
+                                ? 'bg-indigo-600 text-white'
+                                : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
                                 }`}
                         >
                             <BarChart className="w-5 h-5 inline-block mr-2" />
@@ -93,8 +93,8 @@ export default function TeacherBenefitsPage() {
                         <button
                             onClick={() => setCurrentPreview('students')}
                             className={`flex-1 px-8 py-6 font-bold text-lg transition-all ${currentPreview === 'students'
-                                    ? 'bg-indigo-600 text-white'
-                                    : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
+                                ? 'bg-indigo-600 text-white'
+                                : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
                                 }`}
                         >
                             <Users className="w-5 h-5 inline-block mr-2" />

@@ -42,7 +42,7 @@ export default function RootLayout({
               {/* 조건에 맞지 않을 때만 사이드바 표시 */}
               {!hideNavbar && <Navbar />}
 
-              <main className="flex-1 pb-16 md:pb-0 w-full min-w-0">
+              <main className={`flex-1 pb-16 md:pb-0 w-full min-w-0 ${!hideNavbar ? 'md:pl-64' : ''}`}>
                 {children}
               </main>
 

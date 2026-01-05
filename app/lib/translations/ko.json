@@ -1,4 +1,171 @@
 {
+    "diagnosis": {
+        "progress": "{{current}}/{{total}} 단계",
+        "step0": {
+            "title": "기본 정보를 입력해주세요",
+            "subtitle": "학습 계획 수립을 위한 기본 정보가 필요해요",
+            "nameLabel": "이름",
+            "namePlaceholder": "홍길동",
+            "phoneLabel": "전화번호",
+            "phonePlaceholder": "010-1234-5678",
+            "phoneHint": "'-' 포함하여 입력해주세요"
+        },
+        "step1": {
+            "title": "학년과 과목을 선택해주세요",
+            "gradeLabel": "학년",
+            "semesterLabel": "학기",
+            "semester1": "1학기",
+            "semester2": "2학기",
+            "mainSubjects": "주요 과목",
+            "detailSubjects": "세부 과목",
+            "showMore": "세부 과목 보기",
+            "showLess": "접기"
+        },
+        "step2": {
+            "title": "학습 성향 진단",
+            "subtitle": "4가지 질문으로 당신의 학습 스타일을 분석합니다",
+            "question": "질문 {{number}}",
+            "q1": {
+                "question": "문제를 풀 때 나의 모습은?",
+                "a": "빠르게 훑어보고 답을 선택한 뒤 넘어간다",
+                "aDesc": "'대충 맞겠지' 하는 직감적 풀이, 핵심 키워드 위주",
+                "b": "완벽히 이해할 때까지 붙잡고 고민한다",
+                "bDesc": "이해 안 되면 못 넘어감, 한 문제에 10분 이상 소요",
+                "c": "문제집을 펼치기까지가 제일 어렵다",
+                "cDesc": "시작하면 잘하는데 시작이 힘듦, 마감 직전 몰아서 함"
+            },
+            "q2": {
+                "question": "시험 공부를 할 때 나는?",
+                "a": "여러 문제를 빠르게 풀면서 감을 익힌다",
+                "aDesc": "양치기 선호, 틀린 문제는 가볍게 패스",
+                "b": "한 개념을 여러 자료로 비교하며 이해한다",
+                "bDesc": "교과서/인강/참고서 모두 확인, 개념 노트 정리",
+                "c": "평소엔 안 하다가 시험 직전에 집중한다",
+                "cDesc": "시험 기간에만 도서관 행, 압박감을 즐김"
+            },
+            "q3": {
+                "question": "학습 후 복습할 때 나는?",
+                "a": "복습은 잘 안 한다. 한 번 푼 건 끝",
+                "aDesc": "'이건 아니까 패스', 실수도 '아차' 하고 끝냄",
+                "b": "틀린 문제를 완전히 이해할 때까지 파고든다",
+                "bDesc": "원인 분석, 관련 개념 확인, 복습 노트 작성",
+                "c": "복습 계획은 세우지만 실천은 잘 안 된다",
+                "cDesc": "'내일부터 해야지' 미루다가 시험 직전 벼락치기"
+            },
+            "q4": {
+                "question": "계획대로 공부가 안 될 때 나는?",
+                "a": "유연하게 넘기고 다른 과목부터 한다",
+                "aDesc": "융통성 있음, 계획 변경이 빠름",
+                "b": "못 지킨 부분 때문에 스트레스 받는다",
+                "bDesc": "완벽주의, 하나 밀리면 와르르 무너짐",
+                "c": "에라 모르겠다 하고 놀아버린다",
+                "cDesc": "포기가 빠름, 기분파"
+            }
+        },
+        "step3": {
+            "title": "풀이 습관 분석",
+            "subtitle": "최근 푼 문제 사진을 업로드하면 AI가 풀이 습관을 분석합니다",
+            "uploadButton": "사진 업로드",
+            "scanning": "스캔 중...",
+            "analyzing": "분석 중...",
+            "done": "분석 완료",
+            "skip": "건너뛰기",
+            "ocrHint": "국어, 수학, 영어 문제 사진을 각각 업로드해주세요"
+        },
+        "step4": {
+            "title": "주간 학습 시간 설정",
+            "subtitle": "공부 가능한 시간대를 선택해주세요",
+            "totalHours": "총 {{hours}}시간",
+            "clearAll": "전체 지우기",
+            "fillAll": "전체 채우기",
+            "days": {
+                "mon": "월",
+                "tue": "화",
+                "wed": "수",
+                "thu": "목",
+                "fri": "금",
+                "sat": "토",
+                "sun": "일"
+            }
+        },
+        "step5": {
+            "title": "AI가 학습 계획을 생성하고 있습니다",
+            "analyzing": "데이터 분석 중...",
+            "generating": "맞춤 계획 생성 중...",
+            "wait": "잠시만 기다려주세요",
+            "loadingTitle": "Mirror AI가 분석 중입니다...",
+            "typeAnalysis": "학습 성향 분석",
+            "habitAnalysis": "풀이 습관",
+            "avgTime": "하루 평균 가용 시간",
+            "analyzingHabit": "분석 중...",
+            "skipped": "분석 생략됨 (주요 과목 미선택)"
+        },
+        "result": {
+            "title": "{{name}}님의 고{{grade}} {{semester}}학기 Mirror 솔루션",
+            "userType": {
+                "a": {
+                    "label": "스키마 오버로더",
+                    "desc": "직관적이고 빠른 '스피드 러너'",
+                    "fullDesc": "빠른 처리 속도에 의존하지만 실수가 잦은 유형"
+                },
+                "b": {
+                    "label": "코그니티브 터널러",
+                    "desc": "깊이 있는 이해를 추구하는 '딥 다이버'",
+                    "fullDesc": "완벽주의로 인해 시간 배분에 실패하는 유형"
+                },
+                "c": {
+                    "label": "도파민 디스카운터",
+                    "desc": "집중력이 폭발하는 '벼락치기 마스터'",
+                    "fullDesc": "즉각적 보상을 선호하며 마감 직전에 폭발적 집중력을 보이는 유형"
+                }
+            },
+            "weeklyCurriculum": "이번 주 맞춤 커리큘럼",
+            "aiGenerated": "AI Generated",
+            "todayMission": "오늘의 미션 (Today)",
+            "dailyMission": "데일리 미션",
+            "availableTime": "학습 가용 시간",
+            "recommendedTime": "권장 학습 시간",
+            "targetMinutes": "목표",
+            "minutes": "분",
+            "startLearning": "학습 시작하기",
+            "solvingHabits": "AI 풀이 습관 분석",
+            "concept": "진도",
+            "review": "복습",
+            "today": "Today",
+            "noTimeSet": "설정된 공부 시간이 없습니다.",
+            "noDetails": "세부 계획이 없습니다.",
+            "todayAvailableTime": "오늘의 가용 시간"
+        },
+        "buttons": {
+            "next": "다음",
+            "back": "이전",
+            "complete": "완료",
+            "skip": "건너뛰기"
+        }
+    },
+    "subject": {
+        "korean": "국어",
+        "math": "수학",
+        "english": "영어",
+        "science": "과학",
+        "social": "사회",
+        "physics": "물리",
+        "chemistry": "화학",
+        "biology": "생명과학",
+        "earth_science": "지구과학",
+        "integrated_science": "통합과학",
+        "korean_history": "한국사",
+        "ethics": "윤리",
+        "geography": "지리",
+        "history": "역사",
+        "social_studies": "일반사회",
+        "integrated_social": "통합사회",
+        "info": "정보",
+        "second_foreign": "제2외국어",
+        "chinese_classics": "한문",
+        "tech_home": "기가",
+        "etc": "기타"
+    },
     "common": {
         "login": "로그인",
         "logout": "로그아웃",
@@ -26,6 +193,7 @@
         "aiTutor": "AI 튜터",
         "report": "리포트",
         "students": "수강생 관리",
+        "dailyReport": "일일 리포트",
         "schedule": "시간표",
         "profile": "프로필",
         "studentMode": "Student Mode",
@@ -51,22 +219,6 @@
             "completedTasks": "{{completed}}/{{total}} 과제 완료",
             "studyTime": "학습 시간",
             "passionTemp": "열정 온도"
-        }
-    },
-    "teacher": {
-        "dashboard": {
-            "title": "선생님 워크스페이스",
-            "dailyBriefing": "데일리 학습 브리핑",
-            "classMood": "학급 분위기 분석",
-            "weakness": "취약점 발견",
-            "aiRecommendation": "AI 추천 액션",
-            "aiClinic": "AI 오답 클리닉",
-            "careList": "케어 필요 학생",
-            "createClass": "새 반 만들기",
-            "addClass": "반 추가",
-            "addStudent": "학생 추가",
-            "studentCount": "{{count}}명",
-            "avgProgress": "평균 진도율"
         }
     },
     "onboarding": {
@@ -250,6 +402,12 @@
         "available": "언제든 질문 가능",
         "today": "오늘",
         "suggestions": "추천 질문",
+        "suggestionsList": {
+            "solve": "📸 이 문제 풀이 과정 알려줘",
+            "schedule": "📅 오늘 내 학습 스케줄 브리핑해줘",
+            "concept": "🧪 '엔트로피' 개념 쉽게 설명해줘",
+            "motivation": "😫 집중이 안 돼, 동기부여 해줘"
+        },
         "placeholder": "궁금한 내용을 입력하세요...",
         "disclaimer": "AI는 실수할 수 있습니다. 중요한 정보는 확인이 필요합니다."
     },
@@ -272,6 +430,148 @@
             "startDiagnosis": "진단 시작하기",
             "analysisComplete": "분석 완료",
             "recommendations": "추천 사항"
+        },
+        "dashboard": {
+            "selectClass": "반 선택",
+            "createClass": "새 반 만들기",
+            "studentCount": "명",
+            "dailyBriefing": {
+                "title": "Daily Class Briefing",
+                "subtitle": "{{class}} 학생들의 어제 활동 요약",
+                "viewReport": "상세 리포트 보기",
+                "activeStudents": "활동 학생",
+                "avgStudyTime": "평균 학습시간",
+                "avgCompletion": "평균 완료율",
+                "needsCare": "케어 필요",
+                "weakness": "반 전체 취약점",
+                "weaknessDesc": "오답률 {{rate}}% · AI 추천 수업 전략 및 상세 분석은 리포트에서 확인하세요"
+            },
+            "careList": {
+                "title": "케어 필요 학생",
+                "empty": "모든 케어 완료!",
+                "emptyDesc": "오늘도 완벽하게 관리하셨네요 👏",
+                "markComplete": "완료 처리"
+            },
+            "aiClinic": {
+                "title": "AI 오답 클리닉",
+                "desc": "취약 유형인 {{weakness}} 관련 문항을 자동으로 선별하여 PDF로 생성합니다.",
+                "button": "문제지 만들기",
+                "generated": "AI Generated",
+                "exclusive": "{{class}} 전용"
+            },
+            "modal": {
+                "createClassTitle": "새 반 만들기",
+                "className": "반 이름",
+                "classNamePlaceholder": "예: 고2 수학 심화반",
+                "grade": "학년",
+                "cancel": "취소",
+                "confirm": "생성하기",
+                "addStudentTitle": "학생 추가하기",
+                "addStudentDesc": "학생의 정보를 입력하면 초대 링크가 발송됩니다.",
+                "studentName": "학생 이름",
+                "studentPhone": "전화번호",
+                "studentEmail": "이메일",
+                "registered": "현재 등록된 학생",
+                "addButton": "추가하기",
+                "adding": "추가 중..."
+            }
+        },
+        "report": {
+            "title": "일일 학습 리포트",
+            "subtitle": "{{class}} · {{date}}",
+            "overview": {
+                "active": "활동 학생",
+                "time": "총 학습시간",
+                "completion": "평균 완료율",
+                "aiQuestions": "AI 질문",
+                "careNeeded": "케어 필요"
+            },
+            "trend": {
+                "up": "전일 대비 +{{value}}",
+                "down": "전일 대비 -{{value}}"
+            },
+            "insights": {
+                "atmosphere": "학습 분위기",
+                "atmosphereDesc": "어제 밤 10시 이후 접속자가 9명으로, 평소 대비 30% 증가했습니다. 특히 주말임에도 불구하고 평균 학습시간이 2.3시간을 기록했습니다.",
+                "weekendParticipation": "주말 학습 참여율",
+                "nightStudy": "야간 학습 학생",
+                "weakness": "반 전체 취약점",
+                "weaknessDesc": "{{count}}명 중 {{badCount}}명이 이 유형에서 오답을 기록했습니다. 특히 sin과 cos의 합성 공식 유도 과정에서 막히는 학생이 많습니다.",
+                "secondWeakness": "2순위 취약점",
+                "aiStrategy": "AI 추천 수업 전략",
+                "strategy1Title": "📐 수업 도입부 집중 공략",
+                "strategy1Desc": "수업 시작 15분간 '삼각함수 덧셈정리 → 합성 공식 유도 과정'을 시각화 자료로 복습하세요. 이후 기본 합성 문제 3개를 함께 풀이한 뒤 심화 문제로 연결하면 효과적입니다.",
+                "strategy2Title": "💡 개별 학습 자료 추천",
+                "strategy2Desc": "취약점이 확인된 9명 학생에게 '삼각함수 합성 기본 개념 영상'(12분)과 '단계별 연습 문제 5개'를 개별 과제로 배정하는 것을 추천합니다."
+            },
+            "care": {
+                "title": "케어 필요 학생",
+                "urgent": "긴급",
+                "attention": "주의",
+                "reason1": "성적 급락 (▼18점) + 2일 연속 미접속",
+                "reason2": "수학 진도율 32% 정체 (1주째)",
+                "reason3": "학습시간 급감 + 오답노트 미작성 5일째"
+            },
+            "topStudents": {
+                "title": "이번 주 우수 학생",
+                "reason1": "🏆 AI 질문 18개 (최다)",
+                "reason2": "⭐ 전 과목 100% 완료",
+                "reason3": "📈 완료율 +23% 상승"
+            },
+            "benefits": {
+                "hero": {
+                    "badge": "AI 선생님 도구 - Mirror",
+                    "title": "학원의 수익과 효율을",
+                    "highlight": "동시에 끌어올리세요",
+                    "desc1": "Mirror는 단순한 관리 툴이 아닙니다. 학생 관리부터 AI 피드백까지,",
+                    "desc2": "학원의 모든 운영을 자동화하고 고도화하는 완전한 시스템입니다.",
+                    "bold": "자동화하고 고도화"
+                },
+                "cards": {
+                    "revenue": {
+                        "title": "매출 30% 증가",
+                        "desc": "데이터 기반 학습 관리로 학생 성적 향상 → 학부모 만족도 상승 → 재등록률 급증",
+                        "footer": "평균 재등록률 87%"
+                    },
+                    "efficiency": {
+                        "title": "업무 시간 50% 단축",
+                        "desc": "숙제 검사, 오답 노트, 학부모 상담 준비 등 반복 업무를 AI가 대신 처리합니다.",
+                        "footer": "일 평균 절약 시간 3시간"
+                    },
+                    "quality": {
+                        "title": "수업 퀄리티 혁신",
+                        "desc": "학생별 취약점 분석 리포트로 1:1 과외 수준의 맞춤형 케어를 제공하세요.",
+                        "footer": "학생별 맞춤 커리큘럼 제공"
+                    }
+                }
+            }
+        },
+        "students": {
+            "title": "수강생 통합 관리",
+            "subtitle": "전체 수강생 <span class=\"font-bold text-gray-900\">{{total}}명</span> 중 <span class=\"font-bold text-blue-600\">{{filtered}}명</span>이 표시되고 있습니다.",
+            "downloadExcel": "엑셀 다운로드",
+            "registerNew": "신규생 등록",
+            "filter": {
+                "allClasses": "전체 클래스 보기",
+                "classOptions": {
+                    "advanced": "고2 수리논술 심화반 A",
+                    "concept": "고1 수학 개념완성반 B"
+                },
+                "placeholder": "이름 또는 전화번호 검색...",
+                "detailed": "상세 필터",
+                "noResults": "검색 결과가 없습니다."
+            },
+            "list": {
+                "header": {
+                    "info": "학생 정보",
+                    "class": "소속 클래스",
+                    "progress": "학습 진도율",
+                    "weakness": "최대 취약점",
+                    "manage": "관리"
+                },
+                "call": "전화 걸기",
+                "report": "상세 리포트"
+            }
         }
     }
 }

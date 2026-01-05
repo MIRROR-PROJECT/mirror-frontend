@@ -14,6 +14,9 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "../../lib/supabase";
 import Tesseract from 'tesseract.js';
 import DiagnosisResult from "./DiagnosisResult";
+import LanguageToggle from "@/app/components/LanguageToggle";
+import { useLanguage } from "@/app/context/LanguageContext";
+import { formatPhoneNumber } from "@/app/lib/utils/phoneFormatter";
 
 // --- [타입 정의] ---
 type TimeSlotSet = Set<string>;
@@ -157,39 +160,56 @@ const CURRICULUM_DATA: Record<string, Record<string, string[]>> = {
   }
 };
 
-const USER_TYPES_INFO = {
-  A: {
-    label: "스키마 오버로더",
-    desc: "직관적이고 빠른 '스피드 러너'",
-    fullDesc: "빠른 처리 속도에 의존하지만 실수가 잦은 유형"
-  },
-  B: {
-    label: "코그니티브 터널러",
-    desc: "깊이 있는 이해를 추구하는 '딥 다이버'",
-    fullDesc: "완벽주의로 인해 시간 배분에 실패하는 유형"
-  },
-  C: {
-    label: "도파민 디스카운터",
-    desc: "집중력이 폭발하는 '벼락치기 마스터'",
-    fullDesc: "즉각적 보상을 선호하며 마감 직전에 폭발적 집중력을 보이는 유형"
-  }
-};
+// [LOCALE] Constants moved inside component for i18n
 
-const QUIZ_QUESTIONS = [
-  { id: 1, question: "문제를 풀 때 나의 모습은?", options: [{ value: "A", label: "빠르게 훑어보고 답을 선택한 뒤 넘어간다", desc: "'대충 맞겠지' 하는 직감적 풀이, 핵심 키워드 위주" }, { value: "B", label: "완벽히 이해할 때까지 붙잡고 고민한다", desc: "이해 안 되면 못 넘어감, 한 문제에 10분 이상 소요" }, { value: "C", label: "문제집을 펼치기까지가 제일 어렵다", desc: "시작하면 잘하는데 시작이 힘듦, 마감 직전 몰아서 함" }] },
-  { id: 2, question: "시험 공부를 할 때 나는?", options: [{ value: "A", label: "여러 문제를 빠르게 풀면서 감을 익힌다", desc: "양치기 선호, 틀린 문제는 가볍게 패스" }, { value: "B", label: "한 개념을 여러 자료로 비교하며 이해한다", desc: "교과서/인강/참고서 모두 확인, 개념 노트 정리" }, { value: "C", label: "평소엔 안 하다가 시험 직전에 집중한다", desc: "시험 기간에만 도서관 행, 압박감을 즐김" }] },
-  { id: 3, question: "학습 후 복습할 때 나는?", options: [{ value: "A", label: "복습은 잘 안 한다. 한 번 푼 건 끝", desc: "'이건 아니까 패스', 실수도 '아차' 하고 끝냄" }, { value: "B", label: "틀린 문제를 완전히 이해할 때까지 파고든다", desc: "원인 분석, 관련 개념 확인, 복습 노트 작성" }, { value: "C", label: "복습 계획은 세우지만 실천은 잘 안 된다", desc: "'내일부터 해야지' 미루다가 시험 직전 벼락치기" }] },
-  { id: 4, question: "계획대로 공부가 안 될 때 나는?", options: [{ value: "A", label: "유연하게 넘기고 다른 과목부터 한다", desc: "융통성 있음, 계획 변경이 빠름" }, { value: "B", label: "못 지킨 부분 때문에 스트레스 받는다", desc: "완벽주의, 하나 밀리면 와르르 무너짐" }, { value: "C", label: "에라 모르겠다 하고 놀아버린다", desc: "포기가 빠름, 기분파" }] }
-];
+// [LOCALE] Interface for UserTypeInfo
+interface UserTypeInfo {
+  label: string;
+  desc: string;
+  fullDesc: string;
+}
 
 export function DiagnosisContent() {
   const { updateSchedule, updateUserInfo } = useStudy();
   const router = useRouter();
   const searchParams = useSearchParams();
   const selectedRole = searchParams.get('role') || 'student'; // URL에서 role 가져오기
+  const { t } = useLanguage();
 
   const [step, setStep] = useState<number>(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // [LOCALE] Internalize constants for i18n
+  const USER_TYPES_INFO: Record<"A" | "B" | "C", UserTypeInfo> = useMemo(() => ({
+    A: {
+      label: t('diagnosis.types.A.label'),
+      desc: t('diagnosis.types.A.desc'),
+      fullDesc: t('diagnosis.types.A.fullDesc')
+    },
+    B: {
+      label: t('diagnosis.types.B.label'),
+      desc: t('diagnosis.types.B.desc'),
+      fullDesc: t('diagnosis.types.B.fullDesc')
+    },
+    C: {
+      label: t('diagnosis.types.C.label'),
+      desc: t('diagnosis.types.C.desc'),
+      fullDesc: t('diagnosis.types.C.fullDesc')
+    }
+  }), [t]);
+
+  const QUIZ_QUESTIONS = useMemo(() => [
+    { id: 1, question: t('diagnosis.step2.q1.question'), options: [{ value: "A", label: t('diagnosis.step2.q1.a'), desc: t('diagnosis.step2.q1.aDesc') }, { value: "B", label: t('diagnosis.step2.q1.b'), desc: t('diagnosis.step2.q1.bDesc') }, { value: "C", label: t('diagnosis.step2.q1.c'), desc: t('diagnosis.step2.q1.cDesc') }] },
+    { id: 2, question: t('diagnosis.step2.q2.question'), options: [{ value: "A", label: t('diagnosis.step2.q2.a'), desc: t('diagnosis.step2.q2.aDesc') }, { value: "B", label: t('diagnosis.step2.q2.b'), desc: t('diagnosis.step2.q2.bDesc') }, { value: "C", label: t('diagnosis.step2.q2.c'), desc: t('diagnosis.step2.q2.cDesc') }] },
+    { id: 3, question: t('diagnosis.step2.q3.question'), options: [{ value: "A", label: t('diagnosis.step2.q3.a'), desc: t('diagnosis.step2.q3.aDesc') }, { value: "B", label: t('diagnosis.step2.q3.b'), desc: t('diagnosis.step2.q3.bDesc') }, { value: "C", label: t('diagnosis.step2.q3.c'), desc: t('diagnosis.step2.q3.cDesc') }] },
+    { id: 4, question: t('diagnosis.step2.q4.question'), options: [{ value: "A", label: t('diagnosis.step2.q4.a'), desc: t('diagnosis.step2.q4.aDesc') }, { value: "B", label: t('diagnosis.step2.q4.b'), desc: t('diagnosis.step2.q4.bDesc') }, { value: "C", label: t('diagnosis.step2.q4.c'), desc: t('diagnosis.step2.q4.cDesc') }] }
+  ], [t]);
+
+  const getSubjectLabel = (sub: string) => {
+    const enumVal = SUBJECT_ENUM_MAP[sub];
+    if (enumVal) return t(`subject.${enumVal.toLowerCase()}`);
+    return sub;
+  };
 
   // 사용자 정보
   const [info, setInfo] = useState({
@@ -795,7 +815,11 @@ export function DiagnosisContent() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-6 select-none">
+    <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-6 select-none relative">
+      {/* Language Toggle - Top Right */}
+      <div className="absolute top-6 right-6 z-50">
+        <LanguageToggle />
+      </div>
 
       {/* Progress Bar */}
       {step < 5 && (
@@ -818,8 +842,8 @@ export function DiagnosisContent() {
       {step === 0 && (
         <div className="bg-white max-w-md w-full p-8 rounded-3xl shadow-xl space-y-6 animate-fade-in-up">
           <div className="text-center mb-6">
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">개인 정보 입력</h2>
-            <p className="text-sm text-gray-500">학습 진단을 시작하기 전에 기본 정보를 입력해주세요</p>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">{t('diagnosis.step0.title')}</h2>
+            <p className="text-sm text-gray-500">{t('diagnosis.step0.subtitle')}</p>
           </div>
 
           <div className="space-y-5">
@@ -827,13 +851,13 @@ export function DiagnosisContent() {
             <div>
               <label className="block text-sm font-bold text-gray-700 mb-2 flex items-center gap-2">
                 <User className="w-4 h-4 text-primary" />
-                이름
+                {t('diagnosis.step0.nameLabel')}
               </label>
               <input
                 type="text"
                 value={info.name}
                 onChange={(e) => setInfo({ ...info, name: e.target.value })}
-                placeholder="홍길동"
+                placeholder={t('diagnosis.step0.namePlaceholder')}
                 className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all text-gray-900 font-medium placeholder-gray-400"
               />
             </div>
@@ -842,16 +866,17 @@ export function DiagnosisContent() {
             <div>
               <label className="block text-sm font-bold text-gray-700 mb-2 flex items-center gap-2">
                 <FileText className="w-4 h-4 text-primary" />
-                전화번호
+                {t('diagnosis.step0.phoneLabel')}
               </label>
               <input
                 type="tel"
                 value={info.phone}
-                onChange={(e) => setInfo({ ...info, phone: e.target.value })}
-                placeholder="010-1234-5678"
+                onChange={(e) => setInfo({ ...info, phone: formatPhoneNumber(e.target.value) })}
+                placeholder={t('diagnosis.step0.phonePlaceholder')}
                 className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all text-gray-900 font-medium placeholder-gray-400"
+                maxLength={13}
               />
-              <p className="text-xs text-gray-500 mt-1">학습 관련 알림을 받을 연락처입니다 (형식: 000-0000-0000)</p>
+              <p className="text-xs text-gray-400 mt-1">{t('diagnosis.step0.phoneHint')}</p>
             </div>
           </div>
         </div>
@@ -864,31 +889,31 @@ export function DiagnosisContent() {
             <div className="inline-flex items-center justify-center p-3 bg-surface rounded-full mb-3">
               <School className="w-6 h-6 text-primary" />
             </div>
-            <h2 className="text-2xl font-bold text-gray-900">고등학교 학습 진단</h2>
-            <p className="text-gray-500 text-sm mt-1">학생 정보와 집중할 과목을 선택해주세요.</p>
+            <h2 className="text-2xl font-bold text-gray-900">{t('diagnosis.step1.title')}</h2>
+            <p className="text-gray-500 text-sm mt-1">{t('diagnosis.step1.subtitle')}</p>
           </div>
           <div className="space-y-6">
             <div>
               <label className="block text-xs font-bold text-gray-500 mb-2 ml-1 flex items-center gap-1">
-                <User className="w-3 h-3" /> 이름 (실명)
+                <User className="w-3 h-3" /> {t('diagnosis.step0.nameLabel')} ({t('diagnosis.step0.namePlaceholder')})
               </label>
               <input
                 type="text"
                 value={info.name}
                 onChange={(e) => setInfo({ ...info, name: e.target.value })}
-                placeholder="홍길동"
+                placeholder={t('diagnosis.step0.namePlaceholder')}
                 className="w-full p-4 rounded-xl border-2 border-gray-200 focus:border-primary focus:outline-none focus:bg-surface/30 font-bold text-gray-900 placeholder-gray-300 transition-colors"
               />
             </div>
             <div className="space-y-3">
               <div className="flex gap-3">
                 <div className="flex-1">
-                  <label className="block text-xs font-bold text-gray-500 mb-1 ml-1">학년</label>
-                  <div className="flex gap-1">{["1", "2", "3"].map((g) => (<button key={g} onClick={() => setInfo({ ...info, grade: g })} className={`flex-1 py-3 rounded-lg border-2 font-bold ${info.grade === g ? "bg-primary text-white border-primary" : "bg-white text-gray-600 border-gray-200 hover:border-[#A1887F]"}`}>{g}학년</button>))}</div>
+                  <label className="block text-xs font-bold text-gray-500 mb-1 ml-1">{t('diagnosis.step1.gradeLabel')}</label>
+                  <div className="flex gap-1">{["1", "2", "3"].map((g) => (<button key={g} onClick={() => setInfo({ ...info, grade: g })} className={`flex-1 py-3 rounded-lg border-2 font-bold ${info.grade === g ? "bg-primary text-white border-primary" : "bg-white text-gray-600 border-gray-200 hover:border-[#A1887F]"}`}>{g}{t('diagnosis.step1.gradeLabel')}</button>))}</div>
                 </div>
                 <div className="flex-1">
-                  <label className="block text-xs font-bold text-gray-500 mb-1 ml-1">학기</label>
-                  <div className="flex gap-1">{["1", "2"].map((s) => (<button key={s} onClick={() => setInfo({ ...info, semester: s })} className={`flex-1 py-3 rounded-lg border-2 font-bold ${info.semester === s ? "bg-primary text-white border-primary" : "bg-white text-gray-600 border-gray-200 hover:border-[#A1887F]"}`}>{s}학기</button>))}</div>
+                  <label className="block text-xs font-bold text-gray-500 mb-1 ml-1">{t('diagnosis.step1.semesterLabel')}</label>
+                  <div className="flex gap-1">{["1", "2"].map((s) => (<button key={s} onClick={() => setInfo({ ...info, semester: s })} className={`flex-1 py-3 rounded-lg border-2 font-bold ${info.semester === s ? "bg-primary text-white border-primary" : "bg-white text-gray-600 border-gray-200 hover:border-[#A1887F]"}`}>{s === "1" ? t('diagnosis.step1.semester1') : t('diagnosis.step1.semester2')}</button>))}</div>
                 </div>
               </div>
             </div>
@@ -900,7 +925,7 @@ export function DiagnosisContent() {
                   const isSelected = info.subjects.includes(subject);
                   return (
                     <button key={subject} onClick={() => toggleSubject(subject)} className={`py-4 rounded-xl font-bold border-2 transition-all relative ${isSelected ? "bg-primary border-primary text-white shadow-lg transform scale-105" : "bg-white border-gray-200 text-gray-500 hover:border-[#A1887F] hover:bg-surface"}`}>
-                      {subject}
+                      {getSubjectLabel(subject)}
                       {isSelected && <Check className="w-4 h-4 absolute top-2 right-2 text-white/80" />}
                     </button>
                   );
@@ -921,7 +946,7 @@ export function DiagnosisContent() {
 
               {/* [복구됨] 탐구 과목 선택 아코디언 버튼 및 리스트 */}
               <button onClick={() => setShowSubSubjects(!showSubSubjects)} className="w-full flex items-center justify-center gap-1 text-sm text-gray-500 font-medium py-3 hover:bg-gray-50 rounded-lg transition-colors border border-dashed border-gray-300">
-                {showSubSubjects ? "탐구 및 기타 과목 접기" : "탐구 및 기타 과목 선택하기"}
+                {showSubSubjects ? t('diagnosis.step1.showLess') : t('diagnosis.step1.showMore')}
                 {showSubSubjects ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
               </button>
               {showSubSubjects && (
@@ -934,7 +959,7 @@ export function DiagnosisContent() {
                           const isSelected = info.subjects.includes(subject);
                           return (
                             <button key={subject} onClick={() => toggleSubject(subject)} className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all ${isSelected ? "bg-[#F5F5F0] border-primary text-primary shadow-sm" : "bg-white border-gray-200 text-gray-500 hover:border-gray-300 hover:bg-gray-50"}`}>
-                              {subject}
+                              {getSubjectLabel(subject)}
                             </button>
                           );
                         })}
@@ -952,8 +977,8 @@ export function DiagnosisContent() {
       {step === 2 && (
         <div className="bg-white max-w-xl w-full p-8 rounded-3xl shadow-xl space-y-8 animate-fade-in-up">
           <div className="text-center">
-            <h2 className="text-2xl font-bold text-gray-900">문제 풀이 스타일</h2>
-            <p className="text-gray-500 text-sm mt-1">평소 습관을 솔직하게 알려주세요.</p>
+            <h2 className="text-2xl font-bold text-gray-900">{t('diagnosis.step2.title')}</h2>
+            <p className="text-gray-500 text-sm mt-1">{t('diagnosis.step2.subtitle')}</p>
           </div>
           <div className="space-y-6">
             {QUIZ_QUESTIONS.map((q) => (
@@ -990,9 +1015,9 @@ export function DiagnosisContent() {
       {step === 3 && hasMainSubject && (
         <div className="bg-white max-w-md w-full p-8 rounded-3xl shadow-xl space-y-6 animate-fade-in-up">
           <div className="text-center">
-            <h2 className="text-2xl font-bold text-gray-900">풀이 습관 진단</h2>
+            <h2 className="text-2xl font-bold text-gray-900">{t('diagnosis.step3.title')}</h2>
             <p className="text-gray-500 text-sm mt-1">
-              {ocrStatus === "done" ? "분석이 완료되었습니다!" : "과목별 문제 풀이 사진을 올려주세요."}
+              {ocrStatus === "done" ? t('diagnosis.step3.done') : t('diagnosis.step3.subtitle')}
             </p>
           </div>
 
@@ -1008,7 +1033,7 @@ export function DiagnosisContent() {
                     ${isActive ? "bg-white text-primary shadow-sm" : "text-gray-400 hover:text-gray-600"}
                   `}
                 >
-                  {subject}
+                  {getSubjectLabel(subject)}
                   {isDone && <CheckCircle2 className="w-3 h-3 text-green-500" />}
                 </button>
               );
@@ -1065,7 +1090,7 @@ export function DiagnosisContent() {
                     <ScanLine className="w-16 h-16 text-primary animate-pulse mb-4" />
                     <div className="absolute top-0 left-0 w-full h-1 bg-[#8D6E63] shadow-[0_0_20px_rgba(109,76,65,0.8)] animate-[scan_2s_ease-in-out_infinite]"></div>
                     <p className="font-bold text-primary animate-pulse">
-                      {ocrStatus === "scanning" ? "글자 읽는 중..." : "과목 일치 여부 확인 중..."}
+                      {ocrStatus === "scanning" ? t('diagnosis.step3.scanning') : t('diagnosis.step3.analyzing')}
                     </p>
                   </div>
                 )}
@@ -1079,16 +1104,16 @@ export function DiagnosisContent() {
       {step === 4 && (
         <div className="bg-white max-w-xl w-full p-6 rounded-3xl shadow-xl space-y-4 animate-fade-in-up">
           <div className="text-center">
-            <h2 className="text-2xl font-bold text-gray-900">주간 루틴 설정</h2>
+            <h2 className="text-2xl font-bold text-gray-900">{t('diagnosis.step4.title')}</h2>
             <p className="text-gray-500 text-sm mt-1">
-              드래그하여 평소 공부 가능한 시간을 색칠하세요.
+              {t('diagnosis.step4.subtitle')}
             </p>
           </div>
 
           <div className="flex flex-col gap-3 bg-gray-50 p-3 rounded-xl">
             <div className="grid grid-cols-2 gap-2">
-              <button onClick={clearCurrentWeek} className="flex items-center justify-center gap-1 py-2 text-xs font-bold text-gray-600 bg-white border border-gray-300 rounded-lg hover:bg-gray-100 shadow-sm"><RefreshCcw className="w-3 h-3" /> 전체 비우기</button>
-              <button onClick={fillCurrentWeek} className="flex items-center justify-center gap-1 py-2 text-xs font-bold text-primary bg-surface border border-[#D7CCC8] rounded-lg hover:bg-[#EBE5DE] shadow-sm"><Maximize className="w-3 h-3" /> 전체 채우기</button>
+              <button onClick={clearCurrentWeek} className="flex items-center justify-center gap-1 py-2 text-xs font-bold text-gray-600 bg-white border border-gray-300 rounded-lg hover:bg-gray-100 shadow-sm"><RefreshCcw className="w-3 h-3" /> {t('diagnosis.step4.clearAll')}</button>
+              <button onClick={fillCurrentWeek} className="flex items-center justify-center gap-1 py-2 text-xs font-bold text-primary bg-surface border border-[#D7CCC8] rounded-lg hover:bg-[#EBE5DE] shadow-sm"><Maximize className="w-3 h-3" /> {t('diagnosis.step4.fillAll')}</button>
             </div>
             <div className="flex justify-between items-center px-1 pt-2 border-t border-gray-200">
               <span className="text-sm font-bold text-gray-700 flex items-center gap-2">확보: <span className="text-primary text-lg font-black">{calculateTotalHours()}시간</span></span>
@@ -1167,11 +1192,11 @@ export function DiagnosisContent() {
       {step === 5 && (
         <div className="text-center space-y-6 animate-fade-in">
           <Loader2 className="w-16 h-16 text-primary animate-spin mx-auto" />
-          <h2 className="text-2xl font-bold text-gray-900">Mirror AI가 분석 중입니다...</h2>
+          <h2 className="text-2xl font-bold text-gray-900">{t('diagnosis.analysis.loadingTitle')}</h2>
           <div className="space-y-3 text-gray-500">
-            <p>🧠 학습 성향 분석: {getAnalysisText()}</p>
-            <p>📝 풀이 습관: {hasMainSubject ? (ocrResult || '분석 중...') : '분석 생략됨 (주요 과목 미선택)'}</p>
-            <p>📐 하루 평균 가용 시간: {Math.round((selectedSlots.size * 60) / 7)}분</p>
+            <p>🧠 {t('diagnosis.analysis.typeAnalysis')}: {getAnalysisText()}</p>
+            <p>📝 {t('diagnosis.analysis.habitAnalysis')}: {hasMainSubject ? (ocrResult || t('diagnosis.analysis.analyzingHabit')) : t('diagnosis.analysis.skipped')}</p>
+            <p>📐 {t('diagnosis.analysis.avgTime')}: {Math.round((selectedSlots.size * 60) / 7)}{t('diagnosis.result.minutes')}</p>
           </div>
         </div>
       )}

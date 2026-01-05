@@ -1,4 +1,171 @@
 {
+    "diagnosis": {
+        "progress": "{{current}}/{{total}} Steps",
+        "step0": {
+            "title": "Please enter your basic information",
+            "subtitle": "We need basic information to create your learning plan",
+            "nameLabel": "Name",
+            "namePlaceholder": "John Doe",
+            "phoneLabel": "Phone Number",
+            "phonePlaceholder": "010-1234-5678",
+            "phoneHint": "Please include '-' in your phone number"
+        },
+        "step1": {
+            "title": "Select your grade and subjects",
+            "gradeLabel": "Grade",
+            "semesterLabel": "Semester",
+            "semester1": "1st Semester",
+            "semester2": "2nd Semester",
+            "mainSubjects": "Main Subjects",
+            "detailSubjects": "Detailed Subjects",
+            "showMore": "Show detailed subjects",
+            "showLess": "Collapse"
+        },
+        "step2": {
+            "title": "Learning Style Diagnosis",
+            "subtitle": "Analyze your learning style with 4 questions",
+            "question": "Question {{number}}",
+            "q1": {
+                "question": "When solving problems, I...",
+                "a": "Quickly scan and move on after selecting an answer",
+                "aDesc": "Intuitive solving with 'probably correct' mindset, focusing on keywords",
+                "b": "Hold on until I fully understand",
+                "bDesc": "Can't move on without understanding, spend 10+ minutes per problem",
+                "c": "Find it hardest to open the workbook",
+                "cDesc": "Do well once started but struggle to begin, cram before deadlines"
+            },
+            "q2": {
+                "question": "When studying for exams, I...",
+                "a": "Solve many problems quickly to get a feel",
+                "aDesc": "Prefer quantity practice, lightly skip wrong answers",
+                "b": "Compare one concept across multiple resources",
+                "bDesc": "Check textbook/lectures/references, organize concept notes",
+                "c": "Don't study normally, focus right before exams",
+                "cDesc": "Library only during exam period, enjoy pressure"
+            },
+            "q3": {
+                "question": "When reviewing after learning, I...",
+                "a": "Don't review much. Once solved, done",
+                "aDesc": "'I know this, skip', mistakes end with 'oops'",
+                "b": "Dig deep until fully understanding wrong problems",
+                "bDesc": "Analyze causes, check related concepts, write review notes",
+                "c": "Make review plans but don't follow through",
+                "cDesc": "Procrastinate with 'starting tomorrow', cram before exams"
+            },
+            "q4": {
+                "question": "When study doesn't go as planned, I...",
+                "a": "Flexibly move on and start with another subject",
+                "aDesc": "Adaptable, quick to change plans",
+                "b": "Get stressed about unfinished parts",
+                "bDesc": "Perfectionist, everything collapses if one thing falls behind",
+                "c": "Give up and just play",
+                "cDesc": "Quick to give up, mood-dependent"
+            }
+        },
+        "step3": {
+            "title": "Solving Habits Analysis",
+            "subtitle": "Upload photos of recently solved problems and AI will analyze your solving habits",
+            "uploadButton": "Upload Photo",
+            "scanning": "Scanning...",
+            "analyzing": "Analyzing...",
+            "done": "Analysis Complete",
+            "skip": "Skip",
+            "ocrHint": "Please upload photos of Korean, Math, and English problems separately"
+        },
+        "step4": {
+            "title": "Weekly Study Time Setup",
+            "subtitle": "Select time slots when you can study",
+            "totalHours": "Total {{hours}} hours",
+            "clearAll": "Clear All",
+            "fillAll": "Fill All",
+            "days": {
+                "mon": "Mon",
+                "tue": "Tue",
+                "wed": "Wed",
+                "thu": "Thu",
+                "fri": "Fri",
+                "sat": "Sat",
+                "sun": "Sun"
+            }
+        },
+        "step5": {
+            "title": "AI is generating your study plan",
+            "analyzing": "Analyzing data...",
+            "generating": "Generating custom plan...",
+            "wait": "Please wait a moment",
+            "loadingTitle": "Mirror AI is analyzing...",
+            "typeAnalysis": "Learning Style Analysis",
+            "habitAnalysis": "Solving Habits",
+            "avgTime": "Avg Daily Available Time",
+            "analyzingHabit": "Analyzing...",
+            "skipped": "Skipped (No Main Subject)"
+        },
+        "result": {
+            "title": "{{name}}'s Grade {{grade}} Semester {{semester}} Mirror Solution",
+            "userType": {
+                "a": {
+                    "label": "Schema Overloader",
+                    "desc": "Intuitive and fast 'Speed Runner'",
+                    "fullDesc": "Relies on fast processing speed but makes frequent mistakes"
+                },
+                "b": {
+                    "label": "Cognitive Tunneler",
+                    "desc": "Seeks deep understanding 'Deep Diver'",
+                    "fullDesc": "Fails at time management due to perfectionism"
+                },
+                "c": {
+                    "label": "Dopamine Discounter",
+                    "desc": "Explosive focus 'Cramming Master'",
+                    "fullDesc": "Prefers immediate rewards, shows explosive focus right before deadlines"
+                }
+            },
+            "weeklyCurriculum": "This Week's Personalized Curriculum",
+            "aiGenerated": "AI Generated",
+            "todayMission": "Today's Mission (Today)",
+            "dailyMission": "Daily Mission",
+            "availableTime": "Available Study Time",
+            "recommendedTime": "Recommended Study Time",
+            "targetMinutes": "Target",
+            "minutes": "min",
+            "startLearning": "Start Learning",
+            "solvingHabits": "AI Solving Habits Analysis",
+            "concept": "Progress",
+            "review": "Review",
+            "today": "Today",
+            "noTimeSet": "No study time set.",
+            "noDetails": "No detailed plan.",
+            "todayAvailableTime": "Today's Available Time"
+        },
+        "buttons": {
+            "next": "Next",
+            "back": "Back",
+            "complete": "Complete",
+            "skip": "Skip"
+        }
+    },
+    "subject": {
+        "korean": "Korean",
+        "math": "Mathematics",
+        "english": "English",
+        "science": "Science",
+        "social": "Social Studies",
+        "physics": "Physics",
+        "chemistry": "Chemistry",
+        "biology": "Biology",
+        "earth_science": "Earth Science",
+        "integrated_science": "Integrated Science",
+        "korean_history": "Korean History",
+        "ethics": "Ethics",
+        "geography": "Geography",
+        "history": "History",
+        "social_studies": "Social Studies",
+        "integrated_social": "Integrated Social",
+        "info": "Informatics",
+        "second_foreign": "Second Foreign Language",
+        "chinese_classics": "Chinese Classics",
+        "tech_home": "Tech & Home",
+        "etc": "Others"
+    },
     "common": {
         "login": "Login",
         "logout": "Logout",
@@ -26,6 +193,7 @@
         "aiTutor": "AI Tutor",
         "report": "Report",
         "students": "Students",
+        "dailyReport": "Daily Report",
         "schedule": "Schedule",
         "profile": "Profile",
         "studentMode": "Student Mode",
@@ -51,27 +219,6 @@
             "completedTasks": "{{completed}}/{{total}} tasks completed",
             "studyTime": "Study Time",
             "passionTemp": "Passion Temperature"
-        }
-    },
-    "teacher": {
-        "schedule": {
-            "edit": "Edit Schedule",
-            "selectTime": "Select Time",
-            "save": "Save",
-            "cancel": "Cancel",
-            "editSchedule": "Edit Schedule",
-            "selectDay": "Select Day",
-            "addTimeSlot": "Add Study Time"
-        },
-        "diagnosis": {
-            "title": "Learning Diagnosis",
-            "analyzing": "Analyzing...",
-            "result": "Diagnosis Result",
-            "continue": "Continue",
-            "levelTest": "Level Test",
-            "startDiagnosis": "Start Diagnosis",
-            "analysisComplete": "Analysis Complete",
-            "recommendations": "Recommendations"
         }
     },
     "onboarding": {
@@ -255,7 +402,215 @@
         "available": "Always available",
         "today": "Today",
         "suggestions": "Suggestions",
+        "suggestionsList": {
+            "solve": "📸 Show me how to solve this",
+            "schedule": "📅 Brief me on my schedule today",
+            "concept": "🧪 Explain 'Entropy' simply",
+            "motivation": "😫 I can't focus, motivate me"
+        },
         "placeholder": "Type your question...",
         "disclaimer": "AI can make mistakes. Please verify important information."
+    },
+    "teacher": {
+        "schedule": {
+            "edit": "Edit Schedule",
+            "selectTime": "Select Time",
+            "save": "Save",
+            "cancel": "Cancel",
+            "editSchedule": "Edit Schedule",
+            "selectDay": "Select Day",
+            "addTimeSlot": "Add Study Time"
+        },
+        "diagnosis": {
+            "title": "Learning Diagnosis",
+            "analyzing": "Analyzing...",
+            "result": "Diagnosis Result",
+            "continue": "Continue",
+            "levelTest": "Level Test",
+            "startDiagnosis": "Start Diagnosis",
+            "analysisComplete": "Analysis Complete",
+            "recommendations": "Recommendations"
+        },
+        "benefits": {
+            "badge": "AI Teacher Tool - Mirror",
+            "heroTitle1": "Boost Your Academy's",
+            "heroTitle2": "Revenue and Efficiency Together",
+            "heroSubtitle1": "Mirror isn't just a management tool. From student management to AI feedback,",
+            "heroSubtitle2": "it's a complete system that automates and optimizes all academy operations.",
+            "benefit1Title": "30% Revenue Increase",
+            "benefit1Desc": "Data-driven learning management → Improved student grades → Higher parent satisfaction → Increased re-enrollment",
+            "benefit1Stat": "87% avg re-enrollment rate",
+            "benefit2Title": "70% Time Savings",
+            "benefit2Desc": "Manual student management, report writing, and consultation prep are all automated",
+            "benefit2Stat": "Save 3 hours daily",
+            "benefit3Title": "80% Lower Cost per Student",
+            "benefit3Desc": "AI cares for students 24/7, so teachers can focus on what really matters",
+            "benefit3Stat": "200% student capacity increase",
+            "previewTab1": "Workspace Dashboard",
+            "previewTab2": "Integrated Student Management",
+            "dashboardTitle": "📊 Real-time Class Analytics Dashboard",
+            "dashboardDesc": "Every morning, AI analyzes last night's student learning patterns and suggests today's teaching strategy.",
+            "briefingTitle": "Daily Briefing",
+            "briefingExample": "\"Over 30 students struggled with trigonometric composition last night. Recommend 10-minute review at class start.\"",
+            "careTitle": "Care Alert",
+            "careExample": "\"Student Park Minsu: 20-point grade drop. 3 days absent. Immediate consultation needed\"",
+            "studentsTitle": "👥 Manage All Students at a Glance",
+            "studentsDesc": "Check all students' progress, weaknesses, and recent activity in real-time, with one-click phone consultation.",
+            "callButton": "📞 Call",
+            "reportButton": "📊 Report",
+            "caseTitle": "Real Case: Gangnam Academy A",
+            "caseQuote1": "\"3 months after Mirror adoption: 40 → 82 students.",
+            "caseQuote2": "Saved 2 hours daily on parent consultations alone,",
+            "caseQuote3": "enabling us to accept more students.\"",
+            "caseStat1": "Student Growth",
+            "caseStat2": "Time Saved",
+            "caseStat3": "Re-enrollment",
+            "ctaTitle": "Start Now and Upgrade Your Academy",
+            "ctaSubtitle": "Academy innovation starting at ₩15,000/month. First month free.",
+            "ctaButton": "Get Started Now",
+            "ctaNote": "💳 All features available immediately after payment · Cancel anytime"
+        },
+        "dashboard": {
+            "selectClass": "Select Class",
+            "createClass": "Create New Class",
+            "studentCount": "students",
+            "dailyBriefing": {
+                "title": "Daily Class Briefing",
+                "subtitle": "Activity summary for {{class}}",
+                "viewReport": "View Detailed Report",
+                "activeStudents": "Active Students",
+                "avgStudyTime": "Avg Study Time",
+                "avgCompletion": "Avg Completion",
+                "needsCare": "Needs Care",
+                "weakness": "Class Weakness",
+                "weaknessDesc": "Error rate {{rate}}%. Check report for AI recommendations."
+            },
+            "careList": {
+                "title": "Care Needed Students",
+                "empty": "All caught up!",
+                "emptyDesc": "No students need immediate care currently 👏",
+                "markComplete": "Mark as Handled"
+            },
+            "aiClinic": {
+                "title": "AI Error Clinic",
+                "desc": "Generate personalized worksheets for weakness: {{weakness}}",
+                "button": "Generate Worksheet",
+                "generated": "AI Generated",
+                "exclusive": "{{class}} Exclusive"
+            },
+            "modal": {
+                "createClassTitle": "Create New Class",
+                "className": "Class Name",
+                "classNamePlaceholder": "e.g. Advanced Math Grade 11",
+                "grade": "Grade",
+                "cancel": "Cancel",
+                "confirm": "Create",
+                "addStudentTitle": "Add Students",
+                "addStudentDesc": "Enter student info to send invitation link.",
+                "studentName": "Student Name",
+                "studentPhone": "Phone Number",
+                "studentEmail": "Email",
+                "registered": "Registered Students",
+                "addButton": "Add Student",
+                "adding": "Adding..."
+            }
+        },
+        "report": {
+            "title": "Daily Learning Report",
+            "subtitle": "{{class}} · {{date}}",
+            "overview": {
+                "active": "Active",
+                "time": "Time",
+                "completion": "Avg Completion",
+                "aiQuestions": "AI Questions",
+                "careNeeded": "Care Needed"
+            },
+            "trend": {
+                "up": "+{{value}} vs yda",
+                "down": "-{{value}} vs yda"
+            },
+            "insights": {
+                "atmosphere": "Learning Atmosphere",
+                "atmosphereDesc": "9 students active after 10PM yesterday, a 30% increase. Weekend study time averaged 2.3 hours.",
+                "weekendParticipation": "Weekend Participation",
+                "nightStudy": "Late Night Learners",
+                "weakness": "Class Weakness",
+                "weaknessDesc": "{{badCount}} out of {{count}} students struggled with this. Many had trouble deriving sin/cos synthesis formulas.",
+                "secondWeakness": "Secondary Weakness",
+                "aiStrategy": "AI Teaching Strategy",
+                "strategy1Title": "📐 Introduction Strategy",
+                "strategy1Desc": "Spend first 15 mins reviewing 'Trig Addition -> Synthesis Formula' with visuals. Solve 3 basic problems together before moving to advanced.",
+                "strategy2Title": "💡 Individual Materials",
+                "strategy2Desc": "Recommend assigning 'Basic Concept Video' (12min) and '5 Step-by-Step Problems' to the 9 students who struggled."
+            },
+            "care": {
+                "title": "Care Needed Students",
+                "urgent": "Urgent",
+                "attention": "Attention",
+                "reason1": "Score Drop (▼18) + Inactive 2 days",
+                "reason2": "Math Progress Stagnant 32% (1 week)",
+                "reason3": "Study Time Drop + No Error Note (5 days)"
+            },
+            "topStudents": {
+                "title": "Top Students This Week",
+                "reason1": "🏆 Most AI Questions (18)",
+                "reason2": "⭐ 100% Completion All Subjects",
+                "reason3": "📈 Completion Rate +23%"
+            },
+            "benefits": {
+                "hero": {
+                    "badge": "AI Teaching Tool - Mirror",
+                    "title": "Boost Revenue and Efficiency",
+                    "highlight": "At the Same Time",
+                    "desc1": "Mirror is not just a management tool. From student management to AI feedback,",
+                    "desc2": "It's a complete system that automates and enhances your academy's operations.",
+                    "bold": "automates and enhances"
+                },
+                "cards": {
+                    "revenue": {
+                        "title": "30% Revenue Increase",
+                        "desc": "Data-driven management improves grades → Parent satisfaction rises → Re-enrollment surges",
+                        "footer": "Avg. Re-enrollment 87%"
+                    },
+                    "efficiency": {
+                        "title": "50% Time Savings",
+                        "desc": "AI handles repetitive tasks like homework checks, error notes, and counseling prep.",
+                        "footer": "Save 3 hours daily"
+                    },
+                    "quality": {
+                        "title": "Quality Innovation",
+                        "desc": "Provide 1:1 tutoring-level care with personalized weakness analysis reports.",
+                        "footer": "Personalized Curriculum"
+                    }
+                }
+            }
+        },
+        "students": {
+            "title": "Integrated Student Management",
+            "subtitle": "Showing <span class=\"font-bold text-blue-600\">{{filtered}}</span> out of <span class=\"font-bold text-gray-900\">{{total}}</span> students.",
+            "downloadExcel": "Download Excel",
+            "registerNew": "Register Student",
+            "filter": {
+                "allClasses": "View All Classes",
+                "classOptions": {
+                    "advanced": "Grade 11 Advanced Math Essay A",
+                    "concept": "Grade 10 Math Concepts B"
+                },
+                "placeholder": "Search name or phone...",
+                "detailed": "Detailed Filter",
+                "noResults": "No results found."
+            },
+            "list": {
+                "header": {
+                    "info": "Student Info",
+                    "class": "Class",
+                    "progress": "Progress",
+                    "weakness": "Weakness",
+                    "manage": "Manage"
+                },
+                "call": "Call",
+                "report": "Details"
+            }
+        }
     }
 }

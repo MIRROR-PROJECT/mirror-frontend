@@ -93,7 +93,7 @@ export default function ParentDashboard({ user }: { user: any }) {
   }, []);
 
   return (
-    <div className="p-6 md:p-8 max-w-7xl mx-auto space-y-6 animate-fade-in bg-gray-50/50 min-h-screen">
+    <div className="p-6 md:p-8 max-w-7xl mx-auto space-y-6 animate-fade-in bg-gray-50 min-h-screen">
 
       {/* 1. 헤더 영역 */}
       <div className="flex flex-col md:flex-row justify-between items-end gap-4">

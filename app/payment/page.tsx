@@ -114,6 +114,25 @@ export default function PaymentPage() {
                             {scriptLoaded ? '결제하고 시작하기' : '로딩 중...'}
                         </button>
 
+                        {/* 테스트 카드 안내 */}
+                        {process.env.NODE_ENV === 'development' && (
+                            <div className="mt-4 p-4 bg-yellow-50 border-2 border-yellow-200 rounded-xl">
+                                <p className="text-sm font-bold text-yellow-800 mb-2">⚠️ 개발 환경 - 테스트 결제 안내</p>
+                                <p className="text-xs text-yellow-700 mb-2">
+                                    실제 결제는 승인 거절됩니다. 아래 방법 중 하나를 선택하세요:
+                                </p>
+                                <div className="text-xs text-yellow-700 space-y-1 mb-3">
+                                    <p>• <strong>테스트 카드 번호:</strong> 4000-0000-0000-0008</p>
+                                    <p>• <strong>유효기간:</strong> 아무거나 (예: 12/28)</p>
+                                    <p>• <strong>CVC:</strong> 아무거나 (예: 123)</p>
+                                    <p>• <strong>비밀번호:</strong> 앞 2자리 아무거나 (예: 12)</p>
+                                </div>
+                                <p className="text-xs text-yellow-600 italic">
+                                    또는 아래 "데모로 진행" 버튼을 클릭하세요 👇
+                                </p>
+                            </div>
+                        )}
+
                         {/* 개발 환경 전용 데모 버튼 */}
                         {process.env.NODE_ENV === 'development' && (
                             <button
@@ -121,9 +140,9 @@ export default function PaymentPage() {
                                     localStorage.setItem('teacher_from_benefits', 'true');
                                     router.push('/dashboard?role=teacher');
                                 }}
-                                className="w-full py-3 rounded-xl font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors flex items-center justify-center gap-2 border-2 border-dashed border-gray-300 mt-3"
+                                className="w-full py-4 rounded-xl font-bold text-lg text-white bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 transition-all flex items-center justify-center gap-2 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 mt-3"
                             >
-                                🚀 데모로 진행 (개발용 - 배포 시 자동 숨김)
+                                🚀 데모로 바로 시작하기 (결제 없이 체험)
                             </button>
                         )}
                     </div>

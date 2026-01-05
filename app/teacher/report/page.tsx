@@ -1,180 +1,258 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import { BarChart2, Users, Calendar, Filter } from "lucide-react";
-import StudentReportCard from "@/app/components/report/StudentReportCard";
-import ReportDetailModal from "@/app/components/report/ReportDetailModal";
-import { DailyReport } from "@/app/components/report/types";
-import { generateMockReports } from "@/app/lib/mockReportData";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import {
+    ArrowLeft, Calendar, Users, Clock, TrendingUp, TrendingDown,
+    CheckCircle2, AlertCircle, Brain, Target, Lightbulb,
+    Award, Flame, MessageSquare, BookOpen, Activity
+} from "lucide-react";
 import { useLanguage } from "@/app/context/LanguageContext";
 
-// Mock 반 데이터
-const MOCK_CLASSES = [
-    { id: "class-1", name: "1반" },
-    { id: "class-2", name: "2반" },
-    { id: "class-3", name: "3반" },
-];
-
-// Mock 학생 이름
-const STUDENT_NAMES = [
-    "김민준", "이서연", "박지호", "최유나", "정도윤",
-    "강서준", "조은서", "윤시우", "장하은", "임준서",
-    "한예진", "오지훈", "신수아", "권민재", "송다은"
-];
-
 export default function TeacherReportPage() {
+    const router = useRouter();
     const { t, language } = useLanguage();
-    const [selectedClass, setSelectedClass] = useState(MOCK_CLASSES[0].id);
-    const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
-    const [selectedReport, setSelectedReport] = useState<DailyReport | null>(null);
-    const [sortBy, setSortBy] = useState<"name" | "achievement" | "time">("achievement");
+    const [mounted, setMounted] = useState(false);
+    const [currentDate, setCurrentDate] = useState("");
 
-    // 선택된 반 정보
-    const currentClass = MOCK_CLASSES.find(c => c.id === selectedClass);
+    useEffect(() => {
+        setMounted(true);
+        const now = new Date(); // 실제로는 리포트 날짜를 받아와야 함
+        const options: Intl.DateTimeFormatOptions = {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+            weekday: 'long'
+        };
+        const formatted = new Intl.DateTimeFormat(language === 'ko' ? 'ko-KR' : 'en-US', options).format(now);
+        setCurrentDate(formatted);
+    }, [language]);
 
-    // Mock 학생별 리포트 생성
-    const studentReports = useMemo(() => {
-        return STUDENT_NAMES.map((name, idx) => {
-            const reports = generateMockReports(1, language as 'ko' | 'en');
-            return {
-                ...reports[0],
-                id: `student-${idx}`,
-                user_id: `student-${idx}`,
-                user_name: name,
-            };
-        });
-    }, [selectedClass, selectedDate, language]);
+    if (!mounted) return <div className="min-h-screen bg-gray-50" />;
 
-    // 정렬 적용
-    const sortedReports = useMemo(() => {
-        const sorted = [...studentReports];
-        if (sortBy === "achievement") {
-            sorted.sort((a, b) => a.achievement_rate - b.achievement_rate); // 낮은 순
-        } else if (sortBy === "time") {
-            sorted.sort((a, b) => a.total_study_time_minutes - b.total_study_time_minutes); // 적은 순
-        } else {
-            sorted.sort((a, b) => a.user_name.localeCompare(b.user_name)); // 이름순
-        }
-        return sorted;
-    }, [studentReports, sortBy]);
-
-    // 통계 계산
-    const classStats = useMemo(() => {
-        const totalStudents = studentReports.length;
-        const avgAchievement = Math.round(
-            studentReports.reduce((sum, r) => sum + r.achievement_rate, 0) / totalStudents
-        );
-        const avgTime = Math.round(
-            studentReports.reduce((sum, r) => sum + r.total_study_time_minutes, 0) / totalStudents
-        );
-        const lowAchievers = studentReports.filter(r => r.achievement_rate < 60).length;
-
-        return { totalStudents, avgAchievement, avgTime, lowAchievers };
-    }, [studentReports]);
+    // Mock Class Name - 실제로는 데이터에서 가져와야 함
+    const className = language === 'ko' ? "고2 수학 심화반" : "Advanced Math Grade 11";
 
     return (
-        <div className="p-8 max-w-7xl mx-auto space-y-8 animate-fade-in">
+        <div className="min-h-screen bg-gray-50 p-6 md:p-10">
+            <div className="max-w-5xl mx-auto space-y-6 animate-fade-in">
 
-            {/* 1. 페이지 헤더 + 반/날짜 선택 */}
-            <div className="flex items-start justify-between">
-                <div>
-                    <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-                        <BarChart2 className="w-7 h-7 text-blue-600" />
-                        반 학습 리포트
-                    </h1>
-                    <p className="text-gray-500 mt-2">
-                        학생들의 학습 현황을 한눈에 확인하세요.
-                    </p>
-                </div>
-
-                <div className="flex items-center gap-3">
-                    {/* 반 선택 */}
-                    <div className="flex items-center gap-2">
-                        <Users className="w-5 h-5 text-gray-400" />
-                        <select
-                            value={selectedClass}
-                            onChange={(e) => setSelectedClass(e.target.value)}
-                            className="px-4 py-2 bg-white border-2 border-gray-200 rounded-xl font-medium text-gray-700 hover:border-blue-300 focus:border-blue-500 focus:outline-none transition-colors cursor-pointer"
-                        >
-                            {MOCK_CLASSES.map((cls) => (
-                                <option key={cls.id} value={cls.id}>
-                                    {cls.name}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
-
-                    {/* 날짜 선택 */}
-                    <div className="flex items-center gap-2">
-                        <Calendar className="w-5 h-5 text-gray-400" />
-                        <input
-                            type="date"
-                            value={selectedDate}
-                            onChange={(e) => setSelectedDate(e.target.value)}
-                            className="px-4 py-2 bg-white border-2 border-gray-200 rounded-xl font-medium text-gray-700 hover:border-blue-300 focus:border-blue-500 focus:outline-none transition-colors cursor-pointer"
-                        />
-                    </div>
-                </div>
-            </div>
-
-            {/* 2. 반 요약 통계 */}
-            <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-2xl p-6 border border-blue-100">
-                <h2 className="text-xl font-bold text-gray-900 mb-4">{currentClass?.name} 요약</h2>
-                <div className="grid grid-cols-4 gap-4">
+                {/* Header */}
+                <div className="flex items-center gap-4">
+                    <button
+                        onClick={() => router.back()}
+                        className="p-2 hover:bg-white rounded-xl transition-colors border border-gray-200"
+                    >
+                        <ArrowLeft className="w-5 h-5 text-gray-600" />
+                    </button>
                     <div>
-                        <p className="text-sm text-gray-600">전체 학생</p>
-                        <p className="text-2xl font-bold text-gray-900">{classStats.totalStudents}명</p>
-                    </div>
-                    <div>
-                        <p className="text-sm text-gray-600">평균 성취도</p>
-                        <p className="text-2xl font-bold text-blue-600">{classStats.avgAchievement}%</p>
-                    </div>
-                    <div>
-                        <p className="text-sm text-gray-600">평균 학습 시간</p>
-                        <p className="text-2xl font-bold text-purple-600">
-                            {Math.floor(classStats.avgTime / 60)}h {classStats.avgTime % 60}m
+                        <h1 className="text-3xl font-bold text-gray-900">{t('teacher.report.title')}</h1>
+                        <p className="text-gray-500 mt-1">
+                            <span className="font-bold text-gray-900">{className}</span> · {currentDate}
                         </p>
                     </div>
-                    <div>
-                        <p className="text-sm text-gray-600">주의 필요</p>
-                        <p className="text-2xl font-bold text-red-600">{classStats.lowAchievers}명</p>
+                </div>
+
+                {/* Overview Stats */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="bg-white p-5 rounded-2xl border border-gray-200">
+                        <div className="flex items-center gap-2 text-gray-500 text-sm mb-2">
+                            <Users className="w-4 h-4" />
+                            <span className="font-medium">{t('teacher.report.overview.active')}</span>
+                        </div>
+                        <p className="text-3xl font-bold text-gray-900">9<span className="text-lg text-gray-400">/12{t('teacher.dashboard.studentCount')}</span></p>
+                        <p className="text-xs text-green-600 mt-1 flex items-center gap-1">
+                            <TrendingUp className="w-3 h-3" /> {t('teacher.report.trend.up', { value: '2' })}
+                        </p>
+                    </div>
+
+                    <div className="bg-white p-5 rounded-2xl border border-gray-200">
+                        <div className="flex items-center gap-2 text-gray-500 text-sm mb-2">
+                            <Clock className="w-4 h-4" />
+                            <span className="font-medium">{t('teacher.report.overview.time')}</span>
+                        </div>
+                        <p className="text-3xl font-bold text-blue-600">2.3<span className="text-lg text-gray-400">h</span></p>
+                        <p className="text-xs text-green-600 mt-1 flex items-center gap-1">
+                            <TrendingUp className="w-3 h-3" /> {t('teacher.report.trend.up', { value: '18%' })}
+                        </p>
+                    </div>
+
+                    <div className="bg-white p-5 rounded-2xl border border-gray-200">
+                        <div className="flex items-center gap-2 text-gray-500 text-sm mb-2">
+                            <CheckCircle2 className="w-4 h-4" />
+                            <span className="font-medium">{t('teacher.report.overview.completion')}</span>
+                        </div>
+                        <p className="text-3xl font-bold text-green-600">68<span className="text-lg text-gray-400">%</span></p>
+                        <p className="text-xs text-red-600 mt-1 flex items-center gap-1">
+                            <TrendingDown className="w-3 h-3" /> {t('teacher.report.trend.down', { value: '5%' })}
+                        </p>
+                    </div>
+
+                    <div className="bg-white p-5 rounded-2xl border border-gray-200">
+                        <div className="flex items-center gap-2 text-gray-500 text-sm mb-2">
+                            <MessageSquare className="w-4 h-4" />
+                            <span className="font-medium">{t('teacher.report.overview.aiQuestions')}</span>
+                        </div>
+                        <p className="text-3xl font-bold text-purple-600">77<span className="text-lg text-gray-400"></span></p>
+                        <p className="text-xs text-green-600 mt-1 flex items-center gap-1">
+                            <TrendingUp className="w-3 h-3" /> {t('teacher.report.trend.up', { value: '12' })}
+                        </p>
                     </div>
                 </div>
-            </div>
 
-            {/* 3. 정렬 옵션 */}
-            <div className="flex items-center justify-between">
-                <h2 className="text-lg font-bold text-gray-800">학생별 현황</h2>
-                <div className="flex items-center gap-2">
-                    <Filter className="w-4 h-4 text-gray-400" />
-                    <select
-                        value={sortBy}
-                        onChange={(e) => setSortBy(e.target.value as any)}
-                        className="px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-700 hover:border-gray-300 focus:outline-none cursor-pointer"
-                    >
-                        <option value="achievement">성취도 낮은 순</option>
-                        <option value="time">학습 시간 적은 순</option>
-                        <option value="name">이름순</option>
-                    </select>
+                {/* Main Insights */}
+                <div className="grid md:grid-cols-2 gap-6">
+
+                    {/* 학습 분위기 */}
+                    <div className="bg-white p-6 rounded-2xl border border-gray-200">
+                        <div className="flex items-center gap-2 mb-4">
+                            <div className="p-2 bg-blue-50 rounded-lg">
+                                <Flame className="w-5 h-5 text-blue-600" />
+                            </div>
+                            <h2 className="text-lg font-bold text-gray-900">{t('teacher.report.insights.atmosphere')}</h2>
+                        </div>
+                        <div className="space-y-3">
+                            <div className="bg-blue-50 p-4 rounded-xl border border-blue-100">
+                                <p className="font-bold text-blue-900 mb-2">{t('teacher.report.insights.atmosphereTitle') || "🔥 자습 열기 고조"}</p>
+                                <p className="text-sm text-blue-700 leading-relaxed">
+                                    {t('teacher.report.insights.atmosphereDesc')}
+                                </p>
+                            </div>
+                            <div className="flex items-center justify-between text-sm">
+                                <span className="text-gray-600">{t('teacher.report.insights.weekendParticipation')}</span>
+                                <span className="font-bold text-gray-900">75%</span>
+                            </div>
+                            <div className="flex items-center justify-between text-sm">
+                                <span className="text-gray-600">{t('teacher.report.insights.nightStudy')}</span>
+                                <span className="font-bold text-gray-900">9{t('teacher.dashboard.studentCount')}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* 반 전체 취약점 */}
+                    <div className="bg-white p-6 rounded-2xl border border-gray-200">
+                        <div className="flex items-center gap-2 mb-4">
+                            <div className="p-2 bg-red-50 rounded-lg">
+                                <AlertCircle className="w-5 h-5 text-red-600" />
+                            </div>
+                            <h2 className="text-lg font-bold text-gray-900">{t('teacher.report.insights.weakness')}</h2>
+                        </div>
+                        <div className="space-y-3">
+                            <div className="bg-red-50 p-4 rounded-xl border border-red-100">
+                                <div className="flex items-center justify-between mb-2">
+                                    <p className="font-bold text-red-900 flex items-center gap-2">
+                                        <Target className="w-4 h-4 text-red-600" />
+                                        {language === 'ko' ? '삼각함수 합성 (덧셈정리)' : 'Trigonometric Synthesis'}
+                                    </p>
+                                    <span className="text-sm font-bold text-red-600">{t('teacher.report.insights.errorRate', { rate: '73' })}</span>
+                                </div>
+                                <p className="text-sm text-red-700 leading-relaxed">
+                                    {t('teacher.report.insights.weaknessDesc', { count: 12, badCount: 9 })}
+                                </p>
+                            </div>
+                            <div className="flex items-center justify-between text-sm">
+                                <span className="text-gray-600">{t('teacher.report.insights.secondWeakness')}</span>
+                                <span className="font-bold text-gray-900">{language === 'ko' ? '이차함수 최댓값 (58%)' : 'Quadratic Max Value (58%)'}</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-            </div>
 
-            {/* 4. 학생 그리드 */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {sortedReports.map((report) => (
-                    <StudentReportCard
-                        key={report.id}
-                        report={report}
-                        onClick={() => setSelectedReport(report)}
-                    />
-                ))}
-            </div>
+                {/* AI 추천 액션 */}
+                <div className="bg-gradient-to-br from-blue-600 to-indigo-700 p-6 rounded-2xl text-white">
+                    <div className="flex items-center gap-2 mb-4">
+                        <Brain className="w-6 h-6" />
+                        <h2 className="text-xl font-bold">{t('teacher.report.insights.aiStrategy')}</h2>
+                    </div>
+                    <div className="space-y-4">
+                        <div className="bg-white/10 p-4 rounded-xl backdrop-blur-sm">
+                            <div className="flex items-start gap-3">
+                                <div className="p-2 bg-white/20 rounded-lg shrink-0">
+                                    <Target className="w-5 h-5" />
+                                </div>
+                                <div>
+                                    <p className="font-bold mb-2">{t('teacher.report.insights.strategy1Title')}</p>
+                                    <p className="text-sm text-blue-100">
+                                        {t('teacher.report.insights.strategy1Desc')}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="bg-white/10 p-4 rounded-xl backdrop-blur-sm">
+                            <div className="flex items-start gap-3">
+                                <div className="p-2 bg-white/20 rounded-lg shrink-0">
+                                    <Lightbulb className="w-5 h-5" />
+                                </div>
+                                <div>
+                                    <p className="font-bold mb-2">{t('teacher.report.insights.strategy2Title')}</p>
+                                    <p className="text-sm text-blue-100">
+                                        {t('teacher.report.insights.strategy2Desc')}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
-            {/* 5. 상세 보기 모달 */}
-            <ReportDetailModal
-                report={selectedReport}
-                onClose={() => setSelectedReport(null)}
-            />
+                {/* 케어 필요 학생 요약 */}
+                <div className="bg-white p-6 rounded-2xl border-2 border-red-200">
+                    <div className="flex items-center gap-2 mb-4">
+                        <div className="p-2 bg-red-50 rounded-lg">
+                            <AlertCircle className="w-5 h-5 text-red-600" />
+                        </div>
+                        <h2 className="text-lg font-bold text-gray-900">{t('teacher.report.care.title')} (3{t('teacher.dashboard.studentCount')})</h2>
+                    </div>
+                    <div className="space-y-3">
+                        {[
+                            { name: language === 'ko' ? "김민수" : "Minsu Kim", reason: t('teacher.report.care.reason1'), urgent: true },
+                            { name: language === 'ko' ? "박서준" : "Seojun Park", reason: t('teacher.report.care.reason2'), urgent: false },
+                            { name: language === 'ko' ? "김태현" : "Taehyun Kim", reason: t('teacher.report.care.reason3'), urgent: true },
+                        ].map((student, idx) => (
+                            <div key={idx} className={`flex items-center justify-between p-3 rounded-xl border ${student.urgent ? 'bg-red-50 border-red-100' : 'bg-yellow-50 border-yellow-100'}`}>
+                                <div className="flex items-center gap-3">
+                                    <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold ${student.urgent ? 'bg-red-100 text-red-600' : 'bg-yellow-100 text-yellow-600'}`}>
+                                        {student.name.charAt(0)}
+                                    </div>
+                                    <div>
+                                        <p className="font-bold text-gray-900">{student.name}</p>
+                                        <p className={`text-xs ${student.urgent ? 'text-red-600' : 'text-yellow-600'}`}>{student.reason}</p>
+                                    </div>
+                                </div>
+                                <span className={`text-xs font-bold px-2 py-1 rounded ${student.urgent ? 'text-red-600 bg-red-100' : 'text-yellow-600 bg-yellow-100'}`}>
+                                    {student.urgent ? t('teacher.report.care.urgent') : t('teacher.report.care.warning')}
+                                </span>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+
+                {/* 우수 학생 */}
+                <div className="bg-gradient-to-br from-green-50 to-blue-50 p-6 rounded-2xl border border-green-200">
+                    <div className="flex items-center gap-2 mb-4">
+                        <Award className="w-5 h-5 text-green-600" />
+                        <h2 className="text-lg font-bold text-gray-900">{t('teacher.report.topStudents.title')}</h2>
+                    </div>
+                    <div className="grid md:grid-cols-3 gap-3">
+                        {[
+                            { name: language === 'ko' ? "정하늘" : "Haneul Jung", stats: t('teacher.report.topStudents.stats1'), reason: t('teacher.report.topStudents.reason1'), color: "green", bg: "bg-green-100", text: "text-green-600", border: "border-green-200" },
+                            { name: language === 'ko' ? "이지은" : "Jieun Lee", stats: t('teacher.report.topStudents.stats2'), reason: t('teacher.report.topStudents.reason2'), color: "blue", bg: "bg-blue-100", text: "text-blue-600", border: "border-blue-200" },
+                            { name: language === 'ko' ? "김민지" : "Minji Kim", stats: t('teacher.report.topStudents.stats3'), reason: t('teacher.report.topStudents.reason3'), color: "purple", bg: "bg-purple-100", text: "text-purple-600", border: "border-purple-200" },
+                        ].map((student, idx) => (
+                            <div key={idx} className={`bg-white p-4 rounded-xl border ${student.border}`}>
+                                <div className="flex items-center gap-2 mb-2">
+                                    <div className={`w-8 h-8 rounded-full ${student.bg} flex items-center justify-center font-bold ${student.text} text-sm`}>
+                                        {student.name.charAt(0)}
+                                    </div>
+                                    <p className="font-bold text-gray-900">{student.name}</p>
+                                </div>
+                                <p className="text-xs text-gray-600">{student.stats}</p>
+                                <p className={`text-xs ${student.text} mt-1 font-bold`}>{student.reason}</p>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+
+            </div>
         </div>
     );
 }

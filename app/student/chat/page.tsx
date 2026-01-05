@@ -81,10 +81,10 @@ export default function ChatPage() {
 
   // 추천 질문 칩
   const SUGGESTED_PROMPTS = [
-    "📸 이 문제 풀이 과정 알려줘",
-    "📅 오늘 내 학습 스케줄 브리핑해줘",
-    "🧪 '엔트로피' 개념 쉽게 설명해줘",
-    "😫 집중이 안 돼, 동기부여 해줘"
+    t('chat.suggestionsList.solve'),
+    t('chat.suggestionsList.schedule'),
+    t('chat.suggestionsList.concept'),
+    t('chat.suggestionsList.motivation')
   ];
 
   // 새 메시지가 오면 맨 아래로 스크롤
@@ -207,11 +207,6 @@ export default function ChatPage() {
             <div className="flex items-center gap-1">
               <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span>
               <span className="text-[10px] text-gray-500 font-medium">{t('chat.available')}</span>
-              {language === 'en' && (
-                <span className="ml-1 text-[9px] bg-yellow-50 text-yellow-700 px-1.5 py-0.5 rounded-full border border-yellow-200">
-                  Korean only
-                </span>
-              )}
             </div>
           </div>
         </div>
