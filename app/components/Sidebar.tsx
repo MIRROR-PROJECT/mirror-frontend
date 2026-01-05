@@ -63,7 +63,7 @@ function SidebarContent() {
 
   return (
     <>
-      <aside className="hidden md:flex w-64 bg-gradient-to-b from-gray-900 to-gray-800 text-white flex-col relative shadow-2xl">
+      <aside className="hidden md:flex w-64 bg-white border-r border-gray-200 flex-col p-6 sticky top-0 h-screen z-50">
         <div className="text-2xl font-bold text-blue-600 mb-10 pl-2">Mirror.</div>
 
         <div className="mb-4 px-2">
