@@ -3,17 +3,20 @@
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useStudy } from "@/app/context/StudyContext";
+import { useLanguage } from "@/app/context/LanguageContext";
 import { ROLE_MENUS } from "@/app/constants/navigation";
 import { Suspense, useState, useEffect } from "react";
 import { supabase } from "../lib/supabase";
 import { LogOut, X } from "lucide-react";
 import { useRouter } from "next/navigation";
+import LanguageToggle from "./LanguageToggle";
 
 function SidebarContent() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const router = useRouter();
   const { user, userInfo } = useStudy();
+  const { t } = useLanguage();
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [userName, setUserName] = useState("");
 
@@ -65,8 +68,8 @@ function SidebarContent() {
 
         <div className="mb-4 px-2">
           <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">
-            {currentRole === 'teacher' ? 'Instructor Mode' :
-              currentRole === 'parent' ? 'Parent Mode' : 'Student Mode'}
+            {currentRole === 'teacher' ? t('nav.teacherMode') :
+              currentRole === 'parent' ? t('nav.parentMode') : t('nav.studentMode')}
           </span>
         </div>
 
@@ -81,12 +84,17 @@ function SidebarContent() {
                     : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'}
                 `}>
                   <item.icon className={`w-5 h-5 ${isActive ? 'text-blue-600' : 'text-gray-400'}`} />
-                  <span>{item.name}</span>
+                  <span>{t(item.nameKey)}</span>
                 </div>
               </Link>
             );
           })}
         </nav>
+
+        {/* 언어 전환 버튼 */}
+        <div className="px-2 mb-4">
+          <LanguageToggle />
+        </div>
 
         {/* 프로필 영역 - 클릭 가능하게 */}
         <button
@@ -98,7 +106,7 @@ function SidebarContent() {
             {currentRole === 'teacher' ? '👨‍🏫' : currentRole === 'parent' ? '👨‍👩‍👧' : '🧸'}
           </div>
           <div>
-            <p className="text-sm font-bold text-gray-900">{userName || userInfo?.name || "로딩 중..."}</p>
+            <p className="text-sm font-bold text-gray-900">{userName || userInfo?.name || t('common.loading')}</p>
             <p className="text-xs text-gray-500 capitalize">{currentRole}</p>
           </div>
         </button>
@@ -109,25 +117,27 @@ function SidebarContent() {
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm">
           <div className="bg-white rounded-2xl shadow-2xl p-6 max-w-sm mx-4 w-full">
             <div className="flex items-start justify-between mb-4">
-              <h3 className="text-xl font-bold text-gray-900">로그아웃</h3>
+              <h3 className="text-xl font-bold text-gray-900">{t('common.logout')}</h3>
               <button onClick={() => setShowLogoutModal(false)} className="text-gray-400 hover:text-gray-600">
                 <X className="w-5 h-5" />
               </button>
             </div>
-            <p className="text-gray-600 mb-6">정말 로그아웃하시겠습니까?</p>
+            <p className="text-gray-600 mb-6">
+              {t('nav.logoutConfirm')}
+            </p>
             <div className="flex gap-3">
               <button
                 onClick={() => setShowLogoutModal(false)}
                 className="flex-1 px-4 py-3 border border-gray-300 rounded-lg font-bold text-gray-700 hover:bg-gray-50 transition-colors"
               >
-                취소
+                {t('common.cancel')}
               </button>
               <button
                 onClick={handleLogout}
                 className="flex-1 px-4 py-3 bg-red-600 text-white rounded-lg font-bold hover:bg-red-700 transition-colors flex items-center justify-center gap-2"
               >
                 <LogOut className="w-4 h-4" />
-                로그아웃
+                {t('common.logout')}
               </button>
             </div>
           </div>

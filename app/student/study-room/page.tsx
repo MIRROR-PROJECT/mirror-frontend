@@ -9,6 +9,7 @@ import {
   X, MoreHorizontal
 } from "lucide-react";
 import { supabase } from "@/app/lib/supabase";
+import { useLanguage } from "@/app/context/LanguageContext";
 
 // --- [API 명세서 기반 타입 정의] ---
 interface ApiTask {
@@ -111,6 +112,7 @@ const WEEK_DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
 export default function StudyRoomPage() {
   const { updateSchedule } = useStudy();
+  const { t } = useLanguage();
 
   const [isScheduleOpen, setIsScheduleOpen] = useState(false);
   const [weekDates, setWeekDates] = useState<{ day: string, date: number, isToday: boolean }[]>([]);
@@ -379,10 +381,10 @@ export default function StudyRoomPage() {
           <div>
             <h1 className="text-2xl font-bold text-gray-900 mb-1 flex items-center gap-2">
               <CalendarDays className="w-6 h-6 text-blue-600" />
-              나의 학습방
+              {t('studyRoom.title')}
             </h1>
             <p className="text-gray-500 text-sm">
-              매일 조금씩, 꾸준히 성장하는 나를 만나보세요.
+              {t('studyRoom.subtitle')}
             </p>
           </div>
 
@@ -390,7 +392,7 @@ export default function StudyRoomPage() {
             onClick={() => setIsScheduleOpen(true)}
             className="flex items-center gap-2 bg-white px-5 py-2.5 rounded-xl border border-blue-200 shadow-sm text-blue-600 hover:bg-blue-50 transition-colors font-bold text-sm"
           >
-            <Clock className="w-4 h-4" /> 시간표 설정
+            <Clock className="w-4 h-4" /> {t('studyRoom.scheduleSettings')}
           </button>
         </header>
 
@@ -401,7 +403,7 @@ export default function StudyRoomPage() {
           <div className="bg-white p-6 rounded-3xl border border-gray-200 shadow-sm flex flex-col h-full">
             <div className="flex justify-between items-center mb-6">
               <h3 className="font-bold text-gray-800 flex items-center gap-2">
-                <Calendar className="w-5 h-5 text-blue-500" /> 모의고사 & 수능 일정
+                <Calendar className="w-5 h-5 text-blue-500" /> {t('studyRoom.mockExamSchedule')}
               </h3>
             </div>
 
@@ -427,7 +429,7 @@ export default function StudyRoomPage() {
               ) : (
                 <div className="h-32 flex flex-col items-center justify-center text-gray-400 gap-2">
                   <Calendar className="w-8 h-8 opacity-20" />
-                  <span className="text-xs">예정된 주요 시험이 없습니다.</span>
+                  <span className="text-xs">{t('studyRoom.noUpcomingExams')}</span>
                 </div>
               )}
             </div>
@@ -438,9 +440,9 @@ export default function StudyRoomPage() {
             <div className="flex justify-between items-start mb-4">
               <div>
                 <h3 className="font-bold text-gray-800 flex items-center gap-2">
-                  <TrendingUp className="w-5 h-5 text-indigo-500" /> 주간 학습 요약
+                  <TrendingUp className="w-5 h-5 text-indigo-500" /> {t('studyRoom.weeklySummary')}
                 </h3>
-                <p className="text-xs text-gray-400 mt-1">지난주보다 <span className="text-indigo-600 font-bold">12% 더</span> 달성했어요! 🔥</p>
+                <p className="text-xs text-gray-400 mt-1">{t('studyRoom.weeklyProgress', { percent: 12 })}</p>
               </div>
             </div>
 
@@ -546,7 +548,7 @@ export default function StudyRoomPage() {
         {/* 2. 주간 계획표 (Weekly Plan) */}
         <section>
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-lg font-bold text-gray-900">Weekly Plan</h2>
+            <h2 className="text-lg font-bold text-gray-900">{t('studyRoom.weeklyPlan')}</h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-7 gap-3">
             {weekDates.map((weekDay, idx) => {
@@ -597,7 +599,7 @@ export default function StudyRoomPage() {
                           ))
                         ) : (
                           <div className="h-full flex flex-col items-center justify-center text-gray-300 gap-1">
-                            <span className="text-[10px]">미션 없음</span>
+                            <span className="text-[10px]">{t('studyRoom.noMissions')}</span>
                           </div>
                         )
                       )
@@ -618,7 +620,7 @@ export default function StudyRoomPage() {
                       ) : (
                         <div className="h-full flex flex-col items-center justify-center text-gray-300 gap-1">
                           <CalendarIcon className="w-4 h-4 opacity-50" />
-                          <span className="text-[10px]">일정 없음</span>
+                          <span className="text-[10px]">{t('studyRoom.noSchedule')}</span>
                         </div>
                       )
                     )}
@@ -634,9 +636,9 @@ export default function StudyRoomPage() {
       {isScheduleOpen && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
           <div className="bg-white rounded-3xl w-full max-w-xl shadow-2xl p-6">
-            <h3 className="font-bold text-lg mb-4">시간표 설정</h3>
-            <p className="text-gray-500 mb-6">시간표 설정 기능은 별도 컴포넌트로 관리됩니다.</p>
-            <button onClick={() => setIsScheduleOpen(false)} className="w-full py-3 bg-blue-600 text-white rounded-xl font-bold">닫기</button>
+            <h3 className="font-bold text-lg mb-4">{t('studyRoom.scheduleModal.title')}</h3>
+            <p className="text-gray-500 mb-6">{t('studyRoom.scheduleModal.desc')}</p>
+            <button onClick={() => setIsScheduleOpen(false)} className="w-full py-3 bg-blue-600 text-white rounded-xl font-bold">{t('studyRoom.scheduleModal.close')}</button>
           </div>
         </div>
       )}

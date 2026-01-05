@@ -2,6 +2,8 @@
 
 import { X, Clock, CheckCircle2, ThermometerSun, MessageCircle, Quote, Lightbulb } from "lucide-react";
 import { DailyReport } from "./types";
+import { useLanguage } from "@/app/context/LanguageContext";
+import { translateApiText } from "@/app/lib/translationMappings";
 
 interface Props {
     report: DailyReport | null;
@@ -9,6 +11,7 @@ interface Props {
 }
 
 export default function ReportDetailModal({ report, onClose }: Props) {
+    const { t, language } = useLanguage();
     if (!report) return null;
 
     // 포맷팅 헬퍼
@@ -30,8 +33,8 @@ export default function ReportDetailModal({ report, onClose }: Props) {
                 {/* 헤더 */}
                 <div className="px-6 py-4 border-b flex justify-between items-center bg-gray-50">
                     <div>
-                        <span className="text-gray-500 text-xs font-bold">{report.date} 리포트</span>
-                        <h2 className="text-xl font-bold text-gray-800">나의 학습 하루</h2>
+                        <span className="text-gray-500 text-xs font-bold">{report.date} {t('report.detail.reportDate')}</span>
+                        <h2 className="text-xl font-bold text-gray-800">{t('report.detail.myStudyDay')}</h2>
                     </div>
                     <button onClick={onClose} className="p-2 hover:bg-gray-200 rounded-full transition-colors">
                         <X className="w-5 h-5 text-gray-500" />
@@ -45,22 +48,22 @@ export default function ReportDetailModal({ report, onClose }: Props) {
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                         <div className="p-3 bg-red-50 rounded-2xl border border-red-100 flex flex-col items-center justify-center">
                             <span className="text-xl mb-1">🔥</span>
-                            <span className="text-xs text-red-500 font-bold">몰입 과목</span>
-                            <span className="text-lg font-bold text-red-900">{report.most_immersive_subject}</span>
+                            <span className="text-xs text-red-500 font-bold">{t('report.detail.immersiveSubject')}</span>
+                            <span className="text-lg font-bold text-red-900">{translateApiText(report.most_immersive_subject || '', language)}</span>
                         </div>
                         <div className="p-3 bg-gray-50 rounded-2xl border flex flex-col items-center justify-center">
                             <CheckCircle2 className="w-5 h-5 text-green-500 mb-1" />
-                            <span className="text-xs text-gray-500">달성</span>
+                            <span className="text-xs text-gray-500">{t('report.detail.achievementLabel')}</span>
                             <span className="text-lg font-bold">{report.achievement_rate}%</span>
                         </div>
                         <div className={`p-3 rounded-2xl border flex flex-col items-center justify-center ${getTempColor(report.passion_temp || 36.5)}`}>
                             <ThermometerSun className="w-5 h-5 mb-1" />
-                            <span className="text-xs opacity-80">열정 온도</span>
+                            <span className="text-xs opacity-80">{t('report.detail.passionTemp')}</span>
                             <span className="text-lg font-black">{report.passion_temp || 36.5}°C</span>
                         </div>
                         <div className="p-3 bg-indigo-50 text-indigo-600 rounded-2xl border border-indigo-100 flex flex-col items-center justify-center">
                             <MessageCircle className="w-5 h-5 mb-1" />
-                            <span className="text-xs opacity-80">질문</span>
+                            <span className="text-xs opacity-80">{t('report.detail.questionsLabel')}</span>
                             <span className="text-lg font-bold">{report.question_count || 0}회</span>
                         </div>
                     </div>
@@ -71,7 +74,7 @@ export default function ReportDetailModal({ report, onClose }: Props) {
                         <div className="relative z-10">
                             <div className="flex items-center gap-2 mb-2">
                                 <Lightbulb className="w-4 h-4 text-yellow-500 fill-yellow-500" />
-                                <span className="text-sm font-bold text-blue-900">AI 튜터의 피드백</span>
+                                <span className="text-sm font-bold text-blue-900">{t('report.detail.aiFeedback')}</span>
                             </div>
                             <h3 className="text-lg font-bold text-gray-900 mb-2">"{report.ai_summary_title}"</h3>
                             <div className="text-sm text-gray-600 leading-relaxed whitespace-pre-line">
@@ -83,7 +86,7 @@ export default function ReportDetailModal({ report, onClose }: Props) {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         {/* 3. 키워드 클라우드 */}
                         <div>
-                            <h3 className="text-sm font-bold text-gray-500 mb-3">💭 오늘의 꽂힌 단어</h3>
+                            <h3 className="text-sm font-bold text-gray-500 mb-3">{t('report.detail.todaysKeywords')}</h3>
                             <div className="flex flex-wrap gap-2">
                                 {(report.keywords || []).map((kw, i) => (
                                     <span key={i} className="px-3 py-1 bg-white border rounded-full text-sm text-gray-600 font-medium shadow-sm">
@@ -95,7 +98,7 @@ export default function ReportDetailModal({ report, onClose }: Props) {
 
                         {/* 4. 과목별 배지 */}
                         <div>
-                            <h3 className="text-sm font-bold text-gray-500 mb-3">📚 과목별 상태</h3>
+                            <h3 className="text-sm font-bold text-gray-500 mb-3">{t('report.detail.subjectStatus')}</h3>
                             <div className="space-y-2">
                                 {report.subjects.map((sub, i) => (
                                     <div key={i} className="flex justify-between items-center p-3 bg-white border rounded-xl">
@@ -114,7 +117,7 @@ export default function ReportDetailModal({ report, onClose }: Props) {
 
                 {/* 하단 닫기 (모바일용) */}
                 <div className="p-4 bg-gray-50 border-t md:hidden">
-                    <button onClick={onClose} className="w-full py-3 bg-blue-600 text-white font-bold rounded-xl">닫기</button>
+                    <button onClick={onClose} className="w-full py-3 bg-blue-600 text-white font-bold rounded-xl">{t('report.detail.close')}</button>
                 </div>
             </div>
         </div>

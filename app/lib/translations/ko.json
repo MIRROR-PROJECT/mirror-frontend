@@ -1,0 +1,273 @@
+{
+    "common": {
+        "login": "로그인",
+        "logout": "로그아웃",
+        "welcome": "환영합니다",
+        "cancel": "취소",
+        "confirm": "확인",
+        "save": "저장",
+        "delete": "삭제",
+        "edit": "수정",
+        "add": "추가",
+        "search": "검색",
+        "filter": "필터",
+        "loading": "로딩 중...",
+        "error": "오류가 발생했습니다",
+        "success": "성공했습니다",
+        "close": "닫기",
+        "next": "다음",
+        "previous": "이전",
+        "submit": "제출",
+        "student": "학생"
+    },
+    "nav": {
+        "dashboard": "대시보드",
+        "studyRoom": "학습실",
+        "aiTutor": "AI 튜터",
+        "report": "리포트",
+        "students": "수강생 관리",
+        "schedule": "시간표",
+        "profile": "프로필",
+        "studentMode": "Student Mode",
+        "teacherMode": "Instructor Mode",
+        "parentMode": "Parent Mode",
+        "workspace": "워크스페이스",
+        "materials": "수업 자료실",
+        "myStudyRoom": "나의 학습방",
+        "childStatus": "자녀 현황",
+        "childReport": "학습 리포트",
+        "logoutConfirm": "정말 로그아웃하시겠습니까?"
+    },
+    "student": {
+        "dashboard": {
+            "title": "반가워요, {{name}}님!",
+            "subtitle": "오늘의 미션을 클리어해보세요!",
+            "streak": "{{days}}일 연속",
+            "editSchedule": "시간표 수정하기",
+            "todayMission": "오늘의 학습 시간표",
+            "achievement": "달성률",
+            "aiCoaching": "Mirror AI 코칭",
+            "subjectMissions": "과목별 미션 현황",
+            "completedTasks": "{{completed}}/{{total}} 과제 완료",
+            "studyTime": "학습 시간",
+            "passionTemp": "열정 온도"
+        }
+    },
+    "teacher": {
+        "dashboard": {
+            "title": "선생님 워크스페이스",
+            "dailyBriefing": "데일리 학습 브리핑",
+            "classMood": "학급 분위기 분석",
+            "weakness": "취약점 발견",
+            "aiRecommendation": "AI 추천 액션",
+            "aiClinic": "AI 오답 클리닉",
+            "careList": "케어 필요 학생",
+            "createClass": "새 반 만들기",
+            "addClass": "반 추가",
+            "addStudent": "학생 추가",
+            "studentCount": "{{count}}명",
+            "avgProgress": "평균 진도율"
+        }
+    },
+    "onboarding": {
+        "role": {
+            "title": "Mirror AI에 오신 것을 환영합니다",
+            "subtitle": "당신은 누구신가요?",
+            "student": "학생",
+            "studentDesc": "AI 맞춤 학습으로 성적 향상",
+            "teacher": "강사",
+            "teacherDesc": "데이터 기반 학생 관리",
+            "parent": "학부모",
+            "parentDesc": "자녀 학습 현황 실시간 확인"
+        },
+        "info": {
+            "title": "정보를 입력해주세요",
+            "name": "이름",
+            "email": "이메일",
+            "phone": "전화번호",
+            "grade": "학년",
+            "academy": "학원 이름",
+            "submit": "시작하기"
+        }
+    },
+    "payment": {
+        "title": "결제",
+        "plan": "요금제 선택",
+        "monthly": "월간 구독",
+        "amount": "{{amount}}원",
+        "payNow": "결제하기",
+        "demoMode": "데모로 진행",
+        "success": "결제가 완료되었습니다",
+        "failed": "결제에 실패했습니다",
+        "successTitle": "결제 성공",
+        "successMessage": "결제가 성공적으로 완료되었습니다!",
+        "failedTitle": "결제 실패",
+        "failedMessage": "결제 처리 중 문제가 발생했습니다.",
+        "goToDashboard": "대시보드로 이동",
+        "retry": "다시 시도",
+        "processing": "결제 승인 중입니다...",
+        "pleaseWait": "잠시만 기다려주세요.",
+        "code": "코드"
+    },
+    "landing": {
+        "hero": "AI 기반 맞춤형 학습 플랫폼",
+        "subtitle": "당신만을 위한 학습 경험을 제공합니다",
+        "getStarted": "시작하기",
+        "learnMore": "자세히 보기"
+    },
+    "landing": {
+        "cases": "📉 2개월 만에 4등급 → 1등급 사례 1,240건 돌파",
+        "hero1": "옆집 철수가",
+        "hero2": "머리가 좋은 게 아닙니다.",
+        "hero3": "자기 '유형'을 알고",
+        "hero4": "덤볐을 뿐입니다.",
+        "subtitle1": "무작정 문제만 풀던 시간을 30% 줄이고,",
+        "subtitle2": "점수는 20점 올리는 Mirroring & Morphing 기술.",
+        "startButton": "🚀 무료로 내 '승리 패턴' 진단받기",
+        "warning": "⚠️ 현재 접속자가 많아 리포트 생성이 1분 정도 지연될 수 있습니다.",
+        "liveUsers": "Live: 15,400명 공부 중",
+        "todayPattern": "오늘의 승리 패턴",
+        "achievement": "92% 달성",
+        "task1": "수학 I : 지수함수 필수 예제 (20분)",
+        "task2": "영어 : 빈칸 추론 오답 분석 (15분)",
+        "task3": "휴식 : 뇌과학적 휴식 (10분)",
+        "gradeImprovement": "성적 향상률",
+        "topPercentile": "상위 12% 진입 🚀"
+    },
+    "login": {
+        "title": "로그인",
+        "subtitle": "Mirror에 다시 오신 것을 환영합니다",
+        "email": "이메일",
+        "password": "비밀번호",
+        "loginButton": "로그인",
+        "noAccount": "계정이 없으신가요?",
+        "signUp": "회원가입"
+    },
+    "report": {
+        "title": "학습 리포트",
+        "subtitle": "나의 공부 진척도와 AI 튜터의 피드백을 모아보세요",
+        "recentReports": "최근 리포트",
+        "days7": "7일",
+        "days30": "30일",
+        "all": "전체",
+        "totalStudyDays": "총 학습 일수",
+        "avgStudyTime": "평균 학습 시간",
+        "avgAchievement": "평균 성취도",
+        "totalCompleted": "완료한 과제",
+        "noReports": "아직 생성된 리포트가 없습니다",
+        "noReportsDesc": "학습을 시작하면 매일 자동으로 리포트가 생성됩니다!",
+        "aiComment": "AI 튜터의 코멘트",
+        "studyTime": "학습 시간",
+        "achievement": "성취도",
+        "questions": "질문 횟수",
+        "card": {
+            "achievementLabel": "성취도",
+            "tasksCompleted": "과제 완료",
+            "immersive": "몰입",
+            "aiTutorComment": "AI 튜터의 코멘트"
+        },
+        "stats": {
+            "thisMonthConsistent": "이번 달 꾸준히 했어요!",
+            "increasedFromLastWeek": "지난주보다 30분 늘었어요",
+            "topPace": "상위 15% 페이스예요",
+            "veryHardWorking": "정말 열심히 했어요!"
+        },
+        "detail": {
+            "reportDate": "리포트",
+            "myStudyDay": "나의 학습 하루",
+            "immersiveSubject": "몰입 과목",
+            "achievementLabel": "달성",
+            "passionTemp": "열정 온도",
+            "questionsLabel": "질문",
+            "aiFeedback": "AI 튜터의 피드백",
+            "todaysKeywords": "💭 오늘의 꽂힌 단어",
+            "subjectStatus": "📚 과목별 상태",
+            "close": "닫기"
+        }
+    },
+    "parent": {
+        "report": {
+            "title": "자녀 학습 리포트",
+            "subtitle": "자녀의 학습 현황과 AI 튜터의 피드백을 확인하세요.",
+            "currentChild": "현재 보고 있는 자녀",
+            "childStatus": "{{name}}의 학습 현황",
+            "recentReports": "최근 리포트",
+            "selectChild": "자녀 선택",
+            "filter7days": "최근 7일",
+            "filter30days": "최근 30일",
+            "filterAll": "전체"
+        }
+    },
+    "studyRoom": {
+        "title": "나의 학습방",
+        "subtitle": "매일 조금씩, 꾸준히 성장하는 나를 만나보세요.",
+        "scheduleSettings": "시간표 설정",
+        "mockExamSchedule": "모의고사 & 수능 일정",
+        "noUpcomingExams": "예정된 주요 시험이 없습니다.",
+        "weeklySummary": "주간 학습 요약",
+        "weeklyProgress": "지난주보다 {{percent}}% 더 달성했어요! 🔥",
+        "weeklyPlan": "Weekly Plan",
+        "noMissions": "미션 없음",
+        "noSchedule": "일정 없음",
+        "scheduleModal": {
+            "title": "시간표 설정",
+            "desc": "시간표 설정 기능은 별도 컴포넌트로 관리됩니다.",
+            "close": "닫기"
+        }
+    },
+    "dashboard": {
+        "welcome": "반가워요, {{name}}님! 👋",
+        "welcomeSubtitle": "오늘의 미션을 클리어해보세요!",
+        "streakDays": "{{days}}일 연속",
+        "editSchedule": "시간표 수정하기",
+        "timeTable": "Time Table",
+        "todaySchedule": "오늘의 학습 시간표",
+        "achievementRate": "달성률",
+        "completed": "완료됨",
+        "doMission": "미션 수행하기",
+        "unavailableTime": "공부 불가능 시간 ({{hours}}시간)",
+        "minutes": "분",
+        "noSchedule": "오늘의 시간표가 없습니다.",
+        "aiCoaching": "Mirror AI 코칭",
+        "aiAdvice": "조언 듣기",
+        "reportPreview": "학습 리포트 미리보기",
+        "reportPreviewDesc": "새로운 스타일 확인하기",
+        "subjectMissions": "과목별 미션 현황",
+        "loadingStats": "학습 통계 로딩 중...",
+        "aiCoachingTitle": "Mirror AI 코칭",
+        "aiCoachingMessage": "{{name}}님, {{name}}님 어제 수학 미션을 놓치셨네요. 오늘은 꼭 챙겨볼까요?",
+        "aiCoachingButton": "조언 듣기"
+    },
+    "chat": {
+        "title": "AI 튜터",
+        "welcome": "안녕하세요, {{name}}님! Mirror AI 튜터입니다. 🤖\n\n오늘 공부하시면서 막히는 부분이 있으셨나요? 문제 사진을 올려주시거나 개념을 물어봐 주세요!",
+        "askQuestion": "질문하기",
+        "uploadImage": "이미지 업로드",
+        "available": "언제든 질문 가능",
+        "today": "오늘",
+        "suggestions": "추천 질문",
+        "placeholder": "궁금한 내용을 입력하세요...",
+        "disclaimer": "AI는 실수할 수 있습니다. 중요한 정보는 확인이 필요합니다."
+    },
+    "teacher": {
+        "schedule": {
+            "edit": "시간표 편집",
+            "selectTime": "시간 선택",
+            "save": "저장하기",
+            "cancel": "취소",
+            "editSchedule": "시간표 편집",
+            "selectDay": "요일 선택",
+            "addTimeSlot": "공부 시간 추가하기"
+        },
+        "diagnosis": {
+            "title": "학습 진단",
+            "analyzing": "분석 중...",
+            "result": "진단 결과",
+            "continue": "계속하기",
+            "levelTest": "레벨 테스트",
+            "startDiagnosis": "진단 시작하기",
+            "analysisComplete": "분석 완료",
+            "recommendations": "추천 사항"
+        }
+    }
+}

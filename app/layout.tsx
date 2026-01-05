@@ -4,6 +4,7 @@ import { usePathname } from "next/navigation";
 import "./globals.css";
 import Navbar from "./components/Sidebar";
 import { StudyProvider } from "./context/StudyContext";
+import { LanguageProvider } from "./context/LanguageContext";
 
 export default function RootLayout({
   children,
@@ -28,19 +29,21 @@ export default function RootLayout({
 
   return (
     <html lang="ko">
-      <body>
-        <StudyProvider>
-          <div className="flex min-h-screen bg-gray-50">
+      <body className="min-h-screen bg-gray-50">
+        <LanguageProvider>
+          <StudyProvider>
+            <div className="flex min-h-screen">
 
-            {/* 조건에 맞지 않을 때만 사이드바 표시 */}
-            {!hideNavbar && <Navbar />}
+              {/* 조건에 맞지 않을 때만 사이드바 표시 */}
+              {!hideNavbar && <Navbar />}
 
-            <main className="flex-1 w-full">
-              {children}
-            </main>
+              <main className="flex-1">
+                {children}
+              </main>
 
-          </div>
-        </StudyProvider>
+            </div>
+          </StudyProvider>
+        </LanguageProvider>
       </body>
     </html>
   );

@@ -7,23 +7,31 @@ import ReportStatsSection from "@/app/components/report/ReportStatsSection";
 import ReportDetailModal from "@/app/components/report/ReportDetailModal";
 import { DailyReport } from "@/app/components/report/types";
 import { generateMockReports, calculateMockStats } from "@/app/lib/mockReportData";
+import { useLanguage } from "@/app/context/LanguageContext";
 
 // Mock 자녀 데이터
-const MOCK_CHILDREN = [
+interface Child {
+    id: string;
+    name: string;
+}
+
+const MOCK_CHILDREN: Child[] = [
     { id: "child-1", name: "김민준" },
     { id: "child-2", name: "김서연" },
 ];
 
 export default function ParentReportPage() {
-    const [selectedChild, setSelectedChild] = useState(MOCK_CHILDREN[0].id);
+    const { t, language } = useLanguage();
+    const [selectedChild, setSelectedChild] = useState<Child>(MOCK_CHILDREN[0]);
     const [selectedReport, setSelectedReport] = useState<DailyReport | null>(null);
     const [dateFilter, setDateFilter] = useState<"7days" | "30days" | "all">("30days");
 
     // 선택된 자녀 정보
-    const currentChild = MOCK_CHILDREN.find(c => c.id === selectedChild);
+    // selectedChild is already the object, so currentChild is just selectedChild
+    const currentChild = selectedChild;
 
-    // Mock 데이터 생성 (자녀별로 다른 데이터)
-    const allReports = useMemo(() => generateMockReports(30), [selectedChild]);
+    // 선택된 자녀의 전체 리포트 생성 (Mock)
+    const allReports = useMemo(() => generateMockReports(30, language as 'ko' | 'en'), [selectedChild, language]);
 
     // 날짜 필터 적용
     const filteredReports = useMemo(() => {
@@ -43,10 +51,10 @@ export default function ParentReportPage() {
                 <div>
                     <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
                         <BarChart2 className="w-7 h-7 text-blue-600" />
-                        자녀 학습 리포트
+                        {t('parent.report.title')}
                     </h1>
                     <p className="text-gray-500 mt-2">
-                        자녀의 학습 현황과 AI 튜터의 피드백을 확인하세요.
+                        {t('parent.report.subtitle')}
                     </p>
                 </div>
 
@@ -69,8 +77,8 @@ export default function ParentReportPage() {
 
             {/* 2. 자녀 이름 표시 */}
             <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-2xl p-6 border border-blue-100">
-                <p className="text-sm text-gray-600 mb-1">현재 보고 있는 자녀</p>
-                <h2 className="text-2xl font-bold text-gray-900">{currentChild?.name}의 학습 현황</h2>
+                <p className="text-sm text-gray-600 mb-1">{t('parent.report.currentChild')}</p>
+                <h2 className="text-2xl font-bold text-gray-900">{t('parent.report.childStatus', { name: currentChild?.name || '' })}</h2>
             </div>
 
             {/* 3. 상단 요약 스탯 */}
@@ -78,34 +86,34 @@ export default function ParentReportPage() {
 
             {/* 4. 날짜 필터 */}
             <div className="flex items-center justify-between">
-                <h2 className="text-lg font-bold text-gray-800">최근 리포트</h2>
+                <h2 className="text-lg font-bold text-gray-800">{t('parent.report.recentReports')}</h2>
                 <div className="flex gap-2">
                     <button
                         onClick={() => setDateFilter("7days")}
                         className={`px-4 py-2 rounded-xl text-sm font-medium transition-colors ${dateFilter === "7days"
-                                ? "bg-blue-600 text-white"
-                                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                            ? "bg-blue-600 text-white"
+                            : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                             }`}
                     >
-                        최근 7일
+                        {t('parent.report.filter7days')}
                     </button>
                     <button
                         onClick={() => setDateFilter("30days")}
                         className={`px-4 py-2 rounded-xl text-sm font-medium transition-colors ${dateFilter === "30days"
-                                ? "bg-blue-600 text-white"
-                                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                            ? "bg-blue-600 text-white"
+                            : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                             }`}
                     >
-                        최근 30일
+                        {t('parent.report.filter30days')}
                     </button>
                     <button
                         onClick={() => setDateFilter("all")}
                         className={`px-4 py-2 rounded-xl text-sm font-medium transition-colors ${dateFilter === "all"
-                                ? "bg-blue-600 text-white"
-                                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                            ? "bg-blue-600 text-white"
+                            : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                             }`}
                     >
-                        전체
+                        {t('parent.report.filterAll')}
                     </button>
                 </div>
             </div>

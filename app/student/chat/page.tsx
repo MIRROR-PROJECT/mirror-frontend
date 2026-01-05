@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { useStudy } from "../../context/StudyContext"; // 경로 맞춰주세요 (../context/StudyContext 등)
+import { useStudy } from "../../context/StudyContext";
 import { supabase } from "@/app/lib/supabase";
+import { useLanguage } from "@/app/context/LanguageContext";
 import {
   Send,
   Bot,
@@ -61,6 +62,7 @@ type Message = {
 
 export default function ChatPage() {
   const { userInfo } = useStudy();
+  const { t, language } = useLanguage();
   const [input, setInput] = useState("");
   const [isAiTyping, setIsAiTyping] = useState(false);
 
@@ -72,8 +74,8 @@ export default function ChatPage() {
     {
       id: "welcome-msg",
       role: "ai",
-      text: `안녕하세요, ${userInfo.name || '학생'}님! Mirror AI 튜터입니다. 🤖\n\n오늘 공부하시면서 막히는 부분이 있으셨나요? 문제 사진을 올려주시거나 개념을 물어봐 주세요!`,
-      timestamp: "오전 10:00",
+      text: t('chat.welcome', { name: userInfo.name || t('common.student') }),
+      timestamp: language === 'ko' ? '오전 10:00' : '10:00 AM',
     },
   ]);
 
@@ -201,10 +203,15 @@ export default function ChatPage() {
             <Bot className="w-6 h-6" />
           </div>
           <div>
-            <h1 className="font-bold text-gray-900 text-lg">Mirror AI 튜터</h1>
+            <h1 className="font-bold text-gray-900 text-lg">Mirror AI {t('chat.title')}</h1>
             <div className="flex items-center gap-1.5">
               <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-              <span className="text-xs text-gray-500 font-medium">언제든 질문 가능</span>
+              <span className="text-xs text-gray-500 font-medium">{t('chat.available')}</span>
+              {language === 'en' && (
+                <span className="ml-2 text-[10px] bg-yellow-50 text-yellow-700 px-2 py-0.5 rounded-full border border-yellow-200">
+                  Korean only
+                </span>
+              )}
             </div>
           </div>
         </div>
@@ -218,7 +225,7 @@ export default function ChatPage() {
 
         {/* 날짜 구분선 예시 */}
         <div className="flex justify-center my-4">
-          <span className="bg-gray-200 text-gray-500 text-xs px-3 py-1 rounded-full">오늘</span>
+          <span className="bg-gray-200 text-gray-500 text-xs px-3 py-1 rounded-full">{t('chat.today')}</span>
         </div>
 
         {messages.map((msg) => {
@@ -278,7 +285,7 @@ export default function ChatPage() {
           {/* 추천 질문 칩 (가로 스크롤) */}
           <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
             <div className="flex items-center gap-1 px-3 py-1.5 bg-blue-50 text-blue-600 text-xs font-bold rounded-full shrink-0 border border-blue-100">
-              <Sparkles className="w-3 h-3" /> 추천 질문
+              <Sparkles className="w-3 h-3" /> {t('chat.suggestions')}
             </div>
             {SUGGESTED_PROMPTS.map((prompt, idx) => (
               <button
@@ -302,7 +309,7 @@ export default function ChatPage() {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="궁금한 내용을 입력하세요..."
+              placeholder={t('chat.placeholder')}
               className="flex-1 bg-transparent border-none focus:ring-0 py-2.5 text-gray-800 placeholder-gray-400 text-sm"
               autoComplete="off"
             />
@@ -322,7 +329,7 @@ export default function ChatPage() {
           <div className="text-center">
             <p className="text-[10px] text-gray-400 flex items-center justify-center gap-1">
               <AlertCircle className="w-3 h-3" />
-              AI는 실수할 수 있습니다. 중요한 정보는 확인이 필요합니다.
+              {t('chat.disclaimer')}
             </p>
           </div>
         </div>

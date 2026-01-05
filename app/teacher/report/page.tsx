@@ -6,6 +6,7 @@ import StudentReportCard from "@/app/components/report/StudentReportCard";
 import ReportDetailModal from "@/app/components/report/ReportDetailModal";
 import { DailyReport } from "@/app/components/report/types";
 import { generateMockReports } from "@/app/lib/mockReportData";
+import { useLanguage } from "@/app/context/LanguageContext";
 
 // Mock 반 데이터
 const MOCK_CLASSES = [
@@ -22,6 +23,7 @@ const STUDENT_NAMES = [
 ];
 
 export default function TeacherReportPage() {
+    const { t, language } = useLanguage();
     const [selectedClass, setSelectedClass] = useState(MOCK_CLASSES[0].id);
     const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
     const [selectedReport, setSelectedReport] = useState<DailyReport | null>(null);
@@ -33,7 +35,7 @@ export default function TeacherReportPage() {
     // Mock 학생별 리포트 생성
     const studentReports = useMemo(() => {
         return STUDENT_NAMES.map((name, idx) => {
-            const reports = generateMockReports(1);
+            const reports = generateMockReports(1, language as 'ko' | 'en');
             return {
                 ...reports[0],
                 id: `student-${idx}`,
@@ -41,7 +43,7 @@ export default function TeacherReportPage() {
                 user_name: name,
             };
         });
-    }, [selectedClass, selectedDate]);
+    }, [selectedClass, selectedDate, language]);
 
     // 정렬 적용
     const sortedReports = useMemo(() => {

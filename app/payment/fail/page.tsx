@@ -3,10 +3,12 @@
 import { Suspense } from 'react';
 import { useSearchParams, useRouter } from "next/navigation";
 import { AlertCircle, RotateCcw } from "lucide-react";
+import { useLanguage } from "@/app/context/LanguageContext";
 
 function FailContent() {
     const searchParams = useSearchParams();
     const router = useRouter();
+    const { t } = useLanguage();
 
     const message = searchParams.get("message") || searchParams.get("failReason") || "알 수 없는 오류";
     const code = searchParams.get("code");
@@ -18,17 +20,17 @@ function FailContent() {
                     <AlertCircle className="w-8 h-8 text-red-500" />
                 </div>
 
-                <h1 className="text-2xl font-bold text-gray-900 mb-2">결제가 실패했습니다</h1>
+                <h1 className="text-2xl font-bold text-gray-900 mb-2">{t('payment.failedTitle')}</h1>
                 <p className="text-gray-500 mb-6 word-break-keep">
                     {message}
-                    {code && <span className="block text-xs mt-1 text-gray-400">코드: {code}</span>}
+                    {code && <span className="block text-xs mt-1 text-gray-400">{t('payment.code')}: {code}</span>}
                 </p>
 
                 <button
                     onClick={() => router.push("/payment")}
                     className="w-full bg-gray-900 text-white py-3 rounded-xl font-bold hover:bg-black transition-colors flex items-center justify-center gap-2"
                 >
-                    <RotateCcw className="w-4 h-4" /> 다시 시도하기
+                    <RotateCcw className="w-4 h-4" /> {t('payment.retry')}
                 </button>
             </div>
         </div>

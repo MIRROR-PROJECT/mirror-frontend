@@ -2,12 +2,14 @@
 
 import { ReportStats } from "./types";
 import { Calendar, Clock, TrendingUp, CheckCircle2 } from "lucide-react";
+import { useLanguage } from "@/app/context/LanguageContext";
 
 interface ReportStatsProps {
     stats: ReportStats;
 }
 
 export default function ReportStatsSection({ stats }: ReportStatsProps) {
+    const { t } = useLanguage();
     const avgHours = Math.floor(stats.average_study_time_minutes / 60);
     const avgMinutes = stats.average_study_time_minutes % 60;
 
@@ -15,30 +17,30 @@ export default function ReportStatsSection({ stats }: ReportStatsProps) {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <StatCard
                 icon={Calendar}
-                label="총 학습 일수"
-                value={`${stats.total_study_days}일`}
-                desc="이번 달 꾸준히 했어요!"
+                label={t('report.totalStudyDays')}
+                value={`${stats.total_study_days}${t('common.loading').includes('...') ? '일' : ' days'}`}
+                desc={t('report.stats.thisMonthConsistent')}
                 color="bg-blue-50 text-blue-600"
             />
             <StatCard
                 icon={Clock}
-                label="평균 학습 시간"
+                label={t('report.avgStudyTime')}
                 value={`${avgHours}h ${avgMinutes}m`}
-                desc="지난주보다 30분 늘었어요"
+                desc={t('report.stats.increasedFromLastWeek')}
                 color="bg-purple-50 text-purple-600"
             />
             <StatCard
                 icon={TrendingUp}
-                label="평균 성취도"
+                label={t('report.avgAchievement')}
                 value={`${stats.average_achievement_rate}%`}
-                desc="상위 15% 페이스예요"
+                desc={t('report.stats.topPace')}
                 color="bg-green-50 text-green-600"
             />
             <StatCard
                 icon={CheckCircle2}
-                label="완료한 과제"
-                value={`${stats.total_completed_tasks}개`}
-                desc="정말 열심히 했어요!"
+                label={t('report.totalCompleted')}
+                value={`${stats.total_completed_tasks}${t('common.loading').includes('...') ? '개' : ''}`}
+                desc={t('report.stats.veryHardWorking')}
                 color="bg-orange-50 text-orange-600"
             />
         </div>

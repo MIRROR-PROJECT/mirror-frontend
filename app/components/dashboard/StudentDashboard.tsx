@@ -12,6 +12,7 @@ import Link from "next/link";
 import { supabase } from "@/app/lib/supabase";
 import ReportDetailModal from "../report/ReportDetailModal";
 import { DailyReport } from "../report/types";
+import { useLanguage } from "@/app/context/LanguageContext";
 
 // --- 타입 정의 ---
 interface UserProps {
@@ -90,6 +91,7 @@ const SUBJECT_COLORS: Record<string, string> = {
 
 export default function StudentDashboard({ user }: { user: UserProps }) {
   const { schedule, tasks } = useStudy();
+  const { t, language } = useLanguage();
 
   const [mounted, setMounted] = useState(false);
   const [timeline, setTimeline] = useState<TimeSlot[]>([]);
@@ -365,6 +367,10 @@ export default function StudentDashboard({ user }: { user: UserProps }) {
         } else {
           console.log("✅ [Sync] 서버와 상태 동기화 완료.");
         }
+
+        // 과목별 미션 현황 업데이트
+        console.log("🔄 [Refresh] 학습 통계 재조회 중...");
+        fetchLearningStats();
       }
 
     } catch (error) {
@@ -391,18 +397,18 @@ export default function StudentDashboard({ user }: { user: UserProps }) {
         <header className="flex flex-col md:flex-row md:justify-between md:items-end mb-8 gap-4">
           <div>
             <h1 className="text-2xl font-bold text-gray-900 mb-1">
-              반가워요, {user?.name || '학생'}님! 👋
+              {t('dashboard.welcome', { name: user?.name || '학생' })}
             </h1>
-            <p className="text-gray-500 text-sm">오늘의 미션을 클리어해보세요!</p>
+            <p className="text-gray-500 text-sm">{t('dashboard.welcomeSubtitle')}</p>
           </div>
           <div className="flex gap-3">
             <div className="bg-white px-4 py-2 rounded-xl border border-gray-200 shadow-sm flex items-center gap-2">
               <Flame className="w-5 h-5 text-orange-500 fill-orange-500" />
-              <span className="font-bold text-gray-700">{dashboardSummary?.streak_days || user?.streak || 1}일 연속</span>
+              <span className="font-bold text-gray-700">{t('dashboard.streakDays', { days: dashboardSummary?.streak_days || user?.streak || 1 })}</span>
             </div>
             <Link href="/student/schedule/edit" className="bg-white px-4 py-2 rounded-xl border border-gray-200 shadow-sm flex items-center gap-2 hover:bg-gray-50 transition-colors text-gray-700">
               <Edit3 className="w-4 h-4" />
-              <span className="font-bold text-xs">시간표 수정하기</span>
+              <span className="font-bold text-xs">{t('dashboard.editSchedule')}</span>
             </Link>
           </div>
         </header>
@@ -415,18 +421,18 @@ export default function StudentDashboard({ user }: { user: UserProps }) {
               <div className="flex justify-between items-end mb-6">
                 <div>
                   <div className="flex items-center gap-2 mb-1">
-                    <span className="bg-blue-100 px-2 py-1 rounded text-xs font-bold text-blue-600">Time Table</span>
+                    <span className="bg-blue-100 px-2 py-1 rounded text-xs font-bold text-blue-600">{t('dashboard.timeTable')}</span>
                     {missionDate && (
                       <span className="text-xs text-gray-400 font-medium">
-                        📅 {new Date(missionDate).toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' })}
+                        📅 {new Date(missionDate).toLocaleDateString(language === 'ko' ? 'ko-KR' : 'en-US', { month: 'long', day: 'numeric' })}
                       </span>
                     )}
                   </div>
-                  <h2 className="text-2xl font-bold text-gray-800">오늘의 학습 시간표</h2>
+                  <h2 className="text-2xl font-bold text-gray-800">{t('dashboard.todaySchedule')}</h2>
                 </div>
                 <div className="flex items-center gap-3">
                   <div className="text-right hidden sm:block">
-                    <span className="block text-xs text-gray-400 font-medium">달성률</span>
+                    <span className="block text-xs text-gray-400 font-medium">{t('dashboard.achievementRate')}</span>
                     <span className="block text-xl font-bold text-blue-600">{calcProgress}%</span>
                   </div>
                   <div className="w-12 h-12 rounded-full border-4 border-gray-100 flex items-center justify-center relative">
@@ -490,11 +496,11 @@ export default function StudentDashboard({ user }: { user: UserProps }) {
 
                             {isMission ? (
                               <span className={`text-xs mt-0.5 ${isCompleted ? 'text-blue-100' : 'text-gray-400'}`}>
-                                {isCompleted ? '완료됨' : '미션 수행하기'}
+                                {isCompleted ? t('dashboard.completed') : t('dashboard.doMission')}
                               </span>
                             ) : (
                               <span className="text-xs mt-0.5 text-gray-400">
-                                공부 불가능 시간 ({slot.duration}시간)
+                                {t('dashboard.unavailableTime', { hours: slot.duration })}
                               </span>
                             )}
                           </div>
@@ -513,7 +519,7 @@ export default function StudentDashboard({ user }: { user: UserProps }) {
 
                 {timeline.length === 0 && (
                   <div className="text-center py-20 bg-gray-50 rounded-2xl border border-dashed border-gray-200">
-                    <p className="text-gray-400 mb-2">오늘의 시간표가 없습니다.</p>
+                    <p className="text-gray-400 mb-2">{t('dashboard.noSchedule')}</p>
                   </div>
                 )}
               </div>
@@ -522,37 +528,19 @@ export default function StudentDashboard({ user }: { user: UserProps }) {
 
           {/* Right Column (Side Panel) */}
           <div className="space-y-6">
-            {/* [NEW] 리포트 미리보기 버튼 (테스트용) */}
-            <button
-              onClick={() => setShowMockReport(true)}
-              className="w-full bg-gradient-to-r from-primary to-[#8D6E63] text-white p-6 rounded-3xl shadow-2xl hover:shadow-xl transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]"
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="bg-white/20 p-3 rounded-xl">
-                    <FileText className="w-6 h-6 text-white" />
-                  </div>
-                  <div className="text-left">
-                    <div className="font-bold text-lg">학습 리포트 미리보기</div>
-                    <div className="text-xs text-white/80 mt-1">새로운 스타일 확인하기</div>
-                  </div>
-                </div>
-                <ChevronRight className="w-6 h-6" />
-              </div>
-            </button>
 
             <div className="bg-white p-6 rounded-3xl border border-gray-200 shadow-sm relative overflow-hidden group hover:border-blue-300 transition-colors">
               <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
                 <BrainCircuit className="w-20 h-20 text-blue-600" />
               </div>
               <h3 className="font-bold text-gray-800 mb-4 flex items-center gap-2 relative z-10">
-                <Target className="w-5 h-5 text-blue-600" /> Mirror AI 코칭
+                <Target className="w-5 h-5 text-blue-600" /> {t('dashboard.aiCoachingTitle')}
               </h3>
               <div className="bg-blue-50 p-4 rounded-xl text-sm text-gray-700 leading-relaxed mb-4 relative z-10">
-                "{user?.name || '학생'}님, {dashboardSummary?.student_name ? `${dashboardSummary.student_name}님` : ''} 어제 <span className="font-bold text-blue-600">수학</span> 미션을 놓치셨네요. 오늘은 꼭 챙겨볼까요?"
+                "{t('dashboard.aiCoachingMessage', { name: user?.name || t('common.student') })}"
               </div>
               <Link href="/student/chat" className="text-xs text-blue-500 hover:underline flex items-center gap-1 relative z-10 font-bold">
-                조언 듣기 <ChevronRight className="w-3 h-3" />
+                {t('dashboard.aiCoachingButton')} <ChevronRight className="w-3 h-3" />
               </Link>
             </div>
 
@@ -583,7 +571,7 @@ export default function StudentDashboard({ user }: { user: UserProps }) {
                   ))
                 ) : (
                   <div className="text-center py-8 text-gray-400 text-sm">
-                    학습 통계를 불러오는 중...
+                    {t('dashboard.loadingStats')}
                   </div>
                 )}
               </div>

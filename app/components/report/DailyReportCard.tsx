@@ -2,6 +2,8 @@
 
 import { DailyReport } from "./types";
 import { Clock, CheckCircle2, Brain, ChevronRight } from "lucide-react";
+import { useLanguage } from "@/app/context/LanguageContext";
+import { translateApiText } from "@/app/lib/translationMappings";
 
 interface DailyReportCardProps {
     report: DailyReport;
@@ -14,9 +16,10 @@ export default function DailyReportCard({
     onClick,
     showUserName = false
 }: DailyReportCardProps) {
+    const { t, language } = useLanguage();
     const studyTimeHours = Math.floor(report.total_study_time_minutes / 60);
     const studyTimeMinutes = report.total_study_time_minutes % 60;
-    const studyTimeText = `${studyTimeHours}시간 ${studyTimeMinutes}분`;
+    const studyTimeText = language === 'ko' ? `${studyTimeHours}시간 ${studyTimeMinutes}분` : `${studyTimeHours}h ${studyTimeMinutes}m`;
 
     return (
         <div
@@ -35,7 +38,7 @@ export default function DailyReportCard({
 
                 <div className="mt-4">
                     <div className="flex justify-between text-xs text-gray-500 mb-1">
-                        <span>성취도</span>
+                        <span>{t('report.card.achievementLabel')}</span>
                         <span className="font-bold text-blue-600">{report.achievement_rate}%</span>
                     </div>
                     <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
@@ -56,7 +59,7 @@ export default function DailyReportCard({
                         <div className="flex items-center gap-2 mb-2">
                             <CheckCircle2 className="w-4 h-4 text-blue-600" />
                             <span className="text-sm font-medium text-gray-600">
-                                {report.completed_tasks}/{report.total_tasks} 과제 완료
+                                {report.completed_tasks}/{report.total_tasks} {t('report.card.tasksCompleted')}
                             </span>
                         </div>
 
@@ -67,7 +70,7 @@ export default function DailyReportCard({
                                 </span>
                             ))}
                             <span className="px-2 py-0.5 bg-orange-50 text-orange-600 text-xs rounded-md font-medium flex items-center gap-1">
-                                <span className="text-[10px]">🔥</span> {report.most_immersive_subject} 몰입
+                                <span className="text-[10px]">🔥</span> {translateApiText(report.most_immersive_subject || '', language)} {t('report.card.immersive')}
                             </span>
                         </div>
                     </div>
@@ -83,7 +86,7 @@ export default function DailyReportCard({
                     </div>
                     <div className="flex-1 min-w-0">
                         <p className="text-[10px] font-bold text-blue-500 mb-0.5 flex items-center gap-1 uppercase tracking-wider">
-                            <Brain className="w-3 h-3" /> AI 튜터의 코멘트
+                            <Brain className="w-3 h-3" /> {t('report.card.aiTutorComment')}
                         </p>
                         <p className="text-sm font-bold text-gray-800 truncate">
                             {report.ai_summary_title}

@@ -1,0 +1,272 @@
+{
+    "common": {
+        "login": "Login",
+        "logout": "Logout",
+        "welcome": "Welcome",
+        "cancel": "Cancel",
+        "confirm": "Confirm",
+        "save": "Save",
+        "delete": "Delete",
+        "edit": "Edit",
+        "add": "Add",
+        "search": "Search",
+        "filter": "Filter",
+        "loading": "Loading...",
+        "error": "An error occurred",
+        "success": "Success",
+        "close": "Close",
+        "next": "Next",
+        "previous": "Previous",
+        "submit": "Submit",
+        "student": "Student"
+    },
+    "nav": {
+        "dashboard": "Dashboard",
+        "studyRoom": "Study Room",
+        "aiTutor": "AI Tutor",
+        "report": "Report",
+        "students": "Students",
+        "schedule": "Schedule",
+        "profile": "Profile",
+        "studentMode": "Student Mode",
+        "teacherMode": "Instructor Mode",
+        "parentMode": "Parent Mode",
+        "workspace": "Workspace",
+        "materials": "Materials",
+        "myStudyRoom": "My Study Room",
+        "childStatus": "Child Status",
+        "childReport": "Learning Report",
+        "logoutConfirm": "Are you sure you want to log out?"
+    },
+    "student": {
+        "dashboard": {
+            "title": "Welcome, {{name}}!",
+            "subtitle": "Complete today's missions!",
+            "streak": "{{days}}-day streak",
+            "editSchedule": "Edit Schedule",
+            "todayMission": "Today's Study Schedule",
+            "achievement": "Achievement",
+            "aiCoaching": "Mirror AI Coaching",
+            "subjectMissions": "Subject Mission Status",
+            "completedTasks": "{{completed}}/{{total}} tasks completed",
+            "studyTime": "Study Time",
+            "passionTemp": "Passion Temperature",
+            "loadingStats": "Loading learning stats...",
+            "aiCoachingTitle": "Mirror AI Coaching",
+            "aiCoachingMessage": "{{name}}, you missed your Math mission yesterday. Let's make sure to complete it today!",
+            "aiCoachingButton": "Get Advice"
+        }
+    },
+    "teacher": {
+        "workspace": "Teacher Workspace",
+        "students": "Student Management",
+        "materials": "Teaching Materials",
+        "benefits": "Benefits",
+        "tutorial": "Tutorial",
+        "dashboard": {
+            "title": "Teacher Workspace",
+            "dailyBriefing": "Daily Learning Briefing",
+            "classMood": "Class Mood Analysis",
+            "weakness": "Weakness Detection",
+            "aiRecommendation": "AI Recommendations",
+            "aiClinic": "AI Error Clinic",
+            "careList": "Students Needing Attention",
+            "createClass": "Create New Class",
+            "addClass": "Add Class",
+            "addStudent": "Add Student",
+            "studentCount": "{{count}} students",
+            "avgProgress": "Avg Progress"
+        }
+    },
+    "onboarding": {
+        "role": {
+            "title": "Welcome to Mirror AI",
+            "subtitle": "Who are you?",
+            "student": "Student",
+            "studentDesc": "Improve grades with AI-personalized learning",
+            "teacher": "Teacher",
+            "teacherDesc": "Data-driven student management",
+            "parent": "Parent",
+            "parentDesc": "Real-time view of your child's learning"
+        },
+        "info": {
+            "title": "Please enter your information",
+            "name": "Name",
+            "email": "Email",
+            "phone": "Phone",
+            "grade": "Grade",
+            "academy": "Academy Name",
+            "submit": "Get Started"
+        }
+    },
+    "payment": {
+        "title": "Payment",
+        "plan": "Select Plan",
+        "monthly": "Monthly Subscription",
+        "amount": "₩{{amount}}",
+        "payNow": "Pay Now",
+        "demoMode": "Continue as Demo",
+        "success": "Payment completed successfully",
+        "failed": "Payment failed",
+        "successTitle": "Payment Successful",
+        "successMessage": "Your payment has been completed successfully!",
+        "failedTitle": "Payment Failed",
+        "failedMessage": "There was a problem processing your payment.",
+        "goToDashboard": "Go to Dashboard",
+        "retry": "Try Again",
+        "processing": "Processing payment...",
+        "pleaseWait": "Please wait a moment.",
+        "code": "Code"
+    },
+    "landing": {
+        "hero": "AI-Powered Personalized Learning Platform",
+        "subtitle": "Experience learning tailored just for you",
+        "getStarted": "Get Started",
+        "learnMore": "Learn More"
+    },
+    "landing": {
+        "cases": "📉 1,240 cases: Grade 4 → Grade 1 in 2 months",
+        "hero1": "Your neighbor isn't",
+        "hero2": "smarter than you.",
+        "hero3": "They just know their",
+        "hero4": "'winning pattern' and went for it.",
+        "subtitle1": "Reduce aimless study time by 30%,",
+        "subtitle2": "and boost your score by 20 points with Mirroring & Morphing technology.",
+        "startButton": "🚀 Get FREE 'Victory Pattern' Diagnosis",
+        "warning": "⚠️ High traffic may delay report generation by ~1 minute.",
+        "liveUsers": "Live: 15,400 studying now",
+        "todayPattern": "Today's Victory Pattern",
+        "achievement": "92% Complete",
+        "task1": "Math I: Exponential Functions (20min)",
+        "task2": "English: Inference Analysis (15min)",
+        "task3": "Break: Brain Science Rest (10min)",
+        "gradeImprovement": "Grade Improvement",
+        "topPercentile": "Top 12% Achieved 🚀"
+    },
+    "login": {
+        "title": "Login",
+        "subtitle": "Welcome back to Mirror",
+        "email": "Email",
+        "password": "Password",
+        "loginButton": "Log In",
+        "noAccount": "Don't have an account?",
+        "signUp": "Sign Up"
+    },
+    "report": {
+        "title": "Learning Report",
+        "subtitle": "View your study progress and AI tutor's feedback",
+        "studentSubtitle": "Track your progress and AI tutor feedback all in one place.",
+        "recentReports": "Recent Reports",
+        "days7": "7 Days",
+        "days30": "30 Days",
+        "all": "All",
+        "totalStudyDays": "Total Study Days",
+        "avgStudyTime": "Avg Study Time",
+        "avgAchievement": "Avg Achievement",
+        "totalCompleted": "Tasks Completed",
+        "noReports": "No reports yet.",
+        "noReportsHint": "Reports will be generated automatically as you study!",
+        "aiComment": "AI Tutor's Comment",
+        "studyTime": "Study Time",
+        "achievement": "Achievement",
+        "questions": "Questions Asked",
+        "card": {
+            "achievementLabel": "Achievement",
+            "tasksCompleted": "tasks completed",
+            "immersive": "immersive",
+            "aiTutorComment": "AI Tutor's Comment"
+        },
+        "stats": {
+            "thisMonthConsistent": "Great consistency this month!",
+            "increasedFromLastWeek": "30 min more than last week",
+            "topPace": "Top 15% pace!",
+            "veryHardWorking": "You worked very hard!"
+        },
+        "detail": {
+            "reportDate": "Report",
+            "myStudyDay": "My Study Day",
+            "immersiveSubject": "Most Immersive",
+            "achievementLabel": "Achievement",
+            "passionTemp": "Passion Temp",
+            "questionsLabel": "Questions",
+            "aiFeedback": "AI Tutor's Feedback",
+            "todaysKeywords": "💭 Today's Keywords",
+            "subjectStatus": "📚 Subject Status",
+            "close": "Close"
+        }
+    },
+    "parent": {
+        "report": {
+            "title": "Child Learning Report",
+            "subtitle": "Monitor your child's learning progress and AI tutor's feedback.",
+            "currentChild": "Currently Viewing",
+            "childStatus": "{{name}}'s Learning Status",
+            "recentReports": "Recent Reports",
+            "selectChild": "Select Child",
+            "filter7days": "Last 7 Days",
+            "filter30days": "Last 30 Days",
+            "filterAll": "All"
+        }
+    },
+    "studyRoom": {
+        "title": "My Study Room",
+        "subtitle": "Grow steadily, little by little, every day.",
+        "scheduleSettings": "Schedule Settings",
+        "mockExamSchedule": "Mock Exams & CSAT Schedule",
+        "noUpcomingExams": "No upcoming major exams.",
+        "weeklySummary": "Weekly Summary",
+        "weeklyProgress": "{{percent}}% more than last week! 🔥",
+        "weeklyPlan": "Weekly Plan",
+        "noMissions": "No missions",
+        "noSchedule": "No schedule",
+        "scheduleModal": {
+            "title": "Schedule Settings",
+            "desc": "Schedule settings are managed by a separate component.",
+            "close": "Close"
+        }
+    },
+    "dashboard": {
+        "welcome": "Welcome, {{name}}! 👋",
+        "welcomeSubtitle": "Complete today's missions!",
+        "streakDays": "{{days}}-day streak",
+        "editSchedule": "Edit Schedule",
+        "timeTable": "Time Table",
+        "todaySchedule": "Today's Study Schedule",
+        "achievementRate": "Achievement",
+        "completed": "Completed",
+        "doMission": "Do Mission",
+        "unavailableTime": "Unavailable ({{hours}} hours)",
+        "minutes": "min",
+        "noSchedule": "No schedule for today.",
+        "aiCoaching": "Mirror AI Coaching",
+        "aiAdvice": "Get Advice",
+        "reportPreview": "Learning Report Preview",
+        "reportPreviewDesc": "Check the new style",
+        "subjectMissions": "Subject Mission Status",
+        "aiCoachingTitle": "Mirror AI Coaching",
+        "aiCoachingMessage": "{{name}}, you missed your Math mission yesterday. Let's make sure to complete it today!",
+        "aiCoachingButton": "Get Advice"
+    },
+    "chat": {
+        "title": "AI Tutor",
+        "welcome": "Hello, {{name}}! I'm Mirror AI Tutor. 🤖\n\nDo you have any questions about your studies today? Feel free to upload a problem photo or ask about concepts!",
+        "askQuestion": "Ask a Question",
+        "uploadImage": "Upload Image",
+        "available": "Always available",
+        "today": "Today",
+        "suggestions": "Suggestions",
+        "placeholder": "Type your question...",
+        "disclaimer": "AI can make mistakes. Please verify important information."
+    },
+    "schedule": {
+        "editSchedule": "Edit Schedule",
+        "selectDay": "Select Day",
+        "addTimeSlot": "Add Study Time"
+    },
+    "diagnosis": {
+        "levelTest": "Level Test",
+        "startDiagnosis": "Start Diagnosis",
+        "analysisComplete": "Analysis Complete",
+        "recommendations": "Recommendations"
+    }
+}

@@ -3,10 +3,12 @@
 import { Suspense, useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { CheckCircle2, Loader2, XCircle } from "lucide-react";
+import { useLanguage } from "@/app/context/LanguageContext";
 
 function SuccessContent() {
     const searchParams = useSearchParams();
     const router = useRouter();
+    const { t } = useLanguage();
 
     const paymentKey = searchParams.get("paymentKey");
     const orderId = searchParams.get("orderId");
@@ -47,8 +49,8 @@ function SuccessContent() {
     return (
         <div className="min-h-screen flex items-center justify-center bg-gray-50 flex-col gap-4">
             <Loader2 className="w-12 h-12 text-blue-600 animate-spin" />
-            <h2 className="text-xl font-bold text-gray-800">결제 승인 중입니다...</h2>
-            <p className="text-gray-500">잠시만 기다려주세요.</p>
+            <h2 className="text-xl font-bold text-gray-800">{t('payment.processing')}</h2>
+            <p className="text-gray-500">{t('payment.pleaseWait')}</p>
         </div>
     );
 }
