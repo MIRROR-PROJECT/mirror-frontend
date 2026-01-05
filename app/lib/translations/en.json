@@ -66,8 +66,8 @@
             }
         },
         "step3": {
-            "title": "Solving Habits Analysis",
-            "subtitle": "Upload photos of recently solved problems and AI will analyze your solving habits",
+            "title": "Problem Solving Pattern Analysis",
+            "subtitle": "Upload photos of recently solved problems and AI will analyze your solving patterns",
             "uploadButton": "Upload Photo",
             "scanning": "Scanning...",
             "analyzing": "Analyzing...",
@@ -75,7 +75,7 @@
             "skip": "Skip",
             "ocrHint": "Please upload photos of Korean, Math, and English problems separately",
             "ocrReady": "Analysis Ready",
-            "ocrMismatchConfirm": "⚠️ OCR could not find the keyword for '{{subject}}'.\n\n[Recognized Text Part]\n\"{{text}}...\"\n\nClick [OK] if this is indeed a '{{subject}}' problem."
+            "ocrMismatchConfirm": "⚠️ OCR failed to detect keywords for '{{subject}}'.\n\n[Detected Text Snippet]\n\"{{text}}...\"\n\nIf this is a '{{subject}}' problem, click [OK] to proceed."
         },
         "step4": {
             "title": "Weekly Study Time Setup",
@@ -104,7 +104,7 @@
             "wait": "Please wait a moment",
             "loadingTitle": "Mirror AI is analyzing...",
             "typeAnalysis": "Learning Style Analysis",
-            "habitAnalysis": "Solving Habits",
+            "habitAnalysis": "Problem Solving Patterns",
             "avgTime": "Avg Daily Available Time",
             "analyzingHabit": "Analyzing...",
             "skipped": "Skipped (No Main Subject)"
@@ -137,7 +137,7 @@
             "targetMinutes": "Target",
             "minutes": "min",
             "startLearning": "Start Learning",
-            "solvingHabits": "AI Solving Habits Analysis",
+            "solvingHabits": "AI Solving Pattern Analysis",
             "concept": "Progress",
             "review": "Review",
             "today": "Today",
