@@ -82,6 +82,7 @@ export default function ChatPage() {
   // 추천 질문 칩
   const SUGGESTED_PROMPTS = [
     "📸 이 문제 풀이 과정 알려줘",
+    "📅 오늘 내 학습 스케줄 브리핑해줘",
     "🧪 '엔트로피' 개념 쉽게 설명해줘",
     "😫 집중이 안 돼, 동기부여 해줘"
   ];
@@ -282,15 +283,15 @@ export default function ChatPage() {
         <div className="max-w-4xl mx-auto space-y-2 md:space-y-3 w-full">
 
           {/* 추천 질문 칩 (가로 스크롤) */}
-          <div className="flex gap-1.5 md:gap-2 overflow-x-auto pb-1 md:pb-2 scrollbar-hide -mx-2 px-2">
-            <div className="flex items-center gap-1 px-2 md:px-3 py-1 md:py-1.5 bg-blue-50 text-blue-600 text-[10px] md:text-xs font-bold rounded-full shrink-0 border border-blue-100">
-              <Sparkles className="w-2.5 h-2.5 md:w-3 md:h-3" /> {t('chat.suggestions')}
+          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide -mx-2 px-2">
+            <div className="flex items-center gap-1 px-2.5 py-1.5 bg-blue-50 text-blue-600 text-[10px] md:text-xs font-bold rounded-full shrink-0 border border-blue-100">
+              <Sparkles className="w-3 h-3" /> {t('chat.suggestions')}
             </div>
             {SUGGESTED_PROMPTS.map((prompt, idx) => (
               <button
                 key={idx}
-                onClick={() => setInput(prompt.replace(/^[📸🧪😫] /, ""))}
-                className="px-2 md:px-3 py-1 md:py-1.5 bg-gray-50 text-gray-600 text-[10px] md:text-xs rounded-full hover:bg-gray-100 transition-colors border border-gray-200 max-w-[140px] md:max-w-none truncate shrink-0"
+                onClick={() => setInput(prompt.replace(/^[📸📅🧪😫] /, ""))}
+                className="px-2.5 py-1.5 bg-gray-50 text-gray-600 text-[10px] md:text-xs rounded-full hover:bg-gray-100 transition-colors border border-gray-200 whitespace-nowrap shrink-0"
               >
                 {prompt}
               </button>
@@ -298,9 +299,9 @@ export default function ChatPage() {
           </div>
 
           {/* 입력창 */}
-          <div className="relative flex items-center gap-1 md:gap-2 bg-gray-50 border border-gray-200 rounded-xl md:rounded-2xl p-1.5 md:p-2 focus-within:ring-2 focus-within:ring-blue-100 focus-within:border-blue-400 transition-all shadow-inner">
-            <button className="p-1.5 md:p-2 text-gray-400 hover:text-blue-500 hover:bg-gray-200 rounded-lg md:rounded-xl transition-colors">
-              <ImageIcon className="w-4 h-4 md:w-5 md:h-5" />
+          <div className="relative flex items-center gap-1.5 bg-gray-50 border border-gray-200 rounded-xl p-1.5 focus-within:ring-2 focus-within:ring-blue-100 focus-within:border-blue-400 transition-all shadow-inner">
+            <button className="p-1.5 text-gray-400 hover:text-blue-500 hover:bg-gray-200 rounded-lg transition-colors shrink-0">
+              <ImageIcon className="w-4 h-4" />
             </button>
 
             <input
@@ -309,19 +310,19 @@ export default function ChatPage() {
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder={t('chat.placeholder')}
-              className="flex-1 bg-transparent border-none focus:ring-0 py-2 md:py-2.5 text-gray-800 placeholder-gray-400 text-sm"
+              className="flex-1 bg-transparent border-none focus:ring-0 py-2 text-gray-800 placeholder-gray-400 text-sm min-w-0"
               autoComplete="off"
             />
 
             <button
               onClick={handleSend}
               disabled={!input.trim() || isAiTyping}
-              className={`p-1.5 md:p-2 rounded-lg md:rounded-xl transition-all ${input.trim()
+              className={`p-2 rounded-lg transition-all shrink-0 ${input.trim()
                 ? "bg-blue-600 text-white shadow-md hover:bg-blue-700 hover:scale-105"
                 : "bg-gray-200 text-gray-400 cursor-not-allowed"
                 }`}
             >
-              <Send className="w-4 h-4 md:w-5 md:h-5" />
+              <Send className="w-4 h-4" />
             </button>
           </div>
 
