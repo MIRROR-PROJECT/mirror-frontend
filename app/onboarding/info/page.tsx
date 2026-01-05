@@ -139,6 +139,21 @@ function InfoContent() {
         // 3. [NEW] 학부모 프로필 API 호출 (명세서 반영)
         if (role === 'parent') {
           try {
+            // [MOCK] 부모 프로필 API 모킹 (실제 서버 전송 X)
+            console.log("🔒 [MOCK] 부모 프로필 API 호출 (Simulated)");
+            await new Promise(resolve => setTimeout(resolve, 1000)); // 1초 대기
+
+            const apiRes = { ok: true };
+            const apiData = {
+              success: true,
+              message: "Parent profile created (MOCK)",
+              data: {
+                child_name: formData.childName,
+                parent_phone: formData.phoneNumber
+              }
+            };
+
+            /* 실제 API 호출 (주석 처리됨)
             const apiRes = await fetch("https://mirror-backend-5j11.onrender.com/parents/profile", {
               method: "POST",
               headers: {
@@ -151,8 +166,8 @@ function InfoContent() {
                 child_phone: formData.childPhoneNumber // 자녀 전화번호로 매칭
               })
             });
-
             const apiData = await apiRes.json();
+            */
 
             if (apiRes.ok && apiData.success) {
               console.log("✅ 학부모 프로필 등록 성공:", apiData);

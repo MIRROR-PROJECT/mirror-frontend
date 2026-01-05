@@ -19,7 +19,10 @@
             "mainSubjects": "주요 과목",
             "detailSubjects": "세부 과목",
             "showMore": "세부 과목 보기",
-            "showLess": "접기"
+            "showLess": "접기",
+            "selectSubject": "어떤 과목을 공부할까요?",
+            "multipleChoice": "(중복 가능)",
+            "mainSubjectHint": "국어, 수학, 영어 중 선택한 과목은 나중에 풀었던 문제를 업로드하여 정확한 진단을 받을 수 있습니다."
         },
         "step2": {
             "title": "학습 성향 진단",
@@ -70,7 +73,9 @@
             "analyzing": "분석 중...",
             "done": "분석 완료",
             "skip": "건너뛰기",
-            "ocrHint": "국어, 수학, 영어 문제 사진을 각각 업로드해주세요"
+            "ocrHint": "국어, 수학, 영어 문제 사진을 각각 업로드해주세요",
+            "ocrReady": "분석 준비 완료",
+            "ocrMismatchConfirm": "⚠️ OCR이 '{{subject}}' 키워드를 찾지 못했습니다.\n\n[인식된 내용 일부]\n\"{{text}}...\"\n\n그래도 '{{subject}}' 문제가 맞다면 [확인]을 눌러 진행하세요."
         },
         "step4": {
             "title": "주간 학습 시간 설정",
@@ -86,7 +91,11 @@
                 "fri": "금",
                 "sat": "토",
                 "sun": "일"
-            }
+            },
+            "secured": "확보",
+            "hours": "시간",
+            "available": "공부 가능",
+            "unavailable": "불가능"
         },
         "step5": {
             "title": "AI가 학습 계획을 생성하고 있습니다",
@@ -161,10 +170,13 @@
         "social_studies": "일반사회",
         "integrated_social": "통합사회",
         "info": "정보",
-        "second_foreign": "제2외국어",
-        "chinese_classics": "한문",
         "tech_home": "기가",
-        "etc": "기타"
+        "etc": "기타",
+        "category": {
+            "science_inquiry": "과학 탐구",
+            "social_history": "사회/역사 탐구",
+            "etc": "기타"
+        }
     },
     "common": {
         "login": "로그인",
@@ -437,7 +449,7 @@
             "studentCount": "명",
             "dailyBriefing": {
                 "title": "Daily Class Briefing",
-                "subtitle": "{{class}} 학생들의 어제 활동 요약",
+                "subtitle": "학생들의 어제 활동 요약",
                 "viewReport": "상세 리포트 보기",
                 "activeStudents": "활동 학생",
                 "avgStudyTime": "평균 학습시간",
@@ -522,10 +534,8 @@
                 "hero": {
                     "badge": "AI 선생님 도구 - Mirror",
                     "title": "학원의 수익과 효율을",
-                    "highlight": "동시에 끌어올리세요",
-                    "desc1": "Mirror는 단순한 관리 툴이 아닙니다. 학생 관리부터 AI 피드백까지,",
-                    "desc2": "학원의 모든 운영을 자동화하고 고도화하는 완전한 시스템입니다.",
-                    "bold": "자동화하고 고도화"
+                    "titleAccent": "동시에 끌어올리세요",
+                    "subtitle": "Mirror는 단순한 관리 툴이 아닙니다. 학생 관리부터 AI 피드백까지,<br />학원의 모든 운영을 <span class=\"font-bold text-indigo-600\">자동화하고 고도화</span>하는 완전한 시스템입니다."
                 },
                 "cards": {
                     "revenue": {
@@ -533,16 +543,70 @@
                         "desc": "데이터 기반 학습 관리로 학생 성적 향상 → 학부모 만족도 상승 → 재등록률 급증",
                         "footer": "평균 재등록률 87%"
                     },
-                    "efficiency": {
-                        "title": "업무 시간 50% 단축",
-                        "desc": "숙제 검사, 오답 노트, 학부모 상담 준비 등 반복 업무를 AI가 대신 처리합니다.",
-                        "footer": "일 평균 절약 시간 3시간"
+                    "time": {
+                        "title": "관리 시간 70% 절감",
+                        "desc": "수작업 학생 관리, 리포트 작성, 상담 준비가 모두 자동화됩니다",
+                        "footer": "하루 3시간 절약"
                     },
-                    "quality": {
-                        "title": "수업 퀄리티 혁신",
-                        "desc": "학생별 취약점 분석 리포트로 1:1 과외 수준의 맞춤형 케어를 제공하세요.",
-                        "footer": "학생별 맞춤 커리큘럼 제공"
+                    "cost": {
+                        "title": "학생 1명당 관리비 80% 감소",
+                        "desc": "AI가 24시간 학생을 케어하고, 선생님은 정말 중요한 일에만 집중",
+                        "footer": "수강생 200% 증가 가능"
                     }
+                },
+                "tabs": {
+                    "dashboard": "워크스페이스 대시보드",
+                    "students": "수강생 통합 관리"
+                },
+                "preview": {
+                    "dashboard": {
+                        "title": "📊 실시간 학급 분석 대시보드",
+                        "desc": "매일 아침 눈을 뜨면, AI가 어제 밤 학생들의 학습 패턴을 분석해 오늘의 수업 전략을 제시합니다.",
+                        "briefing": {
+                            "title": "Daily Briefing",
+                            "desc": "\"어제 밤 30명 이상이 삼각함수 합성에서 막혔습니다. 오늘 수업 도입부 10분 복습 권장합니다.\""
+                        },
+                        "care": {
+                            "title": "케어 알림",
+                            "desc": "\"박민수 학생 성적 20점 급락. 3일 연속 미접속. 즉시 상담 필요\""
+                        }
+                    },
+                    "students": {
+                        "title": "👥 수강생 한눈에 관리",
+                        "desc": "모든 학생의 진도율, 취약점, 최근 활동을 실시간으로 확인하고, 클릭 한 번으로 전화 상담까지.",
+                        "student1": {
+                            "name": "박민수",
+                            "desc": "진도율 42% ▼ · 취약점: 삼각함수"
+                        },
+                        "student2": {
+                            "name": "이영희",
+                            "desc": "진도율 87% ▲ · 취약점: 미분계수"
+                        },
+                        "call": "전화",
+                        "report": "리포트"
+                    }
+                },
+                "caseStudy": {
+                    "title": "강남 A학원의 실제 사례",
+                    "quote": "\"Mirror 도입 3개월 만에 학생 수 40명 → 82명 증가.<br />학부모 상담 시간만 하루 2시간 절약되면서<br />더 많은 학생을 받을 수 있게 되었습니다.\"",
+                    "stat1": {
+                        "value": "+105%",
+                        "label": "수강생 증가"
+                    },
+                    "stat2": {
+                        "value": "-70%",
+                        "label": "관리 시간"
+                    },
+                    "stat3": {
+                        "value": "87%",
+                        "label": "재등록률"
+                    }
+                },
+                "cta": {
+                    "title": "지금 시작하고, 학원을 한 단계 업그레이드하세요",
+                    "desc": "월 15,000원으로 시작하는 학원 혁신. 첫 달 무료입니다.",
+                    "button": "지금 바로 시작하기",
+                    "footer": "💳 결제 후 즉시 모든 기능 사용 가능 · 언제든 해지 가능"
                 }
             }
         },

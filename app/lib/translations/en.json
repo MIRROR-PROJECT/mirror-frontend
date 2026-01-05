@@ -19,7 +19,10 @@
             "mainSubjects": "Main Subjects",
             "detailSubjects": "Detailed Subjects",
             "showMore": "Show detailed subjects",
-            "showLess": "Collapse"
+            "showLess": "Collapse",
+            "selectSubject": "Which subjects will you study?",
+            "multipleChoice": "(Multiple selection allowed)",
+            "mainSubjectHint": "If you select Korean, Math, or English, you can upload problem photos later for accurate diagnosis."
         },
         "step2": {
             "title": "Learning Style Diagnosis",
@@ -70,7 +73,9 @@
             "analyzing": "Analyzing...",
             "done": "Analysis Complete",
             "skip": "Skip",
-            "ocrHint": "Please upload photos of Korean, Math, and English problems separately"
+            "ocrHint": "Please upload photos of Korean, Math, and English problems separately",
+            "ocrReady": "Analysis Ready",
+            "ocrMismatchConfirm": "⚠️ OCR could not find the keyword for '{{subject}}'.\n\n[Recognized Text Part]\n\"{{text}}...\"\n\nClick [OK] if this is indeed a '{{subject}}' problem."
         },
         "step4": {
             "title": "Weekly Study Time Setup",
@@ -86,7 +91,11 @@
                 "fri": "Fri",
                 "sat": "Sat",
                 "sun": "Sun"
-            }
+            },
+            "secured": "Secured",
+            "hours": "hours",
+            "available": "Available",
+            "unavailable": "Unavailable"
         },
         "step5": {
             "title": "AI is generating your study plan",
@@ -161,10 +170,13 @@
         "social_studies": "Social Studies",
         "integrated_social": "Integrated Social",
         "info": "Informatics",
-        "second_foreign": "Second Foreign Language",
-        "chinese_classics": "Chinese Classics",
         "tech_home": "Tech & Home",
-        "etc": "Others"
+        "etc": "Others",
+        "category": {
+            "science_inquiry": "Scientific Inquiry",
+            "social_history": "Social Studies & History",
+            "etc": "Others"
+        }
     },
     "common": {
         "login": "Login",
@@ -476,7 +488,7 @@
             "studentCount": "students",
             "dailyBriefing": {
                 "title": "Daily Class Briefing",
-                "subtitle": "Activity summary for {{class}}",
+                "subtitle": "Activity Summary",
                 "viewReport": "View Detailed Report",
                 "activeStudents": "Active Students",
                 "avgStudyTime": "Avg Study Time",
@@ -561,10 +573,8 @@
                 "hero": {
                     "badge": "AI Teaching Tool - Mirror",
                     "title": "Boost Revenue and Efficiency",
-                    "highlight": "At the Same Time",
-                    "desc1": "Mirror is not just a management tool. From student management to AI feedback,",
-                    "desc2": "It's a complete system that automates and enhances your academy's operations.",
-                    "bold": "automates and enhances"
+                    "titleAccent": "At the Same Time",
+                    "subtitle": "Mirror is not just a management tool. From student management to AI feedback,<br />it is a complete system that <span class=\"font-bold text-indigo-600\">automates and enhances</span> your academy's operations."
                 },
                 "cards": {
                     "revenue": {
@@ -572,16 +582,70 @@
                         "desc": "Data-driven management improves grades → Parent satisfaction rises → Re-enrollment surges",
                         "footer": "Avg. Re-enrollment 87%"
                     },
-                    "efficiency": {
-                        "title": "50% Time Savings",
-                        "desc": "AI handles repetitive tasks like homework checks, error notes, and counseling prep.",
+                    "time": {
+                        "title": "70% Time Savings",
+                        "desc": "Manual student management, reporting, and counseling prep are all automated.",
                         "footer": "Save 3 hours daily"
                     },
-                    "quality": {
-                        "title": "Quality Innovation",
-                        "desc": "Provide 1:1 tutoring-level care with personalized weakness analysis reports.",
-                        "footer": "Personalized Curriculum"
+                    "cost": {
+                        "title": "80% Cost Reduction per Student",
+                        "desc": "AI cares for students 24/7, allowing teachers to focus on what truly matters.",
+                        "footer": "200% Student Increase Feasible"
                     }
+                },
+                "tabs": {
+                    "dashboard": "Workspace Dashboard",
+                    "students": "Student Management"
+                },
+                "preview": {
+                    "dashboard": {
+                        "title": "📊 Real-time Class Analysis Dashboard",
+                        "desc": "Wake up to AI-analyzed learning patterns and daily teaching strategies based on last night's data.",
+                        "briefing": {
+                            "title": "Daily Briefing",
+                            "desc": "\"Over 30 students struggled with Trig Synthesis last night. Recommend 10-min review at start of class.\""
+                        },
+                        "care": {
+                            "title": "Care Alert",
+                            "desc": "\"Student Park Min-su score dropped 20 points. Inactive for 3 days. Immediate counseling needed.\""
+                        }
+                    },
+                    "students": {
+                        "title": "👥 Student Management at a Glance",
+                        "desc": "Check progress, weaknesses, and recent activity in real-time, and call with one click.",
+                        "student1": {
+                            "name": "Park Min-su",
+                            "desc": "Progress 42% ▼ · Weakness: Trigonometry"
+                        },
+                        "student2": {
+                            "name": "Lee Young-hee",
+                            "desc": "Progress 87% ▲ · Weakness: Differentiation"
+                        },
+                        "call": "Call",
+                        "report": "Report"
+                    }
+                },
+                "caseStudy": {
+                    "title": "Success Story: Gangnam Academy A",
+                    "quote": "\"Students increased from 40 to 82 in 3 months with Mirror.<br />Saving 2 hours daily on parent counseling allowed us to accept more students.\"",
+                    "stat1": {
+                        "value": "+105%",
+                        "label": "Student Growth"
+                    },
+                    "stat2": {
+                        "value": "-70%",
+                        "label": "Mgmt Time"
+                    },
+                    "stat3": {
+                        "value": "87%",
+                        "label": "Re-enrollment"
+                    }
+                },
+                "cta": {
+                    "title": "Start Now and Upgrade Your Academy",
+                    "desc": "Academy innovation starting at $15/mo. First month free.",
+                    "button": "Start Now",
+                    "footer": "💳 Immediate access after payment · Cancel anytime"
                 }
             }
         },

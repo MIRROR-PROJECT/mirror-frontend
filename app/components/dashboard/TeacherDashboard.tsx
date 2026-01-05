@@ -439,7 +439,7 @@ export default function TeacherDashboard({ user }: { user: any }) {
                 Daily Class Briefing
               </h2>
               <p className="text-gray-500 text-sm mt-2 font-medium">
-                <span className="text-gray-900 font-bold">{currentClass.name}</span> {t('teacher.dashboard.dailyBriefing.subtitle', { class: '' })}
+                <span className="text-gray-900 font-bold">{currentClass.name}</span> {t('teacher.dashboard.dailyBriefing.subtitle')}
               </p>
             </div>
             <Link href="/teacher/report">

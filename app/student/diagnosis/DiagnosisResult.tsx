@@ -149,18 +149,18 @@ export default function DiagnosisResult({
                 <h2 className="text-3xl font-bold text-gray-900">
                     {getFormattedTitle()}
                 </h2>
-                <div className="relative inline-flex items-center gap-2 bg-surface px-3 py-1 rounded-full">
-                    <span className="text-sm font-bold text-[#4E342E]">{analysisText}</span>
+                <div className="relative inline-flex items-center gap-2 bg-blue-50 px-3 py-1 rounded-full">
+                    <span className="text-sm font-bold text-blue-900">{analysisText}</span>
                     <button
                         onClick={showTooltip ? onTooltipHide : onTooltipShow}
                         className="relative hover:scale-110 transition-transform"
                     >
-                        <Info className="w-4 h-4 text-primary cursor-pointer" />
+                        <Info className="w-4 h-4 text-blue-600 cursor-pointer" />
                     </button>
                     {showTooltip && (
                         <div className="absolute left-1/2 -translate-x-1/2 top-full mt-3 z-50 w-96 bg-gray-900 text-white rounded-xl p-4 shadow-2xl animate-slide-down">
                             <div className="absolute -top-1.5 left-1/2 -translate-x-1/2 w-3 h-3 bg-gray-900 rotate-45"></div>
-                            <div className="font-bold text-[#D7CCC8] text-base mb-2 whitespace-nowrap">{userTypeInfo[userType].label}</div>
+                            <div className="font-bold text-blue-100 text-base mb-2 whitespace-nowrap">{userTypeInfo[userType].label}</div>
                             <div className="text-gray-200 text-sm leading-relaxed break-keep">{userTypeInfo[userType].fullDesc}</div>
                         </div>
                     )}
@@ -173,8 +173,8 @@ export default function DiagnosisResult({
                     <div className="bg-white p-6 rounded-3xl shadow-xl border border-gray-100 flex flex-col h-full">
                         <div className="flex items-center justify-between mb-6">
                             <div className="flex items-center gap-2">
-                                <div className="p-2 rounded-lg bg-[#EBE5DE]">
-                                    <Map className="w-5 h-5 text-primary" />
+                                <div className="p-2 rounded-lg bg-blue-50">
+                                    <Map className="w-5 h-5 text-blue-600" />
                                 </div>
                                 <h3 className="font-bold text-gray-800 text-lg">
                                     {t('diagnosis.result.weeklyCurriculum')}
@@ -198,21 +198,21 @@ export default function DiagnosisResult({
                                                         onClick={() => setSelectedDayIndex(idx)}
                                                         className={`flex items-center gap-3 p-3 rounded-xl transition-all cursor-pointer border-2
                                                             ${isSelected
-                                                                ? 'bg-surface border-primary shadow-md scale-102 ring-2 ring-[#D7CCC8]'
+                                                                ? 'bg-white border-blue-500 shadow-md scale-102 ring-2 ring-blue-100'
                                                                 : plan.isToday
-                                                                    ? 'bg-white border-[#D7CCC8] shadow-sm'
+                                                                    ? 'bg-white border-blue-200 shadow-sm'
                                                                     : 'bg-white border-transparent hover:bg-gray-50 hover:border-gray-200'
                                                             }`}
                                                     >
-                                                        <div className={`w-12 py-2 rounded-lg text-center font-bold text-sm ${plan.isToday ? 'bg-primary text-white' : 'bg-gray-200 text-gray-500'}`}>
+                                                        <div className={`w-12 py-2 rounded-lg text-center font-bold text-sm ${plan.isToday ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-500'}`}>
                                                             {plan.day}
                                                         </div>
                                                         <div className="flex-1">
                                                             <div className="flex items-center gap-2 mb-0.5">
-                                                                <span className={`text-xs font-bold px-1.5 rounded ${plan.type === 'Concept' ? 'bg-[#EBE5DE] text-[#4E342E]' : 'bg-green-100 text-green-700'}`}>
+                                                                <span className={`text-xs font-bold px-1.5 rounded ${plan.type === 'Concept' ? 'bg-blue-50 text-blue-700' : 'bg-green-100 text-green-700'}`}>
                                                                     {plan.type === 'Concept' ? t('diagnosis.result.concept') : t('diagnosis.result.review')}
                                                                 </span>
-                                                                {plan.isToday && <span className="text-[10px] font-bold text-[#D84315] animate-pulse">● {t('diagnosis.result.today')}</span>}
+                                                                {plan.isToday && <span className="text-[10px] font-bold text-red-500 animate-pulse">● {t('diagnosis.result.today')}</span>}
                                                             </div>
                                                             <p className={`text-sm font-semibold ${isSelected ? 'text-[#3E2723]' : 'text-gray-900'}`}>
                                                                 {/* Daily Focus가 있으면 그것을, 없으면 기존 topic 표시 */}
@@ -226,7 +226,7 @@ export default function DiagnosisResult({
                                                         </div>
                                                         <div className="text-right min-w-15">
                                                             <span className="text-xs font-bold text-gray-400 block">{t('diagnosis.result.targetMinutes')}</span>
-                                                            <span className={`text-sm font-bold ${plan.isToday ? 'text-primary' : 'text-gray-600'}`}>
+                                                            <span className={`text-sm font-bold ${plan.isToday ? 'text-blue-600' : 'text-gray-600'}`}>
                                                                 {plan.time}{t('diagnosis.result.minutes')}
                                                             </span>
                                                         </div>
@@ -243,7 +243,7 @@ export default function DiagnosisResult({
 
                 <div className="md:col-span-5 flex flex-col gap-6">
                     {/* 2. 오늘의 미션 */}
-                    <div className="bg-primary text-white p-6 rounded-3xl shadow-xl shadow-[#D7CCC8] flex flex-col relative overflow-hidden">
+                    <div className="bg-blue-600 text-white p-6 rounded-3xl shadow-xl shadow-blue-200 flex flex-col relative overflow-hidden">
                         <div className="absolute top-0 right-0 w-64 h-64 bg-white opacity-5 rounded-full blur-3xl transform translate-x-1/2 -translate-y-1/2"></div>
                         <div className="flex items-center gap-2 mb-6 relative z-10">
                             <div className="bg-white/20 p-2 rounded-lg"><ListTodo className="w-5 h-5 text-white" /></div>
@@ -277,17 +277,17 @@ export default function DiagnosisResult({
                                             <span className="text-[#EFEBE9] text-sm font-medium">{targetPlan.isToday ? t('diagnosis.result.todayAvailableTime') : t('diagnosis.result.availableTime')}</span>
                                             <div className="text-right">
                                                 <span className="text-3xl font-bold">{availableMinutes}{t('diagnosis.result.minutes')}</span>
-                                                <span className="text-xs text-[#D7CCC8] block">{t('diagnosis.result.recommendedTime')}</span>
+                                                <span className="text-xs text-blue-100 block">{t('diagnosis.result.recommendedTime')}</span>
                                             </div>
                                         </div>
                                         <ul className="space-y-4">
                                             {(() => {
                                                 if (targetPlan.tasks && targetPlan.tasks.length > 0) {
                                                     return targetPlan.tasks.map((task, idx) => (
-                                                        <li key={idx} className={`flex gap-4 ${idx < targetPlan.tasks!.length - 1 ? 'pb-4 border-l-2 border-[#A1887F]/30' : ''} pl-4 relative`}>
-                                                            <div className={`absolute -left-2.25 top-0 w-4 h-4 rounded-full border-4 ${task.is_completed ? 'bg-green-400 border-green-600' : 'bg-white border-primary'}`}></div>
+                                                        <li key={idx} className={`flex gap-4 ${idx < targetPlan.tasks!.length - 1 ? 'pb-4 border-l-2 border-blue-200/30' : ''} pl-4 relative`}>
+                                                            <div className={`absolute -left-2.25 top-0 w-4 h-4 rounded-full border-4 ${task.is_completed ? 'bg-green-400 border-green-600' : 'bg-white border-blue-500'}`}></div>
                                                             <div>
-                                                                <span className="text-xs font-bold text-[#D7CCC8] block mb-1">
+                                                                <span className="text-xs font-bold text-blue-100 block mb-1">
                                                                     {task.time_slot} | {task.category} ({task.assigned_minutes}{t('diagnosis.result.minutes')})
                                                                 </span>
                                                                 <p className="font-bold text-lg">{task.title}</p>
@@ -299,7 +299,7 @@ export default function DiagnosisResult({
 
                                                 // Fallback
                                                 return (
-                                                    <li className="text-center text-[#D7CCC8] py-4">
+                                                    <li className="text-center text-blue-100 py-4">
                                                         {t('diagnosis.result.noDetails')}
                                                     </li>
                                                 );
@@ -309,7 +309,7 @@ export default function DiagnosisResult({
                                     <div className="mt-auto">
                                         <button
                                             onClick={() => router.push('/dashboard?role=student')}
-                                            className="w-full bg-white text-primary py-4 rounded-xl font-bold text-center block hover:bg-surface transition-colors cursor-pointer"
+                                            className="w-full bg-white text-blue-600 py-4 rounded-xl font-bold text-center block hover:bg-blue-50 transition-colors cursor-pointer shadow-lg"
                                         >
                                             {t('diagnosis.result.startLearning')}
                                         </button>
@@ -321,19 +321,19 @@ export default function DiagnosisResult({
 
                     {/* 3. [최종] AI 풀이 습관 분석 리포트 */}
                     {Object.keys(ocrAnalysis).length > 0 && (
-                        <div className="bg-white p-6 rounded-3xl shadow-lg border border-[#EBE5DE] relative overflow-hidden">
+                        <div className="bg-white p-6 rounded-3xl shadow-lg border border-gray-100 relative overflow-hidden">
                             <div className="absolute top-0 right-0 p-6 opacity-10">
-                                <BrainCircuit className="w-24 h-24 text-primary" />
+                                <BrainCircuit className="w-24 h-24 text-blue-600" />
                             </div>
                             <div className="relative z-10">
                                 <h3 className="font-bold text-gray-800 text-lg flex items-center gap-2 mb-4">
-                                    <FileText className="w-5 h-5 text-primary" />
+                                    <FileText className="w-5 h-5 text-blue-600" />
                                     {t('diagnosis.result.solvingHabits')}
                                 </h3>
                                 <div className="space-y-4">
                                     {Object.entries(ocrAnalysis).map(([subject, result]) => (
-                                        <div key={subject} className="bg-surface p-4 rounded-xl border border-[#EBE5DE] shadow-sm">
-                                            <h4 className="font-bold text-[#4E342E] text-sm mb-2 flex items-center gap-2">
+                                        <div key={subject} className="bg-gray-50 p-4 rounded-xl border border-gray-100 shadow-sm">
+                                            <h4 className="font-bold text-gray-900 text-sm mb-2 flex items-center gap-2">
                                                 <AlertCircle className="w-3 h-3" /> {subject}
                                             </h4>
                                             <p className="text-sm text-gray-700 leading-relaxed font-medium mb-3">
@@ -343,7 +343,7 @@ export default function DiagnosisResult({
                                             {result.tags && result.tags.length > 0 && (
                                                 <div className="flex flex-wrap gap-1.5">
                                                     {result.tags.map((tag, i) => (
-                                                        <span key={i} className="inline-flex items-center gap-0.5 px-2 py-1 rounded-md bg-white border border-[#D7CCC8] text-[10px] font-bold text-[#6D4C41] shadow-sm">
+                                                        <span key={i} className="inline-flex items-center gap-0.5 px-2 py-1 rounded-md bg-white border border-gray-200 text-[10px] font-bold text-gray-600 shadow-sm">
                                                             <Hash className="w-2.5 h-2.5 opacity-50" /> {tag}
                                                         </span>
                                                     ))}

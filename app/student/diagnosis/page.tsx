@@ -99,9 +99,9 @@ const WEEK_DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
 const MAIN_SUBJECTS = ["국어", "수학", "영어"];
 const DETAIL_SUBJECTS = [
-  { category: "과학 탐구", items: ["물리", "화학", "생명과학", "지구과학", "통합과학"] },
-  { category: "사회/역사 탐구", items: ["한국사", "윤리", "지리", "역사", "일반사회", "통합사회"] },
-  { category: "기타", items: ["정보", "제2외국어", "한문", "기가"] }
+  { id: "science_inquiry", category: "과학 탐구", items: ["물리", "화학", "생명과학", "지구과학", "통합과학"] },
+  { id: "social_history", category: "사회/역사 탐구", items: ["한국사", "윤리", "지리", "역사", "일반사회", "통합사회"] },
+  { id: "etc", category: "기타", items: ["정보", "제2외국어", "한문", "기가"] }
 ];
 
 const SUBJECT_KEYWORDS: Record<string, string[]> = {
@@ -182,19 +182,19 @@ export function DiagnosisContent() {
   // [LOCALE] Internalize constants for i18n
   const USER_TYPES_INFO: Record<"A" | "B" | "C", UserTypeInfo> = useMemo(() => ({
     A: {
-      label: t('diagnosis.types.A.label'),
-      desc: t('diagnosis.types.A.desc'),
-      fullDesc: t('diagnosis.types.A.fullDesc')
+      label: t('diagnosis.result.userType.a.label'),
+      desc: t('diagnosis.result.userType.a.desc'),
+      fullDesc: t('diagnosis.result.userType.a.fullDesc')
     },
     B: {
-      label: t('diagnosis.types.B.label'),
-      desc: t('diagnosis.types.B.desc'),
-      fullDesc: t('diagnosis.types.B.fullDesc')
+      label: t('diagnosis.result.userType.b.label'),
+      desc: t('diagnosis.result.userType.b.desc'),
+      fullDesc: t('diagnosis.result.userType.b.fullDesc')
     },
     C: {
-      label: t('diagnosis.types.C.label'),
-      desc: t('diagnosis.types.C.desc'),
-      fullDesc: t('diagnosis.types.C.fullDesc')
+      label: t('diagnosis.result.userType.c.label'),
+      desc: t('diagnosis.result.userType.c.desc'),
+      fullDesc: t('diagnosis.result.userType.c.fullDesc')
     }
   }), [t]);
 
@@ -315,7 +315,7 @@ export function DiagnosisContent() {
         setTimeout(() => {
           setOcrStatus("done");
           setSubjectImages(prev => ({ ...prev, [activeSubjectTab]: "uploaded" }));
-          setOcrResult("분석 준비 완료");
+          setOcrResult(t('diagnosis.step3.ocrReady'));
         }, 1000);
 
         setFileObjects(prev => [...prev, file]);
@@ -331,9 +331,7 @@ export function DiagnosisContent() {
 
         const previewText = text.replace(/\s+/g, ' ').slice(0, 50);
         const forcePass = window.confirm(
-          `⚠️ OCR이 '${activeSubjectTab}' 키워드를 찾지 못했습니다.\n\n` +
-          `[인식된 내용 일부]\n"${previewText}..."\n\n` +
-          `그래도 '${activeSubjectTab}' 문제가 맞다면 [확인]을 눌러 진행하세요.`
+          t('diagnosis.step3.ocrMismatchConfirm', { subject: activeSubjectTab, text: previewText })
         );
 
         if (forcePass) {
@@ -346,7 +344,7 @@ export function DiagnosisContent() {
     } catch (error) {
       console.error("OCR Error:", error);
       setOcrStatus("idle");
-      alert("이미지 분석 중 오류가 발생했습니다.");
+      alert(t('common.error'));
     }
   };
 
@@ -825,14 +823,14 @@ export function DiagnosisContent() {
       {step < 5 && (
         <div className="w-full max-w-md mb-8">
           <div className="flex justify-between text-xs font-bold text-gray-400 mb-2 uppercase tracking-wide">
-            <span className={step >= 0 ? "text-primary" : ""}>Personal</span>
-            <span className={step >= 1 ? "text-primary" : ""}>Info</span>
-            <span className={step >= 2 ? "text-primary" : ""}>Style</span>
-            <span className={step >= 3 ? (hasMainSubject ? "text-primary" : "text-gray-300 line-through decoration-2") : ""}>Solving</span>
-            <span className={step >= 4 ? "text-primary" : ""}>Time</span>
+            <span className={step >= 0 ? "text-blue-600" : ""}>Personal</span>
+            <span className={step >= 1 ? "text-blue-600" : ""}>Info</span>
+            <span className={step >= 2 ? "text-blue-600" : ""}>Style</span>
+            <span className={step >= 3 ? (hasMainSubject ? "text-blue-600" : "text-gray-300 line-through decoration-2") : ""}>Solving</span>
+            <span className={step >= 4 ? "text-blue-600" : ""}>Time</span>
           </div>
           <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-            <div className="h-full bg-primary transition-all duration-500 ease-out" style={{ width: `${(step / 4) * 100}%` }}></div>
+            <div className="h-full bg-blue-600 transition-all duration-500 ease-out" style={{ width: `${(step / 4) * 100}%` }}></div>
           </div>
         </div>
       )}
@@ -840,7 +838,7 @@ export function DiagnosisContent() {
 
       {/* --- STEP 0: Personal Info (Name + Phone) --- */}
       {step === 0 && (
-        <div className="bg-white max-w-md w-full p-8 rounded-3xl shadow-xl space-y-6 animate-fade-in-up">
+        <div className="bg-white max-w-md w-full p-8 rounded-2xl shadow-sm border border-gray-100 space-y-6 animate-fade-in-up">
           <div className="text-center mb-6">
             <h2 className="text-2xl font-bold text-gray-900 mb-2">{t('diagnosis.step0.title')}</h2>
             <p className="text-sm text-gray-500">{t('diagnosis.step0.subtitle')}</p>
@@ -850,7 +848,7 @@ export function DiagnosisContent() {
             {/* 이름 */}
             <div>
               <label className="block text-sm font-bold text-gray-700 mb-2 flex items-center gap-2">
-                <User className="w-4 h-4 text-primary" />
+                <User className="w-4 h-4 text-blue-600" />
                 {t('diagnosis.step0.nameLabel')}
               </label>
               <input
@@ -858,14 +856,14 @@ export function DiagnosisContent() {
                 value={info.name}
                 onChange={(e) => setInfo({ ...info, name: e.target.value })}
                 placeholder={t('diagnosis.step0.namePlaceholder')}
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all text-gray-900 font-medium placeholder-gray-400"
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none transition-all text-gray-900 font-medium placeholder-gray-400"
               />
             </div>
 
             {/* 전화번호 */}
             <div>
               <label className="block text-sm font-bold text-gray-700 mb-2 flex items-center gap-2">
-                <FileText className="w-4 h-4 text-primary" />
+                <FileText className="w-4 h-4 text-blue-600" />
                 {t('diagnosis.step0.phoneLabel')}
               </label>
               <input
@@ -873,7 +871,7 @@ export function DiagnosisContent() {
                 value={info.phone}
                 onChange={(e) => setInfo({ ...info, phone: formatPhoneNumber(e.target.value) })}
                 placeholder={t('diagnosis.step0.phonePlaceholder')}
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all text-gray-900 font-medium placeholder-gray-400"
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none transition-all text-gray-900 font-medium placeholder-gray-400"
                 maxLength={13}
               />
               <p className="text-xs text-gray-400 mt-1">{t('diagnosis.step0.phoneHint')}</p>
@@ -884,10 +882,10 @@ export function DiagnosisContent() {
 
       {/* --- STEP 1: Basic Info --- */}
       {step === 1 && (
-        <div className="bg-white max-w-md w-full p-8 rounded-3xl shadow-xl space-y-6 animate-fade-in-up">
+        <div className="bg-white max-w-md w-full p-8 rounded-2xl shadow-sm border border-gray-100 space-y-6 animate-fade-in-up">
           <div className="text-center">
-            <div className="inline-flex items-center justify-center p-3 bg-surface rounded-full mb-3">
-              <School className="w-6 h-6 text-primary" />
+            <div className="inline-flex items-center justify-center p-3 bg-blue-50 rounded-full mb-3">
+              <School className="w-6 h-6 text-blue-600" />
             </div>
             <h2 className="text-2xl font-bold text-gray-900">{t('diagnosis.step1.title')}</h2>
             <p className="text-gray-500 text-sm mt-1">{t('diagnosis.step1.subtitle')}</p>
@@ -902,29 +900,29 @@ export function DiagnosisContent() {
                 value={info.name}
                 onChange={(e) => setInfo({ ...info, name: e.target.value })}
                 placeholder={t('diagnosis.step0.namePlaceholder')}
-                className="w-full p-4 rounded-xl border-2 border-gray-200 focus:border-primary focus:outline-none focus:bg-surface/30 font-bold text-gray-900 placeholder-gray-300 transition-colors"
+                className="w-full p-4 rounded-xl border-2 border-gray-100 focus:border-blue-500 focus:outline-none focus:bg-blue-50/30 font-bold text-gray-900 placeholder-gray-300 transition-colors"
               />
             </div>
             <div className="space-y-3">
               <div className="flex gap-3">
                 <div className="flex-1">
                   <label className="block text-xs font-bold text-gray-500 mb-1 ml-1">{t('diagnosis.step1.gradeLabel')}</label>
-                  <div className="flex gap-1">{["1", "2", "3"].map((g) => (<button key={g} onClick={() => setInfo({ ...info, grade: g })} className={`flex-1 py-3 rounded-lg border-2 font-bold ${info.grade === g ? "bg-primary text-white border-primary" : "bg-white text-gray-600 border-gray-200 hover:border-[#A1887F]"}`}>{g}{t('diagnosis.step1.gradeLabel')}</button>))}</div>
+                  <div className="flex gap-1">{["1", "2", "3"].map((g) => (<button key={g} onClick={() => setInfo({ ...info, grade: g })} className={`flex-1 py-3 rounded-lg border-2 font-bold ${info.grade === g ? "bg-blue-600 text-white border-blue-600 shadow-md" : "bg-white text-gray-600 border-gray-100 hover:border-blue-200"}`}>{g}{t('diagnosis.step1.gradeLabel')}</button>))}</div>
                 </div>
                 <div className="flex-1">
                   <label className="block text-xs font-bold text-gray-500 mb-1 ml-1">{t('diagnosis.step1.semesterLabel')}</label>
-                  <div className="flex gap-1">{["1", "2"].map((s) => (<button key={s} onClick={() => setInfo({ ...info, semester: s })} className={`flex-1 py-3 rounded-lg border-2 font-bold ${info.semester === s ? "bg-primary text-white border-primary" : "bg-white text-gray-600 border-gray-200 hover:border-[#A1887F]"}`}>{s === "1" ? t('diagnosis.step1.semester1') : t('diagnosis.step1.semester2')}</button>))}</div>
+                  <div className="flex gap-1">{["1", "2"].map((s) => (<button key={s} onClick={() => setInfo({ ...info, semester: s })} className={`flex-1 py-3 rounded-lg border-2 font-bold ${info.semester === s ? "bg-blue-600 text-white border-blue-600 shadow-md" : "bg-white text-gray-600 border-gray-100 hover:border-blue-200"}`}>{s === "1" ? t('diagnosis.step1.semester1') : t('diagnosis.step1.semester2')}</button>))}</div>
                 </div>
               </div>
             </div>
-            <hr className="border-gray-100" />
+            <hr className="border-gray-50" />
             <div>
-              <label className="block text-sm font-bold text-gray-800 mb-3 ml-1">어떤 과목을 공부할까요? <span className="text-gray-400 font-normal text-xs">(중복 가능)</span></label>
+              <label className="block text-sm font-bold text-gray-800 mb-3 ml-1">{t('diagnosis.step1.selectSubject')} <span className="text-gray-400 font-normal text-xs">{t('diagnosis.step1.multipleChoice')}</span></label>
               <div className="grid grid-cols-3 gap-3 mb-3">
                 {MAIN_SUBJECTS.map((subject) => {
                   const isSelected = info.subjects.includes(subject);
                   return (
-                    <button key={subject} onClick={() => toggleSubject(subject)} className={`py-4 rounded-xl font-bold border-2 transition-all relative ${isSelected ? "bg-primary border-primary text-white shadow-lg transform scale-105" : "bg-white border-gray-200 text-gray-500 hover:border-[#A1887F] hover:bg-surface"}`}>
+                    <button key={subject} onClick={() => toggleSubject(subject)} className={`py-4 rounded-xl font-bold border-2 transition-all relative ${isSelected ? "bg-blue-600 border-blue-600 text-white shadow-md transform scale-102" : "bg-white border-gray-100 text-gray-500 hover:border-blue-200 hover:bg-blue-50/50"}`}>
                       {getSubjectLabel(subject)}
                       {isSelected && <Check className="w-4 h-4 absolute top-2 right-2 text-white/80" />}
                     </button>
@@ -934,18 +932,18 @@ export function DiagnosisContent() {
 
               {/* 주요 과목 선택 시 안내 문구 */}
               {info.subjects.some(s => MAIN_SUBJECTS.includes(s)) && (
-                <div className="mb-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <div className="mb-3 p-3 bg-blue-50 border border-blue-100 rounded-xl">
                   <p className="text-xs text-blue-700 font-medium flex items-center gap-2">
                     <svg className="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
                     </svg>
-                    국어, 수학, 영어 중 선택한 과목은 나중에 풀었던 문제를 업로드하여 정확한 진단을 받을 수 있습니다.
+                    {t('diagnosis.step1.mainSubjectHint')}
                   </p>
                 </div>
               )}
 
               {/* [복구됨] 탐구 과목 선택 아코디언 버튼 및 리스트 */}
-              <button onClick={() => setShowSubSubjects(!showSubSubjects)} className="w-full flex items-center justify-center gap-1 text-sm text-gray-500 font-medium py-3 hover:bg-gray-50 rounded-lg transition-colors border border-dashed border-gray-300">
+              <button onClick={() => setShowSubSubjects(!showSubSubjects)} className="w-full flex items-center justify-center gap-1 text-sm text-gray-500 font-medium py-3 hover:bg-gray-50 rounded-lg transition-colors border border-dashed border-gray-200">
                 {showSubSubjects ? t('diagnosis.step1.showLess') : t('diagnosis.step1.showMore')}
                 {showSubSubjects ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
               </button>
@@ -953,12 +951,12 @@ export function DiagnosisContent() {
                 <div className="mt-4 space-y-4 animate-fade-in bg-gray-50 p-4 rounded-xl border border-gray-100">
                   {DETAIL_SUBJECTS.map((group) => (
                     <div key={group.category}>
-                      <h4 className="text-xs font-bold text-gray-400 mb-2">{group.category}</h4>
+                      <h4 className="text-xs font-bold text-gray-400 mb-2">{t(`subject.category.${group.id}`)}</h4>
                       <div className="flex flex-wrap gap-2">
                         {group.items.map((subject) => {
                           const isSelected = info.subjects.includes(subject);
                           return (
-                            <button key={subject} onClick={() => toggleSubject(subject)} className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all ${isSelected ? "bg-[#F5F5F0] border-primary text-primary shadow-sm" : "bg-white border-gray-200 text-gray-500 hover:border-gray-300 hover:bg-gray-50"}`}>
+                            <button key={subject} onClick={() => toggleSubject(subject)} className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all ${isSelected ? "bg-white border-blue-500 text-blue-600 shadow-sm" : "bg-white border-gray-200 text-gray-500 hover:border-gray-300 hover:bg-gray-50"}`}>
                               {getSubjectLabel(subject)}
                             </button>
                           );
@@ -975,7 +973,7 @@ export function DiagnosisContent() {
 
       {/* --- STEP 2: Study Style Quiz --- */}
       {step === 2 && (
-        <div className="bg-white max-w-xl w-full p-8 rounded-3xl shadow-xl space-y-8 animate-fade-in-up">
+        <div className="bg-white max-w-xl w-full p-8 rounded-2xl shadow-sm border border-gray-100 space-y-8 animate-fade-in-up">
           <div className="text-center">
             <h2 className="text-2xl font-bold text-gray-900">{t('diagnosis.step2.title')}</h2>
             <p className="text-gray-500 text-sm mt-1">{t('diagnosis.step2.subtitle')}</p>
@@ -984,7 +982,7 @@ export function DiagnosisContent() {
             {QUIZ_QUESTIONS.map((q) => (
               <div key={q.id} className="space-y-3">
                 <h3 className="font-bold text-gray-800 text-lg flex items-center gap-2">
-                  <span className="bg-surface text-primary text-xs px-2 py-1 rounded-full">Q{q.id}</span>
+                  <span className="bg-blue-50 text-blue-600 text-xs px-2 py-1 rounded-full border border-blue-100">Q{q.id}</span>
                   {q.question}
                 </h3>
                 <div className="grid grid-cols-1 gap-2">
@@ -993,15 +991,15 @@ export function DiagnosisContent() {
                       key={opt.value}
                       onClick={() => setAnswers({ ...answers, [q.id]: opt.value })}
                       className={`text-left p-4 rounded-xl border-2 transition-all flex items-center justify-between group ${answers[q.id] === opt.value
-                        ? "border-primary bg-surface ring-1 ring-[#D7CCC8]"
-                        : "border-gray-100 hover:border-gray-300 hover:bg-gray-50"
+                        ? "border-blue-500 bg-blue-50/50 ring-1 ring-blue-200"
+                        : "border-gray-100 hover:border-blue-200 hover:bg-gray-50"
                         }`}
                     >
                       <div>
-                        <div className={`font-bold text-base mb-1 ${answers[q.id] === opt.value ? "text-primary" : "text-gray-800"}`}>{opt.label}</div>
+                        <div className={`font-bold text-base mb-1 ${answers[q.id] === opt.value ? "text-blue-700" : "text-gray-800"}`}>{opt.label}</div>
                         <div className="text-xs text-gray-500">{opt.desc}</div>
                       </div>
-                      {answers[q.id] === opt.value && <CheckCircle2 className="w-5 h-5 text-primary shrink-0" />}
+                      {answers[q.id] === opt.value && <CheckCircle2 className="w-5 h-5 text-blue-600 shrink-0" />}
                     </button>
                   ))}
                 </div>
@@ -1013,7 +1011,7 @@ export function DiagnosisContent() {
 
       {/* --- STEP 3: OCR Diagnosis --- */}
       {step === 3 && hasMainSubject && (
-        <div className="bg-white max-w-md w-full p-8 rounded-3xl shadow-xl space-y-6 animate-fade-in-up">
+        <div className="bg-white max-w-md w-full p-8 rounded-2xl shadow-sm border border-gray-100 space-y-6 animate-fade-in-up">
           <div className="text-center">
             <h2 className="text-2xl font-bold text-gray-900">{t('diagnosis.step3.title')}</h2>
             <p className="text-gray-500 text-sm mt-1">
@@ -1030,7 +1028,7 @@ export function DiagnosisContent() {
                   key={subject}
                   onClick={() => { setActiveSubjectTab(subject); setOcrStatus(isDone ? "done" : "idle"); }}
                   className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all flex items-center justify-center gap-1
-                    ${isActive ? "bg-white text-primary shadow-sm" : "text-gray-400 hover:text-gray-600"}
+                    ${isActive ? "bg-white text-blue-600 shadow-sm" : "text-gray-400 hover:text-gray-600"}
                   `}
                 >
                   {getSubjectLabel(subject)}
@@ -1050,14 +1048,14 @@ export function DiagnosisContent() {
 
           <div className="relative min-h-[300px]">
             {subjectImages[activeSubjectTab] === "uploaded" && ocrStatus === "done" ? (
-              <div className="border-2 border-green-100 rounded-2xl p-6 bg-green-50 animate-fade-in h-full flex flex-col items-center justify-center text-center">
+              <div className="border-2 border-green-100 rounded-2xl p-6 bg-green-50/50 animate-fade-in h-full flex flex-col items-center justify-center text-center">
                 <div className="flex items-center justify-center w-16 h-16 bg-green-100 rounded-full mb-4 animate-bounce-subtle">
                   <CheckCircle2 className="w-8 h-8 text-green-600" />
                 </div>
-                <h3 className="font-bold text-xl text-green-800 mb-2">{activeSubjectTab} 분석 완료</h3>
+                <h3 className="font-bold text-xl text-green-800 mb-2">{t('diagnosis.step3.ocrReady')}</h3>
                 <p className="text-sm text-green-700 font-medium leading-relaxed mb-6">
-                  풀이 습관 데이터가 저장되었습니다.<br />
-                  <span className="font-bold underline">최종 리포트</span>에서 결과를 확인하세요!
+                  {t('diagnosis.step3.done')}<br />
+                  <span className="font-bold underline">{t('nav.report')}</span>
                 </p>
                 <button
                   onClick={() => {
@@ -1075,21 +1073,21 @@ export function DiagnosisContent() {
                 {(ocrStatus === "idle") && (
                   <div
                     onClick={triggerFileInput}
-                    className="h-full border-2 border-dashed border-gray-300 rounded-2xl p-10 flex flex-col items-center justify-center cursor-pointer hover:border-primary hover:bg-surface transition-all group"
+                    className="h-full border-2 border-dashed border-gray-300 rounded-2xl p-10 flex flex-col items-center justify-center cursor-pointer hover:border-blue-500 hover:bg-blue-50/30 transition-all group"
                   >
-                    <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4 group-hover:bg-[#EBE5DE] transition-colors">
-                      <Camera className="w-8 h-8 text-gray-400 group-hover:text-primary" />
+                    <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4 group-hover:bg-blue-100 transition-colors">
+                      <Camera className="w-8 h-8 text-gray-400 group-hover:text-blue-600" />
                     </div>
-                    <p className="font-bold text-gray-600">{activeSubjectTab} 풀이 사진</p>
-                    <p className="text-xs text-gray-400 mt-1">클릭하여 업로드 (OCR 자동 검사)</p>
+                    <p className="font-bold text-gray-600">{t('diagnosis.step3.uploadTitle', { subject: activeSubjectTab })}</p>
+                    <p className="text-xs text-gray-400 mt-1">{t('diagnosis.step3.uploadDesc')}</p>
                   </div>
                 )}
 
                 {(ocrStatus === "scanning" || ocrStatus === "analyzing") && (
-                  <div className="h-full border-2 border-[#EBE5DE] rounded-2xl p-10 flex flex-col items-center justify-center bg-surface relative overflow-hidden">
-                    <ScanLine className="w-16 h-16 text-primary animate-pulse mb-4" />
-                    <div className="absolute top-0 left-0 w-full h-1 bg-[#8D6E63] shadow-[0_0_20px_rgba(109,76,65,0.8)] animate-[scan_2s_ease-in-out_infinite]"></div>
-                    <p className="font-bold text-primary animate-pulse">
+                  <div className="h-full border-2 border-blue-100 rounded-2xl p-10 flex flex-col items-center justify-center bg-blue-50/30 relative overflow-hidden">
+                    <ScanLine className="w-16 h-16 text-blue-500 animate-pulse mb-4" />
+                    <div className="absolute top-0 left-0 w-full h-1 bg-blue-500 shadow-[0_0_20px_rgba(59,130,246,0.6)] animate-[scan_2s_ease-in-out_infinite]"></div>
+                    <p className="font-bold text-blue-600 animate-pulse">
                       {ocrStatus === "scanning" ? t('diagnosis.step3.scanning') : t('diagnosis.step3.analyzing')}
                     </p>
                   </div>
@@ -1102,7 +1100,7 @@ export function DiagnosisContent() {
 
       {/* --- STEP 4: Time Table Grid --- */}
       {step === 4 && (
-        <div className="bg-white max-w-xl w-full p-6 rounded-3xl shadow-xl space-y-4 animate-fade-in-up">
+        <div className="bg-white max-w-xl w-full p-6 rounded-2xl shadow-sm border border-gray-100 space-y-4 animate-fade-in-up">
           <div className="text-center">
             <h2 className="text-2xl font-bold text-gray-900">{t('diagnosis.step4.title')}</h2>
             <p className="text-gray-500 text-sm mt-1">
@@ -1113,30 +1111,30 @@ export function DiagnosisContent() {
           <div className="flex flex-col gap-3 bg-gray-50 p-3 rounded-xl">
             <div className="grid grid-cols-2 gap-2">
               <button onClick={clearCurrentWeek} className="flex items-center justify-center gap-1 py-2 text-xs font-bold text-gray-600 bg-white border border-gray-300 rounded-lg hover:bg-gray-100 shadow-sm"><RefreshCcw className="w-3 h-3" /> {t('diagnosis.step4.clearAll')}</button>
-              <button onClick={fillCurrentWeek} className="flex items-center justify-center gap-1 py-2 text-xs font-bold text-primary bg-surface border border-[#D7CCC8] rounded-lg hover:bg-[#EBE5DE] shadow-sm"><Maximize className="w-3 h-3" /> {t('diagnosis.step4.fillAll')}</button>
+              <button onClick={fillCurrentWeek} className="flex items-center justify-center gap-1 py-2 text-xs font-bold text-blue-600 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 shadow-sm"><Maximize className="w-3 h-3" /> {t('diagnosis.step4.fillAll')}</button>
             </div>
             <div className="flex justify-between items-center px-1 pt-2 border-t border-gray-200">
-              <span className="text-sm font-bold text-gray-700 flex items-center gap-2">확보: <span className="text-primary text-lg font-black">{calculateTotalHours()}시간</span></span>
+              <span className="text-sm font-bold text-gray-700 flex items-center gap-2">{t('diagnosis.step4.secured')}: <span className="text-blue-600 text-lg font-black">{calculateTotalHours()}{t('diagnosis.step4.hours')}</span></span>
               <div className="flex items-center gap-2 text-xs text-gray-400">
-                <div className="flex items-center gap-1"><div className="w-3 h-3 bg-primary rounded-sm"></div>공부 가능</div>
-                <div className="flex items-center gap-1"><div className="w-3 h-3 bg-white border rounded-sm"></div>불가능</div>
+                <div className="flex items-center gap-1"><div className="w-3 h-3 bg-blue-500 rounded-sm"></div>{t('diagnosis.step4.available')}</div>
+                <div className="flex items-center gap-1"><div className="w-3 h-3 bg-white border rounded-sm"></div>{t('diagnosis.step4.unavailable')}</div>
               </div>
             </div>
           </div>
 
-          <div className="border rounded-xl overflow-hidden shadow-inner bg-white select-none">
-            <div className="grid border-b bg-gray-50" style={{ gridTemplateColumns: `40px repeat(7, 1fr)` }}>
-              <div className="p-2 text-[10px] font-bold text-gray-400 text-center border-r flex items-center justify-center">Time</div>
+          <div className="border border-gray-200 rounded-xl overflow-hidden shadow-inner bg-white select-none">
+            <div className="grid border-b border-gray-200 bg-gray-50" style={{ gridTemplateColumns: `40px repeat(7, 1fr)` }}>
+              <div className="p-2 text-[10px] font-bold text-gray-400 text-center border-r border-gray-200 flex items-center justify-center">Time</div>
               {WEEK_DAYS.map((dayLabel, i) => (
-                <div key={i} className="p-2 text-xs font-bold text-center border-r last:border-r-0 text-gray-700">
+                <div key={i} className="p-2 text-xs font-bold text-center border-r border-gray-200 last:border-r-0 text-gray-700">
                   {dayLabel}
                 </div>
               ))}
             </div>
             <div className="h-64 overflow-y-auto custom-scrollbar relative">
               {HOURS.map((hour) => (
-                <div key={hour} className="grid h-8 border-b last:border-b-0" style={{ gridTemplateColumns: `40px repeat(7, 1fr)` }}>
-                  <div className="text-[10px] text-gray-400 font-medium flex items-center justify-center border-r bg-gray-50 sticky left-0">{hour}:00</div>
+                <div key={hour} className="grid h-8 border-b border-gray-100 last:border-b-0" style={{ gridTemplateColumns: `40px repeat(7, 1fr)` }}>
+                  <div className="text-[10px] text-gray-400 font-medium flex items-center justify-center border-r border-gray-200 bg-gray-50 sticky left-0">{hour}:00</div>
                   {WEEK_DAYS.map((_, dayIdx) => {
                     const key = `${dayIdx}-${hour}`;
                     const isSelected = selectedSlots.has(key);
@@ -1145,7 +1143,7 @@ export function DiagnosisContent() {
                         key={key}
                         onMouseDown={() => handleMouseDown(dayIdx, hour)}
                         onMouseEnter={() => handleMouseEnter(dayIdx, hour)}
-                        className={`cursor-pointer transition-colors duration-75 border-r last:border-r-0 ${isSelected ? "bg-primary hover:bg-[#8D6E63]" : "bg-white hover:bg-gray-100"}`}
+                        className={`cursor-pointer transition-colors duration-75 border-r border-gray-100 last:border-r-0 ${isSelected ? "bg-blue-500 hover:bg-blue-600" : "bg-white hover:bg-gray-100"}`}
                       />
                     );
                   })}
@@ -1171,16 +1169,16 @@ export function DiagnosisContent() {
           <button
             onClick={handleNext}
             disabled={!canGoNext() || isSubmitting}
-            className="flex-1 bg-primary disabled:bg-gray-300 text-white py-4 rounded-xl font-bold text-lg hover:bg-[#5D4037] transition-colors flex items-center justify-center gap-2 shadow-lg disabled:shadow-none"
+            className="flex-1 bg-blue-600 disabled:bg-gray-300 text-white py-4 rounded-xl font-bold text-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 shadow-lg disabled:shadow-none"
           >
             {isSubmitting ? (
               <>
                 <Loader2 className="w-5 h-5 animate-spin" />
-                저장 중...
+                {t('common.save')}...
               </>
             ) : (
               <>
-                {step === 4 ? "분석 시작하기" : "다음으로"}
+                {step === 4 ? t('diagnosis.result.start') : t('common.next')}
                 {step !== 4 && <ChevronRight className="w-5 h-5" />}
               </>
             )}
@@ -1191,12 +1189,12 @@ export function DiagnosisContent() {
       {/* --- STEP 5: AI Analysis --- */}
       {step === 5 && (
         <div className="text-center space-y-6 animate-fade-in">
-          <Loader2 className="w-16 h-16 text-primary animate-spin mx-auto" />
-          <h2 className="text-2xl font-bold text-gray-900">{t('diagnosis.analysis.loadingTitle')}</h2>
+          <Loader2 className="w-16 h-16 text-blue-600 animate-spin mx-auto" />
+          <h2 className="text-2xl font-bold text-gray-900">{t('diagnosis.step5.loadingTitle')}</h2>
           <div className="space-y-3 text-gray-500">
-            <p>🧠 {t('diagnosis.analysis.typeAnalysis')}: {getAnalysisText()}</p>
-            <p>📝 {t('diagnosis.analysis.habitAnalysis')}: {hasMainSubject ? (ocrResult || t('diagnosis.analysis.analyzingHabit')) : t('diagnosis.analysis.skipped')}</p>
-            <p>📐 {t('diagnosis.analysis.avgTime')}: {Math.round((selectedSlots.size * 60) / 7)}{t('diagnosis.result.minutes')}</p>
+            <p>🧠 {t('diagnosis.step5.typeAnalysis')}: {getAnalysisText()}</p>
+            <p>📝 {t('diagnosis.step5.habitAnalysis')}: {hasMainSubject ? (ocrResult || t('diagnosis.step5.analyzingHabit')) : t('diagnosis.step5.skipped')}</p>
+            <p>📐 {t('diagnosis.step5.avgTime')}: {Math.round((selectedSlots.size * 60) / 7)}{t('diagnosis.result.minutes')}</p>
           </div>
         </div>
       )}
