@@ -48,7 +48,7 @@ export default function StudentReportPage() {
   }, [allReports]);
 
   return (
-    <div className="p-6 md:p-8 max-w-5xl mx-auto space-y-6 animate-fade-in pb-20 bg-gray-50 min-h-screen">
+    <div className="p-4 md:p-6 max-w-5xl mx-auto space-y-4 animate-fade-in pb-20 bg-gray-50 min-h-screen">
 
       {/* 1. 페이지 헤더 */}
       <div>

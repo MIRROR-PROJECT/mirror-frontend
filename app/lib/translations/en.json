@@ -50,32 +50,28 @@
             "subjectMissions": "Subject Mission Status",
             "completedTasks": "{{completed}}/{{total}} tasks completed",
             "studyTime": "Study Time",
-            "passionTemp": "Passion Temperature",
-            "loadingStats": "Loading learning stats...",
-            "aiCoachingTitle": "Mirror AI Coaching",
-            "aiCoachingMessage": "{{name}}, you missed your Math mission yesterday. Let's make sure to complete it today!",
-            "aiCoachingButton": "Get Advice"
+            "passionTemp": "Passion Temperature"
         }
     },
     "teacher": {
-        "workspace": "Teacher Workspace",
-        "students": "Student Management",
-        "materials": "Teaching Materials",
-        "benefits": "Benefits",
-        "tutorial": "Tutorial",
-        "dashboard": {
-            "title": "Teacher Workspace",
-            "dailyBriefing": "Daily Learning Briefing",
-            "classMood": "Class Mood Analysis",
-            "weakness": "Weakness Detection",
-            "aiRecommendation": "AI Recommendations",
-            "aiClinic": "AI Error Clinic",
-            "careList": "Students Needing Attention",
-            "createClass": "Create New Class",
-            "addClass": "Add Class",
-            "addStudent": "Add Student",
-            "studentCount": "{{count}} students",
-            "avgProgress": "Avg Progress"
+        "schedule": {
+            "edit": "Edit Schedule",
+            "selectTime": "Select Time",
+            "save": "Save",
+            "cancel": "Cancel",
+            "editSchedule": "Edit Schedule",
+            "selectDay": "Select Day",
+            "addTimeSlot": "Add Study Time"
+        },
+        "diagnosis": {
+            "title": "Learning Diagnosis",
+            "analyzing": "Analyzing...",
+            "result": "Diagnosis Result",
+            "continue": "Continue",
+            "levelTest": "Level Test",
+            "startDiagnosis": "Start Diagnosis",
+            "analysisComplete": "Analysis Complete",
+            "recommendations": "Recommendations"
         }
     },
     "onboarding": {
@@ -122,9 +118,7 @@
         "hero": "AI-Powered Personalized Learning Platform",
         "subtitle": "Experience learning tailored just for you",
         "getStarted": "Get Started",
-        "learnMore": "Learn More"
-    },
-    "landing": {
+        "learnMore": "Learn More",
         "cases": "📉 1,240 cases: Grade 4 → Grade 1 in 2 months",
         "hero1": "Your neighbor isn't",
         "hero2": "smarter than you.",
@@ -243,6 +237,7 @@
         "reportPreview": "Learning Report Preview",
         "reportPreviewDesc": "Check the new style",
         "subjectMissions": "Subject Mission Status",
+        "loadingStats": "Loading learning stats...",
         "aiCoachingTitle": "Mirror AI Coaching",
         "aiCoachingMessage": "{{name}}, you missed your Math mission yesterday. Let's make sure to complete it today!",
         "aiCoachingButton": "Get Advice"
@@ -257,16 +252,5 @@
         "suggestions": "Suggestions",
         "placeholder": "Type your question...",
         "disclaimer": "AI can make mistakes. Please verify important information."
-    },
-    "schedule": {
-        "editSchedule": "Edit Schedule",
-        "selectDay": "Select Day",
-        "addTimeSlot": "Add Study Time"
-    },
-    "diagnosis": {
-        "levelTest": "Level Test",
-        "startDiagnosis": "Start Diagnosis",
-        "analysisComplete": "Analysis Complete",
-        "recommendations": "Recommendations"
     }
 }

@@ -1,0 +1,114 @@
+﻿
+> mirror-app@0.1.0 build
+> next build
+
+node.exe : ??Warning: Next.js infe
+rred your workspace root, but it m
+ay not be correct.
+위치 줄:1 문자:1
++ & "C:\Program Files\nodejs/node.
+exe" "C:\Users\ohsey\AppData\Roami
+ng\ ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~
+    + CategoryInfo          : Not 
+   Specified: (??Warning: Next..  
+  .not be correct.:String) [],    
+ RemoteException
+    + FullyQualifiedErrorId : Nat 
+   iveCommandError
+ 
+ We detected multiple lockfiles an
+d selected the directory of C:\Use
+rs\ohsey\package-lock.json as the 
+root directory.
+ To silence this warning, set `tur
+bopack.root` in your Next.js confi
+g, or consider removing one of the
+ lockfiles if it's not needed.
+   See https://nextjs.org/docs/app
+/api-reference/config/next-config-
+js/turbopack#root-directory for mo
+re information.
+ Detected additional lockfiles: 
+   * C:\Users\ohsey\Desktop\mirror
+-app\package-lock.json
+
+??Next.js 16.1.1 (Turbopack)
+- Environments: .env.local
+
+??The "middleware" file convention
+ is deprecated. Please use "proxy"
+ instead. Learn more: https://next
+js.org/docs/messages/middleware-to
+-proxy
+  Creating an optimized production build ...
+??Compiled successfully in 8.4s
+  Running TypeScript ...
+Failed to compile.
+
+./app/context/LanguageContext.tsx:
+20:5
+Type error: Type '{ common: { logi
+n: string; logout: string; welcome
+: string; cancel: string; confirm:
+ string; save: string; delete: str
+ing; edit: string; add: string; se
+arch: string; filter: string; load
+ing: string; error: string; ... 5 
+more ...; student: string; }; ... 
+11 more ...; chat: { ...; }; }' is
+ not assignable to type '{ common:
+ { login: string; logout: string; 
+welcome: string; cancel: string; c
+onfirm: string; save: string; dele
+te: string; edit: string; add: str
+ing; search: string; filter: strin
+g; loading: string; error: string;
+ ... 5 more ...; student: string; 
+}; ... 11 more ...; chat: { ...; }
+; }'. Two different types with thi
+s name exist, but they are unrelat
+ed.
+  Types of property '"teacher"' ar
+e incompatible.
+    Type '{ dashboard: { title: st
+ring; dailyBriefing: string; class
+Mood: string; weakness: string; ai
+Recommendation: string; aiClinic: 
+string; careList: string; createCl
+ass: string; addClass: string; add
+Student: string; studentCount: str
+ing; avgProgress: string; }; }' is
+ missing the following properties 
+from type '{ schedule: { edit: str
+ing; selectTime: string; save: str
+ing; cancel: string; editSchedule:
+ string; selectDay: string; addTim
+eSlot: string; }; diagnosis: { tit
+le: string; analyzing: string; res
+ult: string; ... 4 more ...; recom
+mendations: string; }; }': "schedu
+le", "diagnosis"
+
+[0m [90m 18 |[39m [36mconst[3
+9m translations[33m:[39m [33mRe
+cord[39m[33m<[39m[33mLanguage
+[39m[33m,[39m [33mTranslations
+[39m[33m>[39m [33m=[39m {
+ [90m 19 |[39m     ko[33m:[39m
+ koTranslations[33m,[39m
+[31m[1m>[22m[39m[90m 20 |[39
+m     en[33m:[39m enTranslations
+ [90m    |[39m     [31m[1m^[2
+2m[39m
+ [90m 21 |[39m }[33m;[39m
+ [90m 22 |[39m
+ [90m 23 |[39m [36mexport[39m 
+[36mfunction[39m [33mLanguagePr
+ovider[39m({ children }[33m:[39
+m { children[33m:[39m [33mReact
+Node[39m }) {[0m
+Next.js build worker exited with c
+ode: 1 and signal: null
