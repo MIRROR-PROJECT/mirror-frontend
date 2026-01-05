@@ -6,6 +6,7 @@ import Navbar from "./components/Sidebar";
 import MobileBottomNav from "./components/MobileBottomNav";
 import { StudyProvider } from "./context/StudyContext";
 import { LanguageProvider } from "./context/LanguageContext";
+import Head from "next/head";
 
 export default function RootLayout({
   children,
@@ -30,7 +31,10 @@ export default function RootLayout({
 
   return (
     <html lang="ko">
-      <body className="min-h-screen bg-gray-50">
+      <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+      </head>
+      <body className="min-h-screen bg-gray-50 overflow-x-hidden">
         <LanguageProvider>
           <StudyProvider>
             <div className="flex min-h-screen">
