@@ -112,10 +112,16 @@ export default function TeacherDashboard({ user }: { user: any }) {
 
   const currentClass = classes.find(c => c.id === selectedClassId) || classes[0];
 
-  // 첫 방문 시 튜토리얼로 리다이렉트
+  // 첫 방문 시 benefits 페이지로 리다이렉트 (결제 이전)
   useEffect(() => {
+    const fromBenefits = localStorage.getItem('teacher_from_benefits');
     const tutorialCompleted = localStorage.getItem('teacher_tutorial_completed');
-    if (!tutorialCompleted) {
+
+    if (!fromBenefits) {
+      // 아직 benefits 페이지를 보지 않았으면 거기로 보냄
+      window.location.href = '/teacher/benefits';
+    } else if (!tutorialCompleted) {
+      // benefits는 봤지만 튜토리얼은 안 했으면 튜토리얼로
       window.location.href = '/teacher/tutorial';
     }
   }, []);
@@ -292,7 +298,7 @@ export default function TeacherDashboard({ user }: { user: any }) {
       </div>
 
       {/* 2. 데일리 학습 브리핑 (메인 섹션) */}
-      <section className="bg-white rounded-3xl border border-gray-200 shadow-xl shadow-gray-100 overflow-hidden">
+      <section data-tutorial="daily-briefing" className="bg-white rounded-3xl border border-gray-200 shadow-xl shadow-gray-100 overflow-hidden">
         {/* 헤더 */}
         <div className="bg-gray-900 p-6 md:p-8 text-white flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
@@ -323,7 +329,7 @@ export default function TeacherDashboard({ user }: { user: any }) {
 
             <div className="space-y-4 flex-1">
               {/* Mood Card */}
-              <div className="flex gap-4 p-4 bg-gray-50 rounded-2xl border border-gray-100 hover:border-blue-200 transition-colors">
+              <div data-tutorial="briefing-mood" className="flex gap-4 p-4 bg-gray-50 rounded-2xl border border-gray-100 hover:border-blue-200 transition-colors">
                 <div className="w-10 h-10 rounded-full bg-white border border-gray-200 flex items-center justify-center text-xl shadow-sm shrink-0">
                   {currentClass.avgProgress >= 70 ? '🔥' : '💧'}
                 </div>
@@ -336,7 +342,7 @@ export default function TeacherDashboard({ user }: { user: any }) {
               </div>
 
               {/* Weakness Card */}
-              <div className="flex gap-4 p-4 bg-red-50/50 rounded-2xl border border-red-100 hover:border-red-200 transition-colors">
+              <div data-tutorial="briefing-weakness" className="flex gap-4 p-4 bg-red-50/50 rounded-2xl border border-red-100 hover:border-red-200 transition-colors">
                 <div className="w-10 h-10 rounded-full bg-white border border-red-100 flex items-center justify-center shadow-sm shrink-0">
                   <AlertCircle className="w-5 h-5 text-red-500" />
                 </div>
@@ -358,7 +364,7 @@ export default function TeacherDashboard({ user }: { user: any }) {
               <CheckCircle2 className="w-5 h-5 text-green-600" /> 오늘의 추천 액션
             </h3>
 
-            <div className="flex-1 bg-blue-50/50 border border-blue-100 rounded-2xl p-6 relative overflow-hidden group">
+            <div data-tutorial="ai-recommendation" className="flex-1 bg-blue-50/50 border border-blue-100 rounded-2xl p-6 relative overflow-hidden group">
               <div className="absolute top-0 right-0 p-6 opacity-5 group-hover:opacity-10 transition-opacity">
                 <Sparkles className="w-24 h-24 text-blue-600" />
               </div>
@@ -391,7 +397,7 @@ export default function TeacherDashboard({ user }: { user: any }) {
             <Printer className="w-5 h-5 text-purple-600" /> AI 오답 클리닉
           </h2>
 
-          <div className="bg-gradient-to-br from-purple-600 to-indigo-700 rounded-3xl p-8 text-white shadow-xl relative overflow-hidden group hover:shadow-2xl transition-all duration-300">
+          <div data-tutorial="ai-clinic" className="bg-gradient-to-br from-purple-600 to-indigo-700 rounded-3xl p-8 text-white shadow-xl relative overflow-hidden group hover:shadow-2xl transition-all duration-300">
             {/* 배경 애니메이션 효과 */}
             <div className="absolute -right-10 -top-10 w-80 h-80 bg-white opacity-5 rounded-full blur-3xl group-hover:scale-110 transition-transform duration-700"></div>
 
@@ -428,7 +434,7 @@ export default function TeacherDashboard({ user }: { user: any }) {
             <MessageSquare className="w-5 h-5 text-pink-500" /> 케어 필요 학생 ({currentClass.careList.length})
           </h2>
 
-          <div className="bg-white border border-gray-200 rounded-3xl p-5 shadow-sm h-full min-h-[200px]">
+          <div data-tutorial="care-list" className="bg-white border border-gray-200 rounded-3xl p-5 shadow-sm h-full min-h-[200px]">
             {currentClass.careList.length > 0 ? (
               <div className="space-y-3">
                 {currentClass.careList.map((student) => (

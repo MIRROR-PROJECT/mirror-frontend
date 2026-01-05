@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Search, Filter, Download, Plus,
   MoreHorizontal, ChevronDown, User,
@@ -73,6 +73,20 @@ export default function StudentManagementPage() {
       default: return 'bg-gray-50 text-gray-600';
     }
   };
+
+  // 첫 방문 시 튜토리얼로 리다이렉트 (단, 대시보드 튜토리얼 완료 후)
+  useEffect(() => {
+    const dashboardTutorialCompleted = localStorage.getItem('teacher_tutorial_completed');
+    const studentsTutorialCompleted = localStorage.getItem('teacher_students_tutorial_completed');
+
+    if (!dashboardTutorialCompleted) {
+      // 대시보드 튜토리얼을 먼저 완료해야 함
+      window.location.href = '/dashboard?role=teacher';
+    } else if (!studentsTutorialCompleted) {
+      // 대시보드는 끝났지만 수강생 관리는 안 끝남
+      window.location.href = '/teacher/students/tutorial';
+    }
+  }, []);
 
   return (
     <div className="p-6 md:p-10 max-w-7xl mx-auto space-y-6 animate-fade-in">
@@ -202,7 +216,7 @@ export default function StudentManagementPage() {
                 <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
                   <div
                     className={`h-full rounded-full transition-all duration-500 ${student.progressRate >= 70 ? 'bg-blue-500' :
-                        student.progressRate >= 40 ? 'bg-yellow-500' : 'bg-red-500'
+                      student.progressRate >= 40 ? 'bg-yellow-500' : 'bg-red-500'
                       }`}
                     style={{ width: `${student.progressRate}%` }}
                   />

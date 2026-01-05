@@ -2,67 +2,73 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { X, ChevronRight, Users, TrendingUp, BookOpen, Sparkles } from 'lucide-react';
-
-// 모의 학생 데이터
-const MOCK_STUDENTS = [
-    { id: 1, name: '김민준', grade: '고2', subject: '수학', progress: 85, status: 'active', recent: '오늘 3시간 학습' },
-    { id: 2, name: '이서윤', grade: '고3', subject: '영어', progress: 72, status: 'active', recent: '어제 2시간 학습' },
-    { id: 3, name: '박지호', grade: '고1', subject: '국어', progress: 90, status: 'warning', recent: '3일째 미접속' },
-];
+import { X, ChevronRight, Sparkles } from 'lucide-react';
+import TeacherDashboard from '../../components/dashboard/TeacherDashboard';
 
 type TutorialStep = {
     title: string;
     description: string;
-    target: string; // CSS selector or ID
-    position: 'top' | 'bottom' | 'left' | 'right';
+    target: string;
+    position: 'top' | 'bottom' | 'left' | 'right' | 'center';
 };
 
 const TUTORIAL_STEPS: TutorialStep[] = [
     {
         title: '👋 환영합니다!',
-        description: 'Mirror AI 선생님 대시보드에 오신 것을 환영합니다. 학생들의 학습 현황을 한눈에 확인하고 관리할 수 있어요.',
-        target: 'dashboard-header',
+        description: 'Mirror AI 선생님 워크스페이스입니다. 실시간으로 학급의 모든 학습 데이터를 분석하고, AI가 오늘의 수업 전략을 제안합니다.',
+        target: 'daily-briefing',
         position: 'bottom'
     },
     {
-        title: '📊 학생 목록',
-        description: '여기서 담당하는 모든 학생들을 확인할 수 있습니다. 각 학생의 학습 진행도와 최근 활동을 실시간으로 모니터링하세요.',
-        target: 'student-list',
+        title: '📊 학급 분위기 분석',
+        description: '어제 밤 학생들의 학습 패턴을 AI가 분석했습니다. 오늘 수업에서 어떤 부분을 먼저 다루면 좋을지 확인하세요.',
+        target: 'briefing-mood',
         position: 'right'
     },
     {
-        title: '📈 학습 통계',
-        description: '학생별 성적 추이와 학습 패턴을 분석할 수 있습니다. 클릭하면 상세한 리포트를 확인할 수 있어요.',
-        target: 'student-card-0',
-        position: 'top'
+        title: '🎯 취약점 발견',
+        description: '전체 학생의 오답률이 높은 개념을 실시간으로 찾아냅니다. 오늘 수업 도입부 복습 추천을 받으세요.',
+        target: 'briefing-weakness',
+        position: 'right'
     },
     {
-        title: '➕ 학생 추가',
-        description: '새로운 학생을 등록하려면 여기를 클릭하세요. 학생 정보를 입력하고 과목을 배정할 수 있습니다.',
-        target: 'add-student-btn',
+        title: '✨ AI 추천 액션',
+        description: 'AI가 데이터를 바탕으로 가장 효과적인 수업 방법을 제안합니다. 클릭 한 번으로 수업 자료에 추가할 수 있어요.',
+        target: 'ai-recommendation',
         position: 'left'
     },
     {
-        title: '✨ 준비 완료!',
-        description: '이제 시작할 준비가 되셨습니다. 학생들의 성장을 함께 만들어가요!',
-        target: 'finish-tutorial',
-        position: 'bottom'
+        title: '📝 AI 오답 클리닉',
+        description: '취약한 유형의 문제를 자동으로 선별하여 PDF 문제지로 생성합니다. 학생별 맞춤 문제도 가능해요.',
+        target: 'ai-clinic',
+        position: 'top'
+    },
+    {
+        title: '⚠️ 케어 필요 학생',
+        description: '성적 급락, 장기 미접속 등 즉시 관리가 필요한 학생을 AI가 알려줍니다. 전화 한 통으로 학생을 구할 수 있어요.',
+        target: 'care-list',
+        position: 'left'
+    },
+    {
+        title: '✅ 준비 완료!',
+        description: '이제 학생 관리의 효율이 10배 올라갑니다. 데이터 기반으로 학생을 케어하세요!',
+        target: 'finish',
+        position: 'center'
     }
 ];
 
-export default function TeacherTutorialPage() {
+export default function TeacherTutorialWrapper() {
     const router = useRouter();
     const [currentStep, setCurrentStep] = useState(0);
     const [spotlightPosition, setSpotlightPosition] = useState({ top: 0, left: 0, width: 0, height: 0 });
+    const [user] = useState({ name: '선생님', email: 'teacher@mirror.com' });
 
     const currentTutorial = TUTORIAL_STEPS[currentStep];
 
-    // 하이라이트할 요소의 위치 계산
     useEffect(() => {
-        if (currentTutorial.target === 'finish-tutorial') return;
+        if (currentTutorial.position === 'center') return;
 
-        const targetElement = document.getElementById(currentTutorial.target);
+        const targetElement = document.querySelector(`[data-tutorial="${currentTutorial.target}"]`);
         if (targetElement) {
             const rect = targetElement.getBoundingClientRect();
             setSpotlightPosition({
@@ -71,8 +77,11 @@ export default function TeacherTutorialPage() {
                 width: rect.width + 20,
                 height: rect.height + 20
             });
+
+            // 요소가 화면에 보이도록 스크롤
+            targetElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
-    }, [currentStep, currentTutorial.target]);
+    }, [currentStep, currentTutorial]);
 
     const handleNext = () => {
         if (currentStep < TUTORIAL_STEPS.length - 1) {
@@ -91,29 +100,29 @@ export default function TeacherTutorialPage() {
         router.push('/dashboard?role=teacher');
     };
 
-    const getTooltipPosition = () => {
+    const getTooltipClasses = () => {
         const { position } = currentTutorial;
-        const baseClasses = "absolute z-50 bg-white rounded-2xl shadow-2xl p-6 max-w-sm border-2 border-indigo-200";
+        const base = "fixed z-[60] bg-white rounded-2xl shadow-2xl p-6 max-w-md border-2 border-indigo-200";
 
         switch (position) {
             case 'top':
-                return `${baseClasses} bottom-full mb-4 left-1/2 -translate-x-1/2`;
+                return `${base} bottom-[${spotlightPosition.top + spotlightPosition.height + 20}px] left-1/2 -translate-x-1/2`;
             case 'bottom':
-                return `${baseClasses} top-full mt-4 left-1/2 -translate-x-1/2`;
+                return `${base} top-[${spotlightPosition.top + spotlightPosition.height + 20}px] left-1/2 -translate-x-1/2`;
             case 'left':
-                return `${baseClasses} right-full mr-4 top-1/2 -translate-y-1/2`;
+                return `${base} right-[calc(100%-${spotlightPosition.left - 20}px)] top-1/2 -translate-y-1/2`;
             case 'right':
-                return `${baseClasses} left-full ml-4 top-1/2 -translate-y-1/2`;
+                return `${base} left-[${spotlightPosition.left + spotlightPosition.width + 20}px] top-1/2 -translate-y-1/2`;
             default:
-                return baseClasses;
+                return base;
         }
     };
 
     return (
-        <div className="min-h-screen bg-gray-50 relative">
-            {/* Overlay with spotlight effect */}
-            {currentTutorial.target !== 'finish-tutorial' && (
-                <div className="fixed inset-0 z-40 pointer-events-none">
+        <div className="relative">
+            {/* Spotlight Overlay */}
+            {currentTutorial.position !== 'center' && (
+                <div className="fixed inset-0 z-[55] pointer-events-none">
                     <svg width="100%" height="100%" className="absolute inset-0">
                         <defs>
                             <mask id="spotlight-mask">
@@ -123,199 +132,62 @@ export default function TeacherTutorialPage() {
                                     y={spotlightPosition.top}
                                     width={spotlightPosition.width}
                                     height={spotlightPosition.height}
-                                    rx="12"
+                                    rx="16"
                                     fill="black"
                                 />
                             </mask>
                         </defs>
-                        <rect
-                            width="100%"
-                            height="100%"
-                            fill="rgba(0, 0, 0, 0.7)"
-                            mask="url(#spotlight-mask)"
-                        />
+                        <rect width="100%" height="100%" fill="rgba(0, 0, 0, 0.75)" mask="url(#spotlight-mask)" />
                     </svg>
                 </div>
             )}
 
-            {/* Mock Teacher Dashboard */}
-            <div className="p-8 max-w-7xl mx-auto">
-                {/* Header */}
-                <div id="dashboard-header" className="mb-8 relative">
-                    <h1 className="text-3xl font-bold text-gray-900 mb-2">선생님 대시보드</h1>
-                    <p className="text-gray-500">학생들의 학습 현황을 확인하세요</p>
-
-                    {currentStep === 0 && (
-                        <div className={getTooltipPosition()}>
-                            <div className="flex items-start justify-between mb-3">
-                                <h3 className="text-xl font-bold text-gray-900">{currentTutorial.title}</h3>
-                                <button onClick={handleSkip} className="text-gray-400 hover:text-gray-600">
-                                    <X className="w-5 h-5" />
-                                </button>
-                            </div>
-                            <p className="text-gray-600 mb-4">{currentTutorial.description}</p>
-                            <div className="flex items-center justify-between">
-                                <span className="text-sm text-gray-400">{currentStep + 1} / {TUTORIAL_STEPS.length}</span>
-                                <button
-                                    onClick={handleNext}
-                                    className="bg-indigo-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-indigo-700 flex items-center gap-2"
-                                >
-                                    다음 <ChevronRight className="w-4 h-4" />
-                                </button>
-                            </div>
-                        </div>
-                    )}
-                </div>
-
-                {/* Stats Cards */}
-                <div className="grid grid-cols-3 gap-6 mb-8">
-                    <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-                        <div className="flex items-center gap-3 mb-2">
-                            <Users className="w-5 h-5 text-indigo-600" />
-                            <span className="text-gray-500 text-sm">전체 학생</span>
-                        </div>
-                        <p className="text-3xl font-bold text-gray-900">24명</p>
-                    </div>
-                    <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-                        <div className="flex items-center gap-3 mb-2">
-                            <TrendingUp className="w-5 h-5 text-green-600" />
-                            <span className="text-gray-500 text-sm">평균 진행률</span>
-                        </div>
-                        <p className="text-3xl font-bold text-gray-900">78%</p>
-                    </div>
-                    <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-                        <div className="flex items-center gap-3 mb-2">
-                            <BookOpen className="w-5 h-5 text-purple-600" />
-                            <span className="text-gray-500 text-sm">오늘 활동</span>
-                        </div>
-                        <p className="text-3xl font-bold text-gray-900">18명</p>
-                    </div>
-                </div>
-
-                {/* Student List */}
-                <div id="student-list" className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 relative">
-                    <div className="flex items-center justify-between mb-6">
-                        <h2 className="text-xl font-bold text-gray-900">학생 목록</h2>
-                        <button id="add-student-btn" className="bg-indigo-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-indigo-700 flex items-center gap-2">
-                            <Users className="w-4 h-4" />
-                            학생 추가
+            {/* Tooltip */}
+            {currentTutorial.position !== 'center' ? (
+                <div
+                    className={getTooltipClasses()}
+                    style={{
+                        top: currentTutorial.position === 'bottom' ? `${spotlightPosition.top + spotlightPosition.height + 20}px` :
+                            currentTutorial.position === 'top' ? 'auto' : '50%',
+                        bottom: currentTutorial.position === 'top' ? `calc(100% - ${spotlightPosition.top - 20}px)` : 'auto',
+                        left: currentTutorial.position === 'right' ? `${spotlightPosition.left + spotlightPosition.width + 20}px` :
+                            currentTutorial.position === 'left' ? 'auto' : '50%',
+                        right: currentTutorial.position === 'left' ? `calc(100% - ${spotlightPosition.left - 20}px)` : 'auto',
+                        transform: currentTutorial.position === 'left' || currentTutorial.position === 'right' ? 'translateY(-50%)' :
+                            currentTutorial.position === 'top' || currentTutorial.position === 'bottom' ? 'translateX(-50%)' : 'none'
+                    }}
+                >
+                    <div className="flex items-start justify-between mb-3">
+                        <h3 className="text-xl font-bold text-gray-900">{currentTutorial.title}</h3>
+                        <button onClick={handleSkip} className="text-gray-400 hover:text-gray-600">
+                            <X className="w-5 h-5" />
                         </button>
                     </div>
-
-                    <div className="space-y-4">
-                        {MOCK_STUDENTS.map((student, index) => (
-                            <div
-                                key={student.id}
-                                id={`student-card-${index}`}
-                                className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 cursor-pointer transition-colors"
-                            >
-                                <div className="flex items-center gap-4">
-                                    <div className="w-12 h-12 bg-indigo-100 rounded-full flex items-center justify-center">
-                                        <span className="text-indigo-600 font-bold">{student.name[0]}</span>
-                                    </div>
-                                    <div>
-                                        <h3 className="font-bold text-gray-900">{student.name}</h3>
-                                        <p className="text-sm text-gray-500">{student.grade} · {student.subject}</p>
-                                    </div>
-                                </div>
-                                <div className="text-right">
-                                    <div className="flex items-center gap-2 mb-1">
-                                        <div className="w-24 h-2 bg-gray-200 rounded-full overflow-hidden">
-                                            <div
-                                                className="h-full bg-indigo-600 rounded-full"
-                                                style={{ width: `${student.progress}%` }}
-                                            />
-                                        </div>
-                                        <span className="text-sm font-medium text-gray-700">{student.progress}%</span>
-                                    </div>
-                                    <p className="text-xs text-gray-400">{student.recent}</p>
-                                </div>
-                            </div>
-                        ))}
+                    <p className="text-gray-600 mb-4 leading-relaxed">{currentTutorial.description}</p>
+                    <div className="flex items-center justify-between">
+                        <span className="text-sm text-gray-400">{currentStep + 1} / {TUTORIAL_STEPS.length}</span>
+                        <button
+                            onClick={handleNext}
+                            className="bg-indigo-600 text-white px-5 py-2.5 rounded-xl font-bold hover:bg-indigo-700 flex items-center gap-2 shadow-lg"
+                        >
+                            다음 <ChevronRight className="w-4 h-4" />
+                        </button>
                     </div>
-
-                    {/* Tooltip for student list */}
-                    {currentStep === 1 && (
-                        <div className={getTooltipPosition()}>
-                            <div className="flex items-start justify-between mb-3">
-                                <h3 className="text-xl font-bold text-gray-900">{currentTutorial.title}</h3>
-                                <button onClick={handleSkip} className="text-gray-400 hover:text-gray-600">
-                                    <X className="w-5 h-5" />
-                                </button>
-                            </div>
-                            <p className="text-gray-600 mb-4">{currentTutorial.description}</p>
-                            <div className="flex items-center justify-between">
-                                <span className="text-sm text-gray-400">{currentStep + 1} / {TUTORIAL_STEPS.length}</span>
-                                <button
-                                    onClick={handleNext}
-                                    className="bg-indigo-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-indigo-700 flex items-center gap-2"
-                                >
-                                    다음 <ChevronRight className="w-4 h-4" />
-                                </button>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Tooltip for student card */}
-                    {currentStep === 2 && (
-                        <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-full mb-4 z-50 bg-white rounded-2xl shadow-2xl p-6 max-w-sm border-2 border-indigo-200">
-                            <div className="flex items-start justify-between mb-3">
-                                <h3 className="text-xl font-bold text-gray-900">{currentTutorial.title}</h3>
-                                <button onClick={handleSkip} className="text-gray-400 hover:text-gray-600">
-                                    <X className="w-5 h-5" />
-                                </button>
-                            </div>
-                            <p className="text-gray-600 mb-4">{currentTutorial.description}</p>
-                            <div className="flex items-center justify-between">
-                                <span className="text-sm text-gray-400">{currentStep + 1} / {TUTORIAL_STEPS.length}</span>
-                                <button
-                                    onClick={handleNext}
-                                    className="bg-indigo-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-indigo-700 flex items-center gap-2"
-                                >
-                                    다음 <ChevronRight className="w-4 h-4" />
-                                </button>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Tooltip for add button */}
-                    {currentStep === 3 && (
-                        <div className="absolute top-16 right-0 mr-4 z-50 bg-white rounded-2xl shadow-2xl p-6 max-w-sm border-2 border-indigo-200">
-                            <div className="flex items-start justify-between mb-3">
-                                <h3 className="text-xl font-bold text-gray-900">{currentTutorial.title}</h3>
-                                <button onClick={handleSkip} className="text-gray-400 hover:text-gray-600">
-                                    <X className="w-5 h-5" />
-                                </button>
-                            </div>
-                            <p className="text-gray-600 mb-4">{currentTutorial.description}</p>
-                            <div className="flex items-center justify-between">
-                                <span className="text-sm text-gray-400">{currentStep + 1} / {TUTORIAL_STEPS.length}</span>
-                                <button
-                                    onClick={handleNext}
-                                    className="bg-indigo-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-indigo-700 flex items-center gap-2"
-                                >
-                                    다음 <ChevronRight className="w-4 h-4" />
-                                </button>
-                            </div>
-                        </div>
-                    )}
                 </div>
-            </div>
-
-            {/* Final Step Modal */}
-            {currentStep === 4 && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-                    <div className="bg-white rounded-3xl shadow-2xl p-8 max-w-md mx-4 text-center">
-                        <div className="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                            <Sparkles className="w-8 h-8 text-indigo-600" />
+            ) : (
+                // Final Modal
+                <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm">
+                    <div className="bg-white rounded-3xl shadow-2xl p-10 max-w-md mx-4 text-center">
+                        <div className="w-20 h-20 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                            <Sparkles className="w-10 h-10 text-indigo-600" />
                         </div>
-                        <h2 className="text-2xl font-bold text-gray-900 mb-3">{currentTutorial.title}</h2>
-                        <p className="text-gray-600 mb-6">{currentTutorial.description}</p>
+                        <h2 className="text-3xl font-bold text-gray-900 mb-4">{currentTutorial.title}</h2>
+                        <p className="text-gray-600 mb-8 text-lg leading-relaxed">{currentTutorial.description}</p>
                         <button
                             onClick={completeTutorial}
-                            className="w-full bg-indigo-600 text-white py-4 rounded-xl font-bold hover:bg-indigo-700 transition-colors"
+                            className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-4 rounded-xl font-bold text-lg hover:shadow-xl transition-all"
                         >
-                            대시보드 시작하기
+                            워크스페이스 시작하기
                         </button>
                         <button
                             onClick={handleSkip}
@@ -326,6 +198,11 @@ export default function TeacherTutorialPage() {
                     </div>
                 </div>
             )}
+
+            {/* Actual Teacher Dashboard with tutorial markers */}
+            <div data-tutorial-wrapper="true">
+                <TeacherDashboard user={user} />
+            </div>
         </div>
     );
 }

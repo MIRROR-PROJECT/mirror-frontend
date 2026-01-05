@@ -23,6 +23,7 @@ export default function RootLayout({
     pathname === "/onboarding/info" ||
     pathname == "/onboarding/role" ||
     pathname === "/payment" ||
+    pathname === "/teacher/benefits" ||
     pathname?.startsWith("/student/diagnosis");
 
   return (
