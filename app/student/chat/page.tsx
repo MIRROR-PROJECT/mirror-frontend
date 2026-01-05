@@ -194,10 +194,10 @@ export default function ChatPage() {
 
   return (
     // 모바일 최적화: 화면에 딱 맞게
-    <div className="flex flex-col h-[100dvh] bg-gray-50 overflow-hidden w-full max-w-full">
+    <div className="flex flex-col h-[100dvh] bg-gray-50 w-full max-w-full overflow-hidden">
 
       {/* 1. 채팅방 헤더 - 모바일 최적화 */}
-      <header className="bg-white border-b border-gray-200 px-3 py-2.5 flex justify-between items-center shrink-0 z-10 shadow-sm">
+      <header className="bg-white border-b border-gray-200 px-3 py-2.5 flex justify-between items-center shrink-0 z-10 shadow-sm w-full">
         <div className="flex items-center gap-2 min-w-0 flex-1">
           <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 shrink-0">
             <Bot className="w-4 h-4" />
@@ -218,7 +218,7 @@ export default function ChatPage() {
       </header>
 
       {/* 2. 메시지 영역 - 카카오톡 스타일 */}
-      <main className="flex-1 overflow-y-auto px-4 py-3 space-y-3 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
+      <main className="flex-1 overflow-y-auto overflow-x-hidden px-4 py-3 space-y-3 w-full">
 
         {/* 날짜 구분선 */}
         <div className="flex justify-center my-2">
@@ -230,7 +230,7 @@ export default function ChatPage() {
           return (
             <div
               key={msg.id}
-              className={`flex gap-2 items-start ${isAi ? "justify-start" : "justify-end"}`}
+              className={`flex gap-2 items-start w-full ${isAi ? "justify-start" : "justify-end"}`}
             >
               {isAi && (
                 <div className="w-7 h-7 rounded-full bg-blue-100 flex items-center justify-center shrink-0 shadow-sm">
@@ -238,7 +238,7 @@ export default function ChatPage() {
                 </div>
               )}
 
-              <div className={`flex flex-col ${isAi ? "items-start" : "items-end"} max-w-[70%]`}>
+              <div className={`flex flex-col ${isAi ? "items-start" : "items-end"}`} style={{ maxWidth: 'calc(100% - 40px)' }}>
                 {/* 말풍선 */}
                 <div
                   className={`px-3 py-2.5 rounded-2xl text-sm leading-relaxed shadow-sm ${isAi
@@ -249,7 +249,8 @@ export default function ChatPage() {
                     wordBreak: 'break-word',
                     overflowWrap: 'break-word',
                     whiteSpace: 'pre-wrap',
-                    maxWidth: '100%'
+                    maxWidth: '100%',
+                    width: 'fit-content'
                   }}
                 >
                   {msg.text}
@@ -283,8 +284,8 @@ export default function ChatPage() {
       </main>
 
       {/* 3. 하단 입력 영역 - 모바일 최적화 */}
-      <footer className="bg-white border-t border-gray-200 px-3 py-2 pb-20 md:pb-3 shrink-0 z-10">
-        <div className="w-full space-y-2 max-w-full">
+      <footer className="bg-white border-t border-gray-200 px-3 py-2 pb-20 md:pb-3 shrink-0 z-10 w-full">
+        <div className="w-full space-y-2">
 
           {/* 추천 질문 칩 - 가로 스크롤 */}
           <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide -mx-3 px-3">
@@ -303,7 +304,7 @@ export default function ChatPage() {
           </div>
 
           {/* 입력창 */}
-          <div className="relative flex items-center gap-1.5 bg-gray-50 border border-gray-200 rounded-xl p-1.5 focus-within:ring-2 focus-within:ring-blue-100 focus-within:border-blue-400 transition-all shadow-inner w-full max-w-full">
+          <div className="relative flex items-center gap-1.5 bg-gray-50 border border-gray-200 rounded-xl p-1.5 focus-within:ring-2 focus-within:ring-blue-100 focus-within:border-blue-400 transition-all shadow-inner">
             <button className="p-1.5 text-gray-400 hover:text-blue-500 hover:bg-gray-200 rounded-lg transition-colors shrink-0">
               <ImageIcon className="w-4 h-4" />
             </button>

@@ -32,17 +32,17 @@ export default function RootLayout({
   return (
     <html lang="ko">
       <head>
-        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0, viewport-fit=cover" />
       </head>
       <body className="min-h-screen bg-gray-50 overflow-x-hidden">
         <LanguageProvider>
           <StudyProvider>
-            <div className="flex min-h-screen">
+            <div className="flex min-h-screen w-full overflow-x-hidden">
 
               {/* 조건에 맞지 않을 때만 사이드바 표시 */}
               {!hideNavbar && <Navbar />}
 
-              <main className="flex-1 pb-16 md:pb-0">
+              <main className="flex-1 pb-16 md:pb-0 w-full min-w-0">
                 {children}
               </main>
 
