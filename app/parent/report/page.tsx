@@ -62,8 +62,11 @@ export default function ParentReportPage() {
                 <div className="flex items-center gap-3">
                     <Users className="w-5 h-5 text-gray-400" />
                     <select
-                        value={selectedChild}
-                        onChange={(e) => setSelectedChild(e.target.value)}
+                        value={selectedChild.id}
+                        onChange={(e) => {
+                            const child = MOCK_CHILDREN.find(c => c.id === e.target.value);
+                            if (child) setSelectedChild(child);
+                        }}
                         className="px-4 py-2 bg-white border-2 border-gray-200 rounded-xl font-medium text-gray-700 hover:border-blue-300 focus:border-blue-500 focus:outline-none transition-colors cursor-pointer"
                     >
                         {MOCK_CHILDREN.map((child) => (
