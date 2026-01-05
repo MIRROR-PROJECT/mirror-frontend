@@ -178,7 +178,7 @@
             "achievementLabel": "Achievement",
             "passionTemp": "Passion Temp",
             "questionsLabel": "Questions",
-            "aiFeedback": "AI Tutor's Feedback",
+            "aiFeedback": "AI Tutor Feedback",
             "todaysKeywords": "💭 Today's Keywords",
             "subjectStatus": "📚 Subject Status",
             "close": "Close"
@@ -187,7 +187,7 @@
     "parent": {
         "report": {
             "title": "Child Learning Report",
-            "subtitle": "Monitor your child's learning progress and AI tutor's feedback.",
+            "subtitle": "Monitor your child's learning progress and AI tutor feedback.",
             "currentChild": "Currently Viewing",
             "childStatus": "{{name}}'s Learning Status",
             "recentReports": "Recent Reports",

@@ -48,66 +48,70 @@ export default function StudentReportPage() {
   }, [allReports]);
 
   return (
-    <div className="p-4 md:p-6 max-w-5xl mx-auto space-y-4 animate-fade-in pb-20 bg-gray-50 min-h-screen">
+    <div className="min-h-screen bg-gray-50 flex animate-fade-in">
+      <main className="flex-1 p-6 md:p-10 max-w-5xl mx-auto">
+        <div className="space-y-3 pb-20">
 
-      {/* 1. 페이지 헤더 */}
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-          <BarChart2 className="w-7 h-7 text-blue-600" />
-          학습 리포트
-        </h1>
-        <p className="text-gray-500 mt-2">
-          나의 공부 진척도와 AI 튜터의 피드백을 모아보세요.
-        </p>
-      </div>
+          {/* 1. 페이지 헤더 */}
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+              <BarChart2 className="w-7 h-7 text-blue-600" />
+              {t('report.title')}
+            </h1>
+            <p className="text-gray-500 mt-2">
+              {t('report.subtitle')}
+            </p>
+          </div>
 
-      {/* 2. 상단 요약 스탯 */}
-      <ReportStatsSection stats={stats} />
+          {/* 2. 상단 요약 스탯 */}
+          <ReportStatsSection stats={stats} />
 
-      {/* 3. 날짜 필터 */}
-      <div className="flex items-center justify-between">
-        <h2 className="text-lg font-bold text-gray-800">{t('parent.report.recentReports')}</h2>
-        <div className="flex gap-2 bg-gray-100 p-1 rounded-xl">
-          {(["7days", "30days", "all"] as const).map((filter) => (
-            <button
-              key={filter}
-              onClick={() => setDateFilter(filter)}
-              className={`px-4 py-1.5 rounded-lg text-sm font-bold transition-all ${dateFilter === filter
-                ? "bg-white text-blue-600 shadow-sm"
-                : "text-gray-500 hover:text-gray-700"
-                }`}
-            >
-              {filter === "7days" ? (language === 'ko' ? '7일' : '7 days') : filter === "30days" ? (language === 'ko' ? '30일' : '30 days') : t('parent.report.filterAll')}
-            </button>
-          ))}
-        </div>
-      </div>
+          {/* 3. 날짜 필터 */}
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-bold text-gray-800">{t('parent.report.recentReports')}</h2>
+            <div className="flex gap-2 bg-gray-100 p-1 rounded-xl">
+              {(["7days", "30days", "all"] as const).map((filter) => (
+                <button
+                  key={filter}
+                  onClick={() => setDateFilter(filter)}
+                  className={`px-4 py-1.5 rounded-lg text-sm font-bold transition-all ${dateFilter === filter
+                    ? "bg-white text-blue-600 shadow-sm"
+                    : "text-gray-500 hover:text-gray-700"
+                    }`}
+                >
+                  {filter === "7days" ? (language === 'ko' ? '7일' : '7 days') : filter === "30days" ? (language === 'ko' ? '30일' : '30 days') : t('parent.report.filterAll')}
+                </button>
+              ))}
+            </div>
+          </div>
 
-      {/* 4. 리포트 리스트 */}
-      {filteredReports.length === 0 ? (
-        <div className="text-center py-20 bg-gray-50 rounded-2xl border-2 border-dashed border-gray-300">
-          <p className="text-gray-500 font-medium">{t('report.noReports')}</p>
-          <p className="text-gray-400 text-sm mt-2">{t('report.noReportsHint')}</p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 gap-4">
-          {filteredReports.map((report) => (
-            <DailyReportCard
-              key={report.id}
-              report={report}
-              onClick={() => setSelectedReport(report)}
+          {/* 4. 리포트 리스트 */}
+          {filteredReports.length === 0 ? (
+            <div className="text-center py-20 bg-gray-50 rounded-2xl border-2 border-dashed border-gray-300">
+              <p className="text-gray-500 font-medium">{t('report.noReports')}</p>
+              <p className="text-gray-400 text-sm mt-2">{t('report.noReportsHint')}</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 gap-4">
+              {filteredReports.map((report) => (
+                <DailyReportCard
+                  key={report.id}
+                  report={report}
+                  onClick={() => setSelectedReport(report)}
+                />
+              ))}
+            </div>
+          )}
+
+          {/* 5. 상세 보기 모달 */}
+          {selectedReport && (
+            <ReportDetailModal
+              report={selectedReport}
+              onClose={() => setSelectedReport(null)}
             />
-          ))}
+          )}
         </div>
-      )}
-
-      {/* 5. 상세 보기 모달 */}
-      {selectedReport && (
-        <ReportDetailModal
-          report={selectedReport}
-          onClose={() => setSelectedReport(null)}
-        />
-      )}
+      </main>
     </div>
   );
 }

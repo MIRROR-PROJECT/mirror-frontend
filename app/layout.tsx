@@ -3,6 +3,7 @@
 import { usePathname } from "next/navigation";
 import "./globals.css";
 import Navbar from "./components/Sidebar";
+import MobileBottomNav from "./components/MobileBottomNav";
 import { StudyProvider } from "./context/StudyContext";
 import { LanguageProvider } from "./context/LanguageContext";
 
@@ -37,11 +38,14 @@ export default function RootLayout({
               {/* 조건에 맞지 않을 때만 사이드바 표시 */}
               {!hideNavbar && <Navbar />}
 
-              <main className="flex-1">
+              <main className="flex-1 pb-16 md:pb-0">
                 {children}
               </main>
 
             </div>
+
+            {/* 모바일 하단 네비게이션 */}
+            <MobileBottomNav />
           </StudyProvider>
         </LanguageProvider>
       </body>

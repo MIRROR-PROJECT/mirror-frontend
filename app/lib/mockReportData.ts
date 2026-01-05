@@ -209,7 +209,10 @@ const generateAiFeedback = (
     const goodLabel = language === 'ko' ? '**잘한 점**' : '**Well Done**';
     return {
         title,
-        content: `${goodLabel}\\n${goodPoint}\\n\\n${improvementPoint}`
+        content: `${goodLabel}
+${goodPoint}
+
+${improvementPoint}`
     };
 };
 
