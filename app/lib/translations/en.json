@@ -569,85 +569,85 @@
                 "reason1": "🏆 Most AI Questions (18)",
                 "reason2": "⭐ 100% Completion All Subjects",
                 "reason3": "📈 Completion Rate +23%"
+            }
+        },
+        "benefits": {
+            "hero": {
+                "badge": "AI Teaching Tool - Mirror",
+                "title": "Boost Revenue and Efficiency",
+                "titleAccent": "At the Same Time",
+                "subtitle": "Mirror is not just a management tool. From student management to AI feedback,<br />it is a complete system that <span class=\"font-bold text-indigo-600\">automates and enhances</span> your academy's operations."
             },
-            "benefits": {
-                "hero": {
-                    "badge": "AI Teaching Tool - Mirror",
-                    "title": "Boost Revenue and Efficiency",
-                    "titleAccent": "At the Same Time",
-                    "subtitle": "Mirror is not just a management tool. From student management to AI feedback,<br />it is a complete system that <span class=\"font-bold text-indigo-600\">automates and enhances</span> your academy's operations."
+            "cards": {
+                "revenue": {
+                    "title": "30% Revenue Increase",
+                    "desc": "Data-driven management improves grades → Parent satisfaction rises → Re-enrollment surges",
+                    "footer": "Avg. Re-enrollment 87%"
                 },
-                "cards": {
-                    "revenue": {
-                        "title": "30% Revenue Increase",
-                        "desc": "Data-driven management improves grades → Parent satisfaction rises → Re-enrollment surges",
-                        "footer": "Avg. Re-enrollment 87%"
-                    },
-                    "time": {
-                        "title": "70% Time Savings",
-                        "desc": "Manual student management, reporting, and counseling prep are all automated.",
-                        "footer": "Save 3 hours daily"
-                    },
-                    "cost": {
-                        "title": "80% Cost Reduction per Student",
-                        "desc": "AI cares for students 24/7, allowing teachers to focus on what truly matters.",
-                        "footer": "200% Student Increase Feasible"
-                    }
+                "time": {
+                    "title": "70% Time Savings",
+                    "desc": "Manual student management, reporting, and counseling prep are all automated.",
+                    "footer": "Save 3 hours daily"
                 },
-                "tabs": {
-                    "dashboard": "Workspace Dashboard",
-                    "students": "Student Management"
-                },
-                "preview": {
-                    "dashboard": {
-                        "title": "📊 Real-time Class Analysis Dashboard",
-                        "desc": "Wake up to AI-analyzed learning patterns and daily teaching strategies based on last night's data.",
-                        "briefing": {
-                            "title": "Daily Briefing",
-                            "desc": "\"Over 30 students struggled with Trig Synthesis last night. Recommend 10-min review at start of class.\""
-                        },
-                        "care": {
-                            "title": "Care Alert",
-                            "desc": "\"Student Park Min-su score dropped 20 points. Inactive for 3 days. Immediate counseling needed.\""
-                        }
-                    },
-                    "students": {
-                        "title": "👥 Student Management at a Glance",
-                        "desc": "Check progress, weaknesses, and recent activity in real-time, and call with one click.",
-                        "student1": {
-                            "name": "Park Min-su",
-                            "desc": "Progress 42% ▼ · Weakness: Trigonometry"
-                        },
-                        "student2": {
-                            "name": "Lee Young-hee",
-                            "desc": "Progress 87% ▲ · Weakness: Differentiation"
-                        },
-                        "call": "Call",
-                        "report": "Report"
-                    }
-                },
-                "caseStudy": {
-                    "title": "Success Story: Gangnam Academy A",
-                    "quote": "\"Students increased from 40 to 82 in 3 months with Mirror.<br />Saving 2 hours daily on parent counseling allowed us to accept more students.\"",
-                    "stat1": {
-                        "value": "+105%",
-                        "label": "Student Growth"
-                    },
-                    "stat2": {
-                        "value": "-70%",
-                        "label": "Mgmt Time"
-                    },
-                    "stat3": {
-                        "value": "87%",
-                        "label": "Re-enrollment"
-                    }
-                },
-                "cta": {
-                    "title": "Start Now and Upgrade Your Academy",
-                    "desc": "Academy innovation starting at $15/mo. First month free.",
-                    "button": "Start Now",
-                    "footer": "💳 Immediate access after payment · Cancel anytime"
+                "cost": {
+                    "title": "80% Cost Reduction per Student",
+                    "desc": "AI cares for students 24/7, allowing teachers to focus on what truly matters.",
+                    "footer": "200% Student Increase Feasible"
                 }
+            },
+            "tabs": {
+                "dashboard": "Workspace Dashboard",
+                "students": "Student Management"
+            },
+            "preview": {
+                "dashboard": {
+                    "title": "📊 Real-time Class Analysis Dashboard",
+                    "desc": "Wake up to AI-analyzed learning patterns and daily teaching strategies based on last night's data.",
+                    "briefing": {
+                        "title": "Daily Briefing",
+                        "desc": "\"Over 30 students struggled with Trig Synthesis last night. Recommend 10-min review at start of class.\""
+                    },
+                    "care": {
+                        "title": "Care Alert",
+                        "desc": "\"Student Park Min-su score dropped 20 points. Inactive for 3 days. Immediate counseling needed.\""
+                    }
+                },
+                "students": {
+                    "title": "👥 Student Management at a Glance",
+                    "desc": "Check progress, weaknesses, and recent activity in real-time, and call with one click.",
+                    "student1": {
+                        "name": "Park Min-su",
+                        "desc": "Progress 42% ▼ · Weakness: Trigonometry"
+                    },
+                    "student2": {
+                        "name": "Lee Young-hee",
+                        "desc": "Progress 87% ▲ · Weakness: Differentiation"
+                    },
+                    "call": "Call",
+                    "report": "Report"
+                }
+            },
+            "caseStudy": {
+                "title": "Success Story: Gangnam Academy A",
+                "quote": "\"Students increased from 40 to 82 in 3 months with Mirror.<br />Saving 2 hours daily on parent counseling allowed us to accept more students.\"",
+                "stat1": {
+                    "value": "+105%",
+                    "label": "Student Growth"
+                },
+                "stat2": {
+                    "value": "-70%",
+                    "label": "Mgmt Time"
+                },
+                "stat3": {
+                    "value": "87%",
+                    "label": "Re-enrollment"
+                }
+            },
+            "cta": {
+                "title": "Start Now and Upgrade Your Academy",
+                "desc": "Academy innovation starting at $15/mo. First month free.",
+                "button": "Start Now",
+                "footer": "💳 Immediate access after payment · Cancel anytime"
             }
         },
         "students": {
