@@ -208,6 +208,7 @@ function InfoContent() {
             <input
               type="tel"
               placeholder="010-1234-5678"
+              value={formData.phoneNumber}
               className="w-full px-4 py-3 bg-gray-50 rounded-lg border focus:ring-2 focus:ring-blue-500 outline-none text-gray-900 font-medium placeholder-gray-400"
               onChange={(e) => setFormData({ ...formData, phoneNumber: formatPhoneNumber(e.target.value) })}
               maxLength={13}
@@ -245,6 +246,7 @@ function InfoContent() {
                 <input
                   type="tel"
                   placeholder="010-0000-0000"
+                  value={formData.childPhoneNumber}
                   className="w-full px-4 py-3 bg-gray-50 rounded-lg border focus:ring-2 focus:ring-blue-500 outline-none text-gray-900 font-medium placeholder-gray-400"
                   onChange={(e) => setFormData({ ...formData, childPhoneNumber: formatPhoneNumber(e.target.value) })}
                   maxLength={13}
