@@ -201,7 +201,7 @@ export default function TeacherTutorialWrapper() {
 
             {/* Actual Teacher Dashboard with tutorial markers */}
             <div data-tutorial-wrapper="true">
-                <TeacherDashboard user={user} />
+                <TeacherDashboard user={user} isTutorial={true} />
             </div>
         </div>
     );

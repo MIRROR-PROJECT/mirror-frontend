@@ -51,10 +51,10 @@ const DUMMY_STUDENTS: Student[] = [
   { id: 5, name: "정하늘", email: "haneul@example.com", grade: "고2" },
 ];
 
-export default function TeacherDashboard({ user }: { user: any }) {
+export default function TeacherDashboard({ user, isTutorial = false }: { user: any; isTutorial?: boolean }) {
   const router = useRouter();
   const [classes, setClasses] = useState<ClassData[]>([]);
-  const [isLoadingClasses, setIsLoadingClasses] = useState(true);
+  const [isLoadingClasses, setIsLoadingClasses] = useState(!isTutorial);
 
   const [selectedClassId, setSelectedClassId] = useState(1);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -103,8 +103,36 @@ export default function TeacherDashboard({ user }: { user: any }) {
     setCurrentDate(formatted);
   }, []);
 
-  // 실제 API에서 반 목록 가져오기
+  // 실제 API에서 반 목록 가져오기 (튜토리얼 모드가 아닐 때만)
   useEffect(() => {
+    // 튜토리얼 모드면 mock 데이터 사용
+    if (isTutorial) {
+      setClasses([{
+        id: 1,
+        name: "고2 수리논술 심화반 A",
+        studentCount: 3,
+        avgProgress: 78,
+        briefing: {
+          mood: "🔥 자습 열기 고조",
+          moodDesc: "어제 밤 10시 이후 접속자가 30명 이상이었습니다.",
+          weakness: "삼각함수 합성",
+          weaknessRate: 65,
+          careAction: "수업 도입부 '합성 공식' 10분 복습"
+        },
+        careList: [
+          { id: 101, name: "박민수", issue: "성적 급락 (▼20점)", urgent: true },
+          { id: 102, name: "최유리", issue: "진로 상담 요청", urgent: false }
+        ],
+        students: [
+          { id: 1, name: "김민수", email: "minsu@example.com", grade: "고2" },
+          { id: 2, name: "이지은", email: "jieun@example.com", grade: "고2" },
+          { id: 5, name: "정하늘", email: "haneul@example.com", grade: "고2" },
+        ]
+      }]);
+      setIsLoadingClasses(false);
+      return;
+    }
+
     const fetchClasses = async () => {
       try {
         setIsLoadingClasses(true);
