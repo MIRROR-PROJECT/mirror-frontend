@@ -423,6 +423,46 @@
         "placeholder": "Type your question...",
         "disclaimer": "AI can make mistakes. Please verify important information."
     },
+    "parent": {
+        "dashboard": {
+            "welcome": "Hello, {{name}}'s Parent! 👋",
+            "dailySummary": "{{name}} has achieved <bold>{{percent}}%</bold> of today's planned study load. That's 12% higher than the weekly average! 🎉",
+            "currentStatus": {
+                "label": "Current Status",
+                "active": "Studying (AI Tutor)",
+                "inactive": "Offline"
+            },
+            "stats": {
+                "weeklyStudy": "Weekly Study Time",
+                "avgFocus": "Avg Focus",
+                "monthlyAttendance": "Monthly Attendance",
+                "upTrend": "Trending Up",
+                "hours": "h",
+                "minutes": "m"
+            },
+            "timeline": {
+                "title": "Today's Learning Activity",
+                "live": "Live Update",
+                "nowPlaying": "NOW PLAYING",
+                "viewMore": "View More History"
+            },
+            "aiAnalysis": {
+                "title": "Weekly AI Analysis",
+                "strong": "Strong Point",
+                "weak": "Weak Point",
+                "topPercent": "Top 5%",
+                "needsCare": "Needs Care",
+                "analysisLabel": "AI Analysis:",
+                "analysisContent": "{{name}} shows fast calculation speed and strong conceptual understanding. However, the error rate is high (23%) in trigonometric problems involving shapes. Specifically, applying synthesis formulas for triangle area calculation is challenging. We will provide visualization materials for focused review this weekend."
+            },
+            "teacherComment": {
+                "title": "👨‍🏫 Teacher's Comment",
+                "content": "\"{{name}} has gained a lot of confidence in Math lately! Their logical steps in essay-type questions have improved significantly. With a Grade 2 in last week's mock exam, Grade 1 is within reach next month. We've prepared special supplementary materials for the Trigonometry section this weekend. Please encourage them at home!\"",
+                "date": "Written on 2026.01.03",
+                "author": "Mr. Park Jin-woo"
+            }
+        }
+    },
     "teacher": {
         "schedule": {
             "edit": "Edit Schedule",
