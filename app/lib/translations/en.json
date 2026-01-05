@@ -115,10 +115,6 @@
         "code": "Code"
     },
     "landing": {
-        "hero": "AI-Powered Personalized Learning Platform",
-        "subtitle": "Experience learning tailored just for you",
-        "getStarted": "Get Started",
-        "learnMore": "Learn More",
         "cases": "📉 1,240 cases: Grade 4 → Grade 1 in 2 months",
         "hero1": "Your neighbor isn't",
         "hero2": "smarter than you.",
@@ -149,7 +145,6 @@
     "report": {
         "title": "Learning Report",
         "subtitle": "View your study progress and AI tutor's feedback",
-        "studentSubtitle": "Track your progress and AI tutor feedback all in one place.",
         "recentReports": "Recent Reports",
         "days7": "7 Days",
         "days30": "30 Days",
@@ -159,7 +154,7 @@
         "avgAchievement": "Avg Achievement",
         "totalCompleted": "Tasks Completed",
         "noReports": "No reports yet.",
-        "noReportsHint": "Reports will be generated automatically as you study!",
+        "noReportsDesc": "Reports will be generated automatically as you study!",
         "aiComment": "AI Tutor's Comment",
         "studyTime": "Study Time",
         "achievement": "Achievement",
